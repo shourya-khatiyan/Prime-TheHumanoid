@@ -64,7 +64,7 @@
     9.01 | Bearing (purchased) | 31 Rear 61813-2Z (floating outer ring) ball set
     4.95 | Bearing (purchased) | 31 Rear 61813-2Z (floating outer ring) seal rear
     4.95 | Bearing (purchased) | 31 Rear 61813-2Z (floating outer ring) seal front
-  225.50 | EN24T (34CrNiMo6) Q&T | 32 Carrier-2 rear half (hub D65 + posts, EN24T)
+  232.26 | EN24T (34CrNiMo6) Q&T | 32 Carrier-2 rear half (hub D65 + posts, EN24T)
   350.98 | 42CrMo4 nitrided | 33 Bearing cartridge + Ring-2 72T m1 (42CrMo4 nitrided)
     1.01 | Steel 12.9 fastener | 34.1 Screw M3x10 SHCS cartridge->housing
     1.01 | Steel 12.9 fastener | 34.2 Screw M3x10 SHCS cartridge->housing
@@ -96,13 +96,13 @@
     9.01 | Bearing (purchased) | 41 Front 61813-2RS1 (located outer ring) ball set
     4.95 | Bearing (purchased) | 41 Front 61813-2RS1 (located outer ring) seal rear
     4.95 | Bearing (purchased) | 41 Front 61813-2RS1 (located outer ring) seal front
-  314.21 | EN24T (34CrNiMo6) Q&T | 42 Carrier-2 front half + output flange D78 (EN24T)
+  313.85 | EN24T (34CrNiMo6) Q&T | 42 Carrier-2 front half + output flange D78 (EN24T)
     2.65 | Steel 12.9 fastener | 43.1 Screw M4x16 SHCS carrier-2 halves
     2.65 | Steel 12.9 fastener | 43.2 Screw M4x16 SHCS carrier-2 halves
     2.65 | Steel 12.9 fastener | 43.3 Screw M4x16 SHCS carrier-2 halves
     0.10 | NdFeB magnet | 44 Homing magnet D3x2 radial (in flange rim)
    23.15 | 7075-T6 | 45 Front cover / bearing retainer 7075-T6
-    0.00 | Electronics | 46 Hall homing sensor DRV5032 SOT-23 (envelope)
+    0.00 | Electronics | 46 Hall homing sensor DRV5033FA SOT-23 (envelope)
     0.29 | Steel 12.9 fastener | 47.1 Screw M2.5x6 CSK cover->cartridge
     0.29 | Steel 12.9 fastener | 47.2 Screw M2.5x6 CSK cover->cartridge
     0.29 | Steel 12.9 fastener | 47.3 Screw M2.5x6 CSK cover->cartridge
@@ -111,4 +111,4 @@
     0.29 | Steel 12.9 fastener | 47.6 Screw M2.5x6 CSK cover->cartridge
     0.29 | Steel 12.9 fastener | 47.7 Screw M2.5x6 CSK cover->cartridge
     0.29 | Steel 12.9 fastener | 47.8 Screw M2.5x6 CSK cover->cartridge
- 2415.55 | TOTAL modelled (excl. motor 336 g, electronics)
+ 2421.95 | TOTAL modelled (excl. motor 336 g, electronics)

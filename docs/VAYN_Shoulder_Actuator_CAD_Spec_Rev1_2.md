@@ -209,7 +209,7 @@ Stress margins (Appendix A.3): at the stage-2 sun–planet mesh at L1, σH ≈ 8
 - The posts reach out to r 34.5 (0.5 clearance to the ring-2 tip). Their end faces at Z 70.5 and Z 81.5 are the **inner-ring shoulders** for both 61813s.
 - Material: 7075-T6 with steel thread inserts for the arm screws (≈ 0.15 kg), or EN24T (≈ 0.41 kg). Pick 7075 for the mass target. Switch to EN24T if the bearing seats fret in the endurance test.
 
-**Pins:** stage 2: 3 × Ø8 × 23 mm (Z 64.5–87.5); stage 1: 3 × Ø8 × 17 mm (Z 43–60, full depth of both 3 mm plates). Through-hardened bearing steel (52100/SUJ2), 58–64 HRC, **ground h6, Ra ≤ 0.2 µm** (needle raceway) [R4][R11]. Press-fit into Ø8 P7 holes in both cheeks/hubs, about 6 mm engagement each side on carrier-2. No threads in the pins. Do not use ISO 8734 m6 dowels as raceways without checking the resulting needle clearance.
+**Pins:** stage 2: 3 × Ø8 × 23 mm (Z 64.5–87.5); stage 1: 3 × Ø8 × 17 mm (Z 43–60, full depth of both 3 mm plates). Through-hardened bearing steel (52100/SUJ2), 58–64 HRC, **ground h6, Ra ≤ 0.2 µm** (needle raceway) [R4][R11]. Press-fit into Ø8 R7 holes (4–28 µm interference) in both cheeks/hubs, about 6 mm engagement each side on carrier-2. Rev 1.3: each stage-2 pin seats on a 1.0 mm shoulder in carrier-2 rear (Ø3 vent/punch-out hole below it), and the front blind hole has 0.3 mm end clearance. No threads in the pins. Do not use ISO 8734 m6 dowels as raceways without checking the resulting needle clearance.
 
 **Planet bearings:** HK0810 (Cr 3.8 kN, C0r 3.95 kN [R19][R20]). Planet bore **Ø12 N6** (steel housing, Schaeffler) [R4][R11]. Roundness IT5/2, Ra ≤ 0.8. Thrust washers Ø8.2 × Ø14 × 0.3, hardened, both sides of each planet.
 

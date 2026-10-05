@@ -304,8 +304,9 @@ def build():
     for k, v in ball_bearing(z0=60.5, seals=True, **brg).items():
         add(f"31 Rear 61813-2Z (floating outer ring) {k}", "Bearing (purchased)", v)
     c2r = cyl(32.5, 60.5, 70.5) + pattern(lambda a: cyl(7.5, 70.4, 81.5, *polar(27, a)), post_angles)
-    c2r = c2r - cyl(11.5, 60, 71) - holes(a2, 8.0, 60.4, 70.6, planet_angles) - holes(27, 4.0, 73.5, 81.6, post_angles)
-    c2r = c2r - tube(40, 32.5, 60, 70.5) - tube(29.5, 21, 60.4, 64.0)  # inner-ring zone clear + lightening groove
+    c2r = c2r - cyl(11.5, 60, 71) - holes(a2, 8.0, 64.5, 70.6, planet_angles) - holes(27, 4.0, 73.5, 81.6, post_angles)
+    c2r = c2r - holes(a2, 3.0, 60.4, 64.6, planet_angles)  # pin seat shoulder, d3 vent + punch-out
+    c2r = c2r - tube(40, 32.5, 60, 70.5) - tube(29.5, 21, 60.4, 63.5)  # inner-ring zone clear + lightening groove
     add("32 Carrier-2 rear half (hub D65 + posts, EN24T)", "EN24T (34CrNiMo6) Q&T", c2r)
     cart = cyl(44.5, 60.0, 84.0) + cyl(50, 84.0, 91.5) - cyl(42.5, 59.9, 91.6)
     cart = cart + ring_gear(r2, m2, 42.5, 70.8, 81.2)
@@ -328,7 +329,7 @@ def build():
         add(f"41 Front 61813-2RS1 (located outer ring) {k}", "Bearing (purchased)", v)
     c2f = cyl(32.5, 81.5, 92.0) + cyl(39, 92.0, 95.5) - cyl(9, 81.4, 87.5) - cyl(18, 89.0, 95.6) - cyl(20, 93.5, 95.6)
     c2f = c2f - holes(26, 5.0, 87.5, 95.6, every(6, 30))  # m5 tapped in steel
-    c2f = c2f - holes(a2, 8.0, 81.4, 87.5, planet_angles) - holes(27, 4.5, 81.4, 95.6, post_angles) - holes(27, 8.0, 91.5, 95.6, post_angles)
+    c2f = c2f - holes(a2, 8.0, 81.4, 87.8, planet_angles) - holes(27, 4.5, 81.4, 95.6, post_angles) - holes(27, 8.0, 91.5, 95.6, post_angles)
     mag = Manifold.cylinder(2.3, 1.5, 1.5, segs(1.5)).rotate((0, 90, 0)).translate((36.8, 0, 93.75))
     add("42 Carrier-2 front half + output flange D78 (EN24T)", "EN24T (34CrNiMo6) Q&T", c2f - mag)
     for i, a in enumerate(post_angles):
@@ -341,7 +342,7 @@ def build():
         cov = cov - csk_hole(*polar(46.6, a), 94.5, 3.0, 2.5, -1)
     hall_pocket = box(39.9, 41.6, -2.0, 2.0, 92.0, 94.6) + box(41.5, 50.1, -0.6, 0.6, 93.3, 94.6)
     add("45 Front cover / bearing retainer 7075-T6", "7075-T6", cov - hall_pocket.rotate((0, 0, hall_ang)))
-    add("46 Hall homing sensor DRV5032 SOT-23 (envelope)", "Electronics", box(40.2, 41.4, -1.45, 1.45, 92.6, 94.2).rotate((0, 0, hall_ang)))
+    add("46 Hall homing sensor DRV5033FA SOT-23 (envelope)", "Electronics", box(40.2, 41.4, -1.45, 1.45, 92.6, 94.2).rotate((0, 0, hall_ang)))
     for i, a in enumerate(cover_ang):
         add(f"47.{i + 1} Screw M2.5x6 CSK cover->cartridge", "Steel 12.9 fastener", csk(*polar(46.6, a), 94.5, 6.0, 2.5, -1))
     return p
