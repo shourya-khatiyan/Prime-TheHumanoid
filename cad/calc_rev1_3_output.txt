@@ -1,0 +1,99 @@
+
+=== 1 motor, torque, heat =======================================
+Kt 0.0919 N*m/A   output 2.481 N*m per A
+    20 N*m ->  8.06 A   Pcu25   9.1 W   Pcu90  11.4 W
+    30 N*m -> 12.09 A   Pcu25  20.4 W   Pcu90  25.6 W
+    37 N*m -> 14.91 A   Pcu25  31.0 W   Pcu90  39.0 W
+    50 N*m -> 20.15 A   Pcu25  56.7 W   Pcu90  71.1 W
+  thermal resistance needed at 30 N*m (90C winding, 25C air): 2.54 K/W
+  speeds @24V: motor 2160 rpm, carrier-1 360 rpm, output 72 rpm
+
+=== 2 output bearings (61813 pair, spring preload) ==============
+span 21.0 mm, load point 9.0 mm ahead of front centre
+L1 continuous Fa +0          rear Fr    974 Fa  231 P    994 s0   9.9 | front Fr   1024 Fa  231 P   1024 s0   9.4
+L2 torque proof Fa +0        rear Fr      0 Fa  231 P    449 s0  83.0 | front Fr      0 Fa  231 P    449 s0  83.0
+L3 tilt proof Fa +150        rear Fr   2445 Fa  231 P   2445 s0   3.9 | front Fr   2595 Fa  381 P   2595 s0   3.7
+L3 tilt proof Fa -150        rear Fr   2445 Fa  231 P   2445 s0   3.9 | front Fr   2595 Fa   81 P   2595 s0   3.7
+L4 combined proof Fa +150    rear Fr   2445 Fa  231 P   2445 s0   3.9 | front Fr   2595 Fa  381 P   2595 s0   3.7
+L4 combined proof Fa -150    rear Fr   2445 Fa  231 P   2445 s0   3.9 | front Fr   2595 Fa   81 P   2595 s0   3.7
+L1 life (front, worst Fa 381 N): P 1231 N  L10 904 Mrev = 209,197 h @72 rpm
+
+=== 2b tilt stiffness / misalignment ============================
+L1 continuous        elastic only       0.83 mrad ( 2.8 arcmin)  tip@670 0.55 mm
+L1 continuous        + selective seats  1.30 mrad ( 4.5 arcmin)  tip@670 0.87 mm
+L1 continuous        + plain H6 seats   2.49 mrad ( 8.6 arcmin)  tip@670 1.67 mm
+L4 combined proof    elastic only       1.53 mrad ( 5.3 arcmin)  tip@670 1.03 mm
+L4 combined proof    + selective seats  2.01 mrad ( 6.9 arcmin)  tip@670 1.34 mm
+L4 combined proof    + plain H6 seats   3.20 mrad (11.0 arcmin)  tip@670 2.14 mm
+
+=== 3 gears (KA 1.25, KV 1.1, Kgamma 1.2, KHbeta from crowned line-contact model) 
+stage-2 KHbeta vs lead crowning (um): C0  C4  C6  C8  C10
+  L1 continuous        f_ma 19.8 um: 5.30  3.60  2.81  2.55  2.55
+  L2 torque proof      f_ma  6.8 um: 2.41  1.70  1.81  1.97  2.13
+  L4 combined proof    f_ma 26.9 um: 4.78  3.72  3.16  2.67  2.46
+  model vs ISO 6336-1 annex C (full face contact, C 2 um, f 1 um, w 46.8): 1.298 vs 1.298
+L1 continuous: Tmotor 1.108 N*m, Tsun2 6.32 N*m, ring-2 reaction 23.7 N*m, ring-1 5.21 N*m
+  S1 Ft   62 N  lewis    73 MPa  KHbeta 3.08  sigH sun   702  ring   314
+  S2 Ft  281 N  lewis   243 MPa  f_ma 19.8 um KHbeta 2.81  sigH sun  1350  ring   675
+L2 torque proof: Tmotor 1.847 N*m, Tsun2 10.53 N*m, ring-2 reaction 39.5 N*m, ring-1 8.68 N*m
+  S1 Ft  103 N  lewis   103 MPa  KHbeta 2.60  sigH sun   833  ring   372
+  S2 Ft  468 N  lewis   261 MPa  f_ma  6.8 um KHbeta 1.81  sigH sun  1400  ring   700
+L4 combined proof: Tmotor 1.847 N*m, Tsun2 10.53 N*m, ring-2 reaction 39.5 N*m, ring-1 8.68 N*m
+  S1 Ft  103 N  lewis   103 MPa  KHbeta 2.60  sigH sun   833  ring   372
+  S2 Ft  468 N  lewis   455 MPa  f_ma 26.9 um KHbeta 3.16  sigH sun  1849  ring   925
+  allowables: 16MnCr5 case-hardened sigHlim 1500 / sigFlim 500 (x ZNT/YNT 1.6/2.5 static); 42CrMo4 nitrided ring sigHlim 1000-1200
+HK0810 stage-2 at L1: P 561 N, n_rel 192 rpm, L10h 50,922 h
+pin-2 bending at L2: 74 MPa (52100 60 HRC)
+backlash 0.03 mm/mesh -> output 0.092 deg
+backlash 0.05 mm/mesh -> output 0.154 deg
+backlash 0.07 mm/mesh -> output 0.215 deg
+
+=== 4 spring preload: tolerance + thermal stack =================
+geometric nominal H 2.650, mean with bearing width tolerance 2.800
+C3 axial play per bearing 160-219 um; worst case +/-0.269, RSS +/-0.093
+  H min (WC)  2.531 mm ->   251 N nominal,   226..  276 N with spring tol
+  H mean      2.800 mm ->   229 N nominal,   206..  252 N with spring tol
+  H max (WC)  3.069 mm ->   207 N nominal,   186..  227 N with spring tol
+front residual at -150 N: 36 N (min)  front max at +150 N: 426 N
+  dT -40 K -> dH -21.3 um -> dF +1.8 N
+  dT -20 K -> dH -10.7 um -> dF +0.9 N
+  dT +60 K -> dH +32.0 um -> dF -2.7 N
+SKF small-motor guideline F = 0.005..0.01 x d = 325..650 N; this spring k = 0.0036
+rear ring stick-slip: mu 0.15 x Fr_rear(L4) 367 N vs spring 231 N
+
+=== 5 fits vs temperature (um, + = clearance, - = interference) =
+ring-1 OD in housing  D85 K6/h5      -20C   -59..  -22  0C   -39..   -2  20C   -18..  +19  80C   +44..  +81
+cartridge in housing  D89 G7/h6      -20C   -31..  +26  0C   -10..  +47  20C   +12..  +69  80C   +77.. +134
+outer rings, selective D85 OD+3/+10  -20C    +3..  +10  0C    +3..  +10  20C    +3..  +10  80C    +3..  +10
+IR on carrier-2       D65 brg/j5     -20C   -21..   +7  0C   -21..   +7  20C   -21..   +7  80C   -21..   +7
+labyrinth D40.6H8 over sun-1 D40h8   -20C  +580.. +658  0C  +590.. +668  20C  +600.. +678  80C  +629.. +707
+radial clearance loss: j5 max interference x0.8 + 5 K ring gradient = 21.1 um  -> Normal(8-28) min -13.1  C3(23-43) min +1.9
+
+=== 6 bolted joints and dowels ==================================
+cartridge flange -> housing      8xM3 @1.2 N*m: FM  2378 N  slip   133 N*m (load 39, SF  3.4)  separation   426 N*m (load 51, SF  8.3)
+rear plate -> housing lip        6xM3 @1.2 N*m: FM  2378 N  slip   101 N*m (load 50, SF  2.0)  separation   316 N*m (load 64, SF  4.9)
+torso bracket -> rear plate      6xM4 @3.0 N*m: FM  4471 N  slip   153 N*m (load 50, SF  3.1)  separation   456 N*m (load 64, SF  7.1)
+arm -> output flange             6xM5 @8.0 N*m: FM  9920 N  slip   232 N*m (load 50, SF  4.6)  separation   733 N*m (load 50, SF 14.7)
+carrier-2 halves                 3xM4 @4.0 N*m: FM  5961 N  slip    72 N*m (load 50, SF  1.4)  
+sun-1 -> rotor (pcd 25 worst)    4xM3 @0.8 N*m: FM  1585 N  slip    12 N*m (load 2, SF  6.4)  
+housing M3 x6 engage (cartridge)     strip 14038 N vs FM 2378 N  SF 5.9
+housing lip M3 x2.6 engage (plate)   strip  6083 N vs FM 2378 N  SF 2.6
+ring-1 dowels 2x D3 (slot 1.5 deep)    110 N each  shear    16 MPa  bearing(Al)   25 MPa
+cartridge dowels 2x D4 (backup)        420 N each  shear    33 MPa  bearing(Al)   26 MPa
+plate dowels 2x D3 (backup)            532 N each  shear    75 MPa  bearing(Al)   59 MPa
+carrier-2 post shear 617 N each, bending 10 MPa
+cover lip: 426 N -> line 1.65 N/mm, bending 3 MPa
+
+=== 8 gear inspection data (x = 0, 20 deg, backlash allowance 0.025 per gear) 
+sun-1     z18 m0.8: W3 nominal 6.106  with allowance 6.082 (-0.000/-0.015)
+planet-1  z36 m0.8: W5 nominal 11.031  with allowance 11.008 (-0.000/-0.015)
+sun-2     z18 m1.0: W3 nominal 7.632  with allowance 7.609 (-0.000/-0.015)
+planet-2  z27 m1.0: W4 nominal 10.711  with allowance 10.687 (-0.000/-0.015)
+ring-1    z90 m0.8: Mi between D1.2 pins nominal 70.744  with allowance 70.813 (+0.015/-0.000), pin contact angle 20.0 deg
+ring-2    z72 m1.0: Mi between D1.5 pins nominal 70.430  with allowance 70.499 (+0.015/-0.000), pin contact angle 20.0 deg
+
+=== 7 housing and homing magnet =================================
+housing torsion at 50 N*m: 0.7 MPa; bending at 51.4 N*m: 1.4 MPa
+homing magnet D3x2 N52 on-axis field at 1.2 mm: 201 mT (DRV5033FA BOP max 6.8 mT)
+homing magnet D3x2 N52 on-axis field at 1.4 mm: 166 mT (DRV5033FA BOP max 6.8 mT)
+homing magnet D3x2 N52 on-axis field at 2.0 mm: 97 mT (DRV5033FA BOP max 6.8 mT)

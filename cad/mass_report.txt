@@ -1,0 +1,114 @@
+   14.50 | 6061-T6 | 01 Encoder lid 6061-T6 D59.8x2
+    0.13 | Steel 12.9 fastener | 02.1 Screw M2x4 CSK lid
+    0.13 | Steel 12.9 fastener | 02.2 Screw M2x4 CSK lid
+    0.13 | Steel 12.9 fastener | 02.3 Screw M2x4 CSK lid
+    0.13 | Steel 12.9 fastener | 02.4 Screw M2x4 CSK lid
+    0.00 | Electronics | 03 Motor encoder PCB 30x30x1.6 (AS5047P)
+    0.00 | Electronics | 04 AS5047P IC (TSSOP-14 envelope)
+    0.46 | Steel 12.9 fastener | 05.1 Screw M2.5x5 pan PCB
+    0.46 | Steel 12.9 fastener | 05.2 Screw M2.5x5 pan PCB
+    0.46 | Steel 12.9 fastener | 05.3 Screw M2.5x5 pan PCB
+    0.46 | Steel 12.9 fastener | 05.4 Screw M2.5x5 pan PCB
+    0.49 | 6061-T6 | 06 Magnet holder sleeve 6061 D10/D6
+    0.53 | NdFeB magnet | 07 Encoder magnet D6x2.5 diametric
+  147.59 | 7075-T6 | 08 Rear mount plate 7075-T6 (10 mm)
+    0.90 | Steel 12.9 fastener | 09.1 Screw M3x8 SHCS plate->housing
+    0.90 | Steel 12.9 fastener | 09.2 Screw M3x8 SHCS plate->housing
+    0.90 | Steel 12.9 fastener | 09.3 Screw M3x8 SHCS plate->housing
+    0.90 | Steel 12.9 fastener | 09.4 Screw M3x8 SHCS plate->housing
+    0.90 | Steel 12.9 fastener | 09.5 Screw M3x8 SHCS plate->housing
+    0.90 | Steel 12.9 fastener | 09.6 Screw M3x8 SHCS plate->housing
+    0.33 | 52100 bearing steel | 10.1 Dowel D3x6 plate->housing
+    0.33 | 52100 bearing steel | 10.2 Dowel D3x6 plate->housing
+    1.04 | Steel 12.9 fastener | 11.1 Screw M4x8 CSK stator
+    1.04 | Steel 12.9 fastener | 11.2 Screw M4x8 CSK stator
+    1.04 | Steel 12.9 fastener | 11.3 Screw M4x8 CSK stator
+    1.04 | Steel 12.9 fastener | 11.4 Screw M4x8 CSK stator
+    0.00 | Motor envelope | 12 LA8308 stator + base (envelope, measure)
+    0.00 | Motor envelope | 13 LA8308 rotor bell (envelope, measure)
+    6.13 | 52100 bearing steel | 14 LA8308 shaft D6
+  341.75 | 7075-T6 | 15 Housing one-piece 7075-T6
+  190.81 | 42CrMo4 nitrided | 16 Ring-1 90T m0.8 (42CrMo4 nitrided)
+    0.44 | 52100 bearing steel | 17.1 Dowel D3x8 ring-1 axial
+    0.44 | 52100 bearing steel | 17.2 Dowel D3x8 ring-1 axial
+   41.72 | 16MnCr5 carburized | 18 Sun-1 18T m0.8 flanged pinion (16MnCr5)
+    0.38 | Steel 12.9 fastener | 19.1 Screw M3x5 CSK sun-1->rotor
+    0.38 | Steel 12.9 fastener | 19.2 Screw M3x5 CSK sun-1->rotor
+    0.38 | Steel 12.9 fastener | 19.3 Screw M3x5 CSK sun-1->rotor
+    0.38 | Steel 12.9 fastener | 19.4 Screw M3x5 CSK sun-1->rotor
+    0.99 | 52100 bearing steel | 20 Thrust washer C1 rear D48/42x0.3
+   76.03 | EN24T (34CrNiMo6) Q&T | 21 Carrier-1 rear plate + posts (EN24T)
+   94.69 | 16MnCr5 carburized | 22 Carrier-1 front plate + Sun-2 18T m1 (16MnCr5)
+    0.66 | Steel 12.9 fastener | 23.1 Screw M3x10 CSK carrier-1
+    0.66 | Steel 12.9 fastener | 23.2 Screw M3x10 CSK carrier-1
+    0.66 | Steel 12.9 fastener | 23.3 Screw M3x10 CSK carrier-1
+   41.61 | 16MnCr5 carburized | 24.1 Planet-1 36T m0.8 (16MnCr5)
+    4.90 | Bearing (purchased) | 25.1 HK0810 needle bearing
+    6.64 | 52100 bearing steel | 26.1 Planet pin-1 D8x17 h6 52100
+    0.24 | 52100 bearing steel | 27.1 Thrust washer D14/8.2x0.3 rear
+    0.24 | 52100 bearing steel | 28.1 Thrust washer D14/8.2x0.3 front
+   41.61 | 16MnCr5 carburized | 24.2 Planet-1 36T m0.8 (16MnCr5)
+    4.90 | Bearing (purchased) | 25.2 HK0810 needle bearing
+    6.64 | 52100 bearing steel | 26.2 Planet pin-1 D8x17 h6 52100
+    0.24 | 52100 bearing steel | 27.2 Thrust washer D14/8.2x0.3 rear
+    0.24 | 52100 bearing steel | 28.2 Thrust washer D14/8.2x0.3 front
+   41.61 | 16MnCr5 carburized | 24.3 Planet-1 36T m0.8 (16MnCr5)
+    4.90 | Bearing (purchased) | 25.3 HK0810 needle bearing
+    6.64 | 52100 bearing steel | 26.3 Planet pin-1 D8x17 h6 52100
+    0.24 | 52100 bearing steel | 27.3 Thrust washer D14/8.2x0.3 rear
+    0.24 | 52100 bearing steel | 28.3 Thrust washer D14/8.2x0.3 front
+    8.56 | Spring steel | 29 Wave spring Smalley SSB-0335 (2.65 at nominal geometry)
+    1.88 | 52100 bearing steel | 30 Thrust washer C1 front D40/24x0.3
+   41.35 | Bearing (purchased) | 31 Rear 61813-2Z (floating outer ring) inner ring
+   54.45 | Bearing (purchased) | 31 Rear 61813-2Z (floating outer ring) outer ring
+    9.01 | Bearing (purchased) | 31 Rear 61813-2Z (floating outer ring) ball set
+    4.95 | Bearing (purchased) | 31 Rear 61813-2Z (floating outer ring) seal rear
+    4.95 | Bearing (purchased) | 31 Rear 61813-2Z (floating outer ring) seal front
+  225.50 | EN24T (34CrNiMo6) Q&T | 32 Carrier-2 rear half (hub D65 + posts, EN24T)
+  350.98 | 42CrMo4 nitrided | 33 Bearing cartridge + Ring-2 72T m1 (42CrMo4 nitrided)
+    1.01 | Steel 12.9 fastener | 34.1 Screw M3x10 SHCS cartridge->housing
+    1.01 | Steel 12.9 fastener | 34.2 Screw M3x10 SHCS cartridge->housing
+    1.01 | Steel 12.9 fastener | 34.3 Screw M3x10 SHCS cartridge->housing
+    1.01 | Steel 12.9 fastener | 34.4 Screw M3x10 SHCS cartridge->housing
+    1.01 | Steel 12.9 fastener | 34.5 Screw M3x10 SHCS cartridge->housing
+    1.01 | Steel 12.9 fastener | 34.6 Screw M3x10 SHCS cartridge->housing
+    1.01 | Steel 12.9 fastener | 34.7 Screw M3x10 SHCS cartridge->housing
+    1.01 | Steel 12.9 fastener | 34.8 Screw M3x10 SHCS cartridge->housing
+    0.78 | 52100 bearing steel | 35.1 Dowel D4x8 cartridge anti-rotation
+    0.78 | 52100 bearing steel | 35.2 Dowel D4x8 cartridge anti-rotation
+   35.23 | 16MnCr5 carburized | 36.1 Planet-2 27T m1 (16MnCr5)
+    4.90 | Bearing (purchased) | 37.1 HK0810 needle bearing
+    8.98 | 52100 bearing steel | 38.1 Planet pin-2 D8x23 h6 52100
+    0.24 | 52100 bearing steel | 39.1 Thrust washer D14/8.2x0.3 rear
+    0.24 | 52100 bearing steel | 40.1 Thrust washer D14/8.2x0.3 front
+   35.23 | 16MnCr5 carburized | 36.2 Planet-2 27T m1 (16MnCr5)
+    4.90 | Bearing (purchased) | 37.2 HK0810 needle bearing
+    8.98 | 52100 bearing steel | 38.2 Planet pin-2 D8x23 h6 52100
+    0.24 | 52100 bearing steel | 39.2 Thrust washer D14/8.2x0.3 rear
+    0.24 | 52100 bearing steel | 40.2 Thrust washer D14/8.2x0.3 front
+   35.23 | 16MnCr5 carburized | 36.3 Planet-2 27T m1 (16MnCr5)
+    4.90 | Bearing (purchased) | 37.3 HK0810 needle bearing
+    8.98 | 52100 bearing steel | 38.3 Planet pin-2 D8x23 h6 52100
+    0.24 | 52100 bearing steel | 39.3 Thrust washer D14/8.2x0.3 rear
+    0.24 | 52100 bearing steel | 40.3 Thrust washer D14/8.2x0.3 front
+   41.35 | Bearing (purchased) | 41 Front 61813-2RS1 (located outer ring) inner ring
+   54.45 | Bearing (purchased) | 41 Front 61813-2RS1 (located outer ring) outer ring
+    9.01 | Bearing (purchased) | 41 Front 61813-2RS1 (located outer ring) ball set
+    4.95 | Bearing (purchased) | 41 Front 61813-2RS1 (located outer ring) seal rear
+    4.95 | Bearing (purchased) | 41 Front 61813-2RS1 (located outer ring) seal front
+  314.21 | EN24T (34CrNiMo6) Q&T | 42 Carrier-2 front half + output flange D78 (EN24T)
+    2.65 | Steel 12.9 fastener | 43.1 Screw M4x16 SHCS carrier-2 halves
+    2.65 | Steel 12.9 fastener | 43.2 Screw M4x16 SHCS carrier-2 halves
+    2.65 | Steel 12.9 fastener | 43.3 Screw M4x16 SHCS carrier-2 halves
+    0.10 | NdFeB magnet | 44 Homing magnet D3x2 radial (in flange rim)
+   23.15 | 7075-T6 | 45 Front cover / bearing retainer 7075-T6
+    0.00 | Electronics | 46 Hall homing sensor DRV5032 SOT-23 (envelope)
+    0.29 | Steel 12.9 fastener | 47.1 Screw M2.5x6 CSK cover->cartridge
+    0.29 | Steel 12.9 fastener | 47.2 Screw M2.5x6 CSK cover->cartridge
+    0.29 | Steel 12.9 fastener | 47.3 Screw M2.5x6 CSK cover->cartridge
+    0.29 | Steel 12.9 fastener | 47.4 Screw M2.5x6 CSK cover->cartridge
+    0.29 | Steel 12.9 fastener | 47.5 Screw M2.5x6 CSK cover->cartridge
+    0.29 | Steel 12.9 fastener | 47.6 Screw M2.5x6 CSK cover->cartridge
+    0.29 | Steel 12.9 fastener | 47.7 Screw M2.5x6 CSK cover->cartridge
+    0.29 | Steel 12.9 fastener | 47.8 Screw M2.5x6 CSK cover->cartridge
+ 2415.55 | TOTAL modelled (excl. motor 336 g, electronics)
