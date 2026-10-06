@@ -1,7 +1,0 @@
-{
-  "plugins": {
-    "clickup": {
-      "enabled": true
-    }
-  }
-}

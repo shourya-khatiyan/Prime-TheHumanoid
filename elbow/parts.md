@@ -4,7 +4,7 @@ Z = 0 is the rear face of the encoder lid. The axis is Z, pointing toward the fo
 
 ## Summary
 
-This is a single-stage cycloid elbow joint, 20:1, driven by a T-Motor MN5008 KV170. The envelope is Ø80 mm at the front flange (Ø69 body) by 78.3 mm long. Modelled parts weigh 386.3 g; the motor adds 128 g, so the actuator is 514 g.
+This is a single-stage cycloid elbow joint, 20:1, driven by a T-Motor MN5008 KV170. The envelope is Ø80 mm at the front flange (Ø69 body) by 78.3 mm long. Modelled parts weigh 380.1 g; the motor adds 128 g, so the actuator is 508 g.
 
 At 24 V the motor runs at 4,080 rpm no-load and the output at 204 rpm (1,224°/s). The rating is 4.93 N·m continuous (5.96 A) and 8.23 N·m proof (9.95 A), the 165 cm stage-2 case in `elbow/research.md` §3. `torque_constant` 0.0486 N·m/A; the ODESC `current_lim` of 10 A caps the output at 8.27 N·m. Output backlash is 21.3 mrad (1.22°) from the profile relief, the output-hole play and the dog play.
 
@@ -76,7 +76,7 @@ Bonded in the cup, face at Z 6.0, 1.0 mm from the IC.
 
 ## 10 Housing
 
-3D print, ASA. Quantity 1. Mass 76.2 g. Body Ø69 (Z 6.6–53.8), 45° chamfer (Z 53.8–59.3), flange Ø80 (Z 59.3–67.3). Length 60.7.
+3D print, ASA. Quantity 1. Mass 70.0 g. Body Ø69 (Z 6.6–53.8), 45° chamfer (Z 53.8–59.3), flange Ø80 (Z 59.3–67.3). Length 60.7.
 
 - Rear wall Z 6.6–8.8 (2.2 thick), Ø11.5 centre bore for the magnet cup.
 - Motor pilot collar Ø31 / Ø35 × 2.0 (Z 8.8–10.8) takes the motor base flange.
@@ -85,6 +85,7 @@ Bonded in the cup, face at Z 6.0, 1.0 mm from the IC.
 - 21 ring-pin grooves Ø5 on Ø60 at 0° + 17.143° steps, from Z 37.1 (pin seat) to the front face. Between Z 37.1 and 41.3 the bore is Ø58.4, so each groove opening is 4.67 mm, narrower than the pin: the pins cannot fall inward (calc §2).
 - Wall holes: 4 × Ø3.4 on Ø25 at 84.8° + 90° (motor screws), 4 × Ø3.4 on Ø37 at 107.3° + 90° (lid screw tips), 4 × Ø2.9 on Ø34 at 62.3° + 90° (PCB screw tips).
 - Lead port 8 wide, Z 9.8–15.8, at 220°.
+- Motor-zone vents: 12 radial slots 4.0 wide, Z 11.0–34.6, at 220° + 30° steps, so one slot runs through the lead port. With the joint axis horizontal, the low slots let air in and the high slots let it out. Rib between slots 11.29 at the bore (9.27 next to the port); 2.50 of wall stays below the ring-pin seat; 1133 mm² open (`cad/calc.txt` §5b). The slot roof is a 4 mm bridge in the print orientation.
 - Front flange: 7 insert holes Ø4.0 × 6.7 deep on Ø71 at 8.57° + 51.43° steps (between pins, wall 2.50 to the OD and 2.85 to the nearest pin groove; Ruthex minimum 1.6 [E5]); 2 dowel holes Ø3 × 6 deep at 25.71° and 180.0°.
 
 Print rear face down. The chamfer removes the flange overhang.

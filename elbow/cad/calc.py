@@ -284,6 +284,11 @@ print(f"slide-over: 6704-A bore r {rb} clears the 6703 journal by {rb - p.BRG_CA
       f"{p.SLIDE_CLEAR:.2f} (6703 inner-ring land {land:.2f}..{p.CAM_R_SHOULDER_R - p.BRG_CAM_R['d'] / 2:.2f}); "
       f"6704-B clears the 6701 shoulder by {rb - p.CAM_F_SHOULDER_R - p.E:.2f}")
 print(f"insert hole depth {p.INSERT['depth']} in housing flange: bottom Z {p.Z_HF - p.INSERT['depth']:.1f} (flange from {p.Z_FLANGE0:.1f})")
+v, ri, pitch = p.VENT, p.R_MOTOR_BORE, math.radians(360.0 / p.VENT["n"])
+rib = ri * (pitch - 2 * math.asin(v["w"] / 2 / ri))
+rib_port = ri * (pitch - math.asin(4.0 / ri) - math.asin(v["w"] / 2 / ri))
+print(f"vents {v['n']} x {v['w']} wide, Z {v['z0']:.1f}..{v['z1']:.1f}: rib at the bore {rib:.2f} (next to the lead port {rib_port:.2f}), "
+      f"roof to ring-pin seat {p.Z_PIN0 - v['z1']:.2f}, open area {v['n'] * v['w'] * (v['z1'] - v['z0']):.0f} mm2")
 
 # ---------------------------------------------------------------- 6 stack
 line("6 axial stack (Z from lid rear face)")

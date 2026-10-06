@@ -69,6 +69,7 @@ hub insert wall 2.50  flange insert wall to OD 2.50, to ring pin 2.85  (ruthex m
 cam skin outside the dog pockets 0.80 (2 perimeters; dog load is tangential into the solid web)
 slide-over: 6704-A bore r 10.0 clears the 6703 journal by 0.50 and the trimmed collar by 0.20 (6703 inner-ring land 0.30..0.50); 6704-B clears the 6701 shoulder by 2.40
 insert hole depth 6.7 in housing flange: bottom Z 60.6 (flange from 59.3)
+vents 12 x 4.0 wide, Z 11.0..34.6: rib at the bore 11.29 (next to the lead port 9.27), roof to ring-pin seat 2.50, open area 1133 mm2
 
 === 6 axial stack (Z from lid rear face) ========================
   lid                      0.00 ..   2.00  ( 2.00)

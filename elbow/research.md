@@ -11,12 +11,12 @@ Status: CAD Rev 1.0 done. The part specification is in [`parts.md`](parts.md), o
 | Rating | 4.9 N·m continuous, 8.2 N·m proof (sized at 165 cm, stage 2 load) |
 | Motor | T-Motor MN5008 KV170 (128 g, Ø55.6 × 32 mm), bought in India |
 | Gearbox | Single-stage printed cycloid, 20:1 (two 20-lobe PET-CF discs, 21 steel Ø5 ring pins on Ø60) |
-| Envelope | Ø80 flange / Ø69 body × 78.3 mm, 0.514 kg (CAD) |
+| Envelope | Ø80 flange / Ø69 body × 78.3 mm, 0.508 kg (CAD) |
 | Driver | ODESC 3.6, axis 1 (shoulder on axis 0), 24 V |
 | Encoders | AS5047P motor side (ODESC), AS5047P output side (sensor MCU) |
 | Protection | Backdrivable gearbox, 10 A current limit, cushioned hard stops, software limits |
 
-For comparison the shoulder is Ø100 × 95.5 mm, 2.76 kg, 30 N·m continuous ([`../shoulder/parts.md`](../shoulder/parts.md)). The elbow is about 19% of its mass.
+For comparison the shoulder is Ø100 × 95.5 mm, 2.76 kg, 30 N·m continuous ([`../shoulder/parts.md`](../shoulder/parts.md)). The elbow is about 18% of its mass.
 
 ## 2. Requirements
 
@@ -140,12 +140,12 @@ The CAD replaced the research geometry (Ø4 pins on Ø52, e 0.9, λ 0.73, 6806 b
 |---|---|
 | MN5008 KV170 | 128 g |
 | Ring pins (21) and output pins (6), steel | 124.2 g |
-| Housing, lid, retainer, cover (ASA) | 105.9 g |
+| Housing (with motor-zone vents), lid, retainer, cover (ASA) | 99.7 g |
 | Cam, rear ring, carrier (PLA) | 41.3 g |
 | Two discs (PET-CF) | 37.2 g |
 | Bearings (61807, 2 × 6704, 6703, 6701) | 44.9 g |
 | Clamp ring, magnet cup, magnet, inserts, fasteners, dowels | 32.8 g |
-| **Total** | **514 g** (printed parts counted 100% solid) |
+| **Total** | **508 g** (printed parts counted 100% solid) |
 
 Envelope Ø80 flange / Ø69 body × 78.3 mm, longer and heavier than the 65 mm / 0.38–0.43 kg estimate: the 9 mm PET-CF discs, the Ø60 pin circle and the cage bearings set the size. No hollow bore: the output magnet sits on the axis. Effect on the shoulder: [`../arm/research.md`](../arm/research.md) §8.
 

@@ -1,0 +1,37 @@
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# secrets
+.env
+.env.*
+
+# generator logs
+*.log
+
+# editor and os
+.cursor/
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# cad tool backups
+*.fcstd1
+*.FCBak
+*.FCStd1

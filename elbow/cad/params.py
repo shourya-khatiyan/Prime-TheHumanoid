@@ -155,6 +155,11 @@ Z_OPIN1 = Z_PP1  # output pins flush with the pin-plate front
 Z_OPIN0 = Z_OPIN1 - OUT_PIN_LEN
 Z_FLANGE0 = Z_HF - 8.0
 
+# ---------------------------------------------------------------- motor-zone vents
+# joint axis is horizontal: low slots take air in, high slots let it out; one slot sits on the lead port
+VENT = dict(n=12, w=4.0, z0=Z_M0 + 2.2, z1=Z_PIN0 - 2.5)
+VENT["angles"] = [M_LEAD_ANGLE + 360.0 * k / VENT["n"] for k in range(VENT["n"])]
+
 # ---------------------------------------------------------------- angles
 ANG_RING_PINS = [360.0 * k / ZP for k in range(ZP)]
 ANG_OUT = [360.0 * k / N_OUT for k in range(N_OUT)]

@@ -18,8 +18,8 @@ The "Model #" column is the object number in the STEP/3MF.
 | Print parts | 9 (ASA 4, PLA 3, PET-CF 2) |
 | Metal make parts | 2 (6061-T6 clamp ring, magnet cup) |
 | Purchased lines | 21 (≈ 90 pieces, not counting spares) |
-| Actuator mass | 514 g: 386.3 g modelled parts (100% solid) + 128 g motor |
-| Heaviest parts | Ring pins 96.6 g (21), housing 76.2 g, output pins 27.6 g, 61807 27.0 g, carrier 23.6 g |
+| Actuator mass | 508 g: 380.1 g modelled parts (100% solid) + 128 g motor |
+| Heaviest parts | Ring pins 96.6 g (21), housing 70.0 g, output pins 27.6 g, 61807 27.0 g, carrier 23.6 g |
 | Printer | Bambu P1S, 256 × 256 × 256. **PET-CF needs the hardened-steel upgrade** (the P1S ships with a stainless 0.4 nozzle and stainless gears) [E14] |
 | Must measure on arrival | MN5008 rotor-top thread depth (model 8.5) and base thread depth (model 7.0) |
 
@@ -37,7 +37,7 @@ The "Model #" column is the object number in the STEP/3MF.
 | ID | Model # | Part | Material | Nozzle | Layer | Walls / infill | Orientation (face on plate) | Critical features | Mass (g) |
 |---|---|---|---|---|---|---|---|---|---|
 | M01 | 01 | Encoder lid | Bambu ASA | 0.4 | 0.16 | 3 / 40% | Outer face | 4 × M3 CSK, cable slot | 3.7 |
-| M02 | 10 | Housing | Bambu ASA | 0.4 | 0.16 | 6 / 40% gyroid | Rear face | 21 ring-pin grooves Ø5 on Ø60; pilot Ø31; 7 insert holes Ø4.0 × 6.7; 2 dowel holes Ø3 | 76.2 |
+| M02 | 10 | Housing | Bambu ASA | 0.4 | 0.16 | 6 / 40% gyroid | Rear face | 21 ring-pin grooves Ø5 on Ø60; pilot Ø31; 7 insert holes Ø4.0 × 6.7; 2 dowel holes Ø3; 12 vent slots 4 × 23.6 | 70.0 |
 | M03 | 26 | Retainer ring | Bambu ASA | 0.4 | 0.16 | 100% | Either face | Ø44.4 bore | 7.1 |
 | M04 | 28 | Front cover | Bambu ASA | 0.4 | 0.16 | 100% | Flange | Ø47 bearing bore | 18.9 |
 | M05 | 14 | Cam | Bambu PLA Basic | 0.4 | 0.12 | 100% | Rear face | Journals Ø17, Ø20 (±1.0 eccentric), Ø12; dog pockets Ø3.4 | 8.7 |
@@ -175,7 +175,7 @@ Each print part gets its own per-object setting, tuned on a test print.
 | Hub screws alone slip below proof (SF 0.75) | The two hub dowels carry the torque (SF 1.5 in PLA bearing). The forearm design must include them |
 | Cam skin outside the dog pockets | 0.8 mm (2 perimeters at 0.4); the dog load is tangential into the solid web |
 | 6703 inner-ring land on the trimmed collar | 0.30 mm on one side (inner-ring chamfer ≈ 0.2). Axial load on it is near zero |
-| Length and mass vs research | 78.3 mm and 514 g, against the research estimates of 65 mm and 0.38–0.43 kg. The shoulder re-check is in `arm/research.md` §8 |
+| Length and mass vs research | 78.3 mm and 508 g, against the research estimates of 65 mm and 0.38–0.43 kg. The shoulder re-check is in `arm/research.md` §8 |
 | Ring pins are 96.6 g | Shorter pins are a later optimisation |
 | Rotor and base thread depths | Measure on arrival (checklist item 1) |
 

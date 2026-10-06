@@ -13,7 +13,7 @@ Status: elbow actuator CAD Rev 1.0 done ([`../elbow/parts.md`](../elbow/parts.md
 | Shoulder joint | L-bracket hub on a 5–6 mm 6061 aluminium adapter plate |
 | Elbow joint | Clevis: actuator on one side, passive pin + bearing on the other |
 | Material | ASA structure; PLA for dummy hand, fit checks and the elbow cam/carrier; PET-CF for the elbow cycloid discs |
-| Mass today | about 1.18 kg per arm, excluding the shoulder actuator (elbow actuator 0.514 kg from CAD) |
+| Mass today | about 1.18 kg per arm, excluding the shoulder actuator (elbow actuator 0.508 kg from CAD) |
 | Shoulder | No change needed: 1.9–2.0× margin at stage 2 |
 
 ## 2. Geometry from anthropometry
@@ -94,7 +94,7 @@ Print rules:
 | Part | Mass |
 |---|---|
 | Upper arm shell + hub + aluminium adapter | about 0.30 kg |
-| Elbow actuator (MN5008 + 20:1 cycloid) | 0.514 kg (CAD; the research estimate was 0.40) |
+| Elbow actuator (MN5008 + 20:1 cycloid) | 0.508 kg (CAD; the research estimate was 0.40) |
 | Forearm shell | about 0.14 kg |
 | Wiring | about 0.08 kg |
 | Dummy hand (PLA, printed light) | about 0.15 kg |
@@ -113,13 +113,13 @@ The elbow is sized for stage 2 (gripper + wrist + 0.5 kg). Stage 3 needs about 6
 
 ## 8. Shoulder re-check
 
-Shoulder rating: 30 N·m continuous, 50 N·m proof, 50 N·m tilt proof ([`../shoulder/parts.md`](../shoulder/parts.md), [`../shoulder/cad/calc.txt`](../shoulder/cad/calc.txt)). Arm horizontal, same 180°/s in 0.25 s acceleration (12.57 rad/s²). The elbow actuator mass is the CAD value of 0.514 kg; it was 0.40 kg in the research estimate. The extra 0.114 kg at the elbow axis adds 0.33–0.34 N·m of gravity and 0.12–0.14 N·m of inertia torque.
+Shoulder rating: 30 N·m continuous, 50 N·m proof, 50 N·m tilt proof ([`../shoulder/parts.md`](../shoulder/parts.md), [`../shoulder/cad/calc.txt`](../shoulder/cad/calc.txt)). Arm horizontal, same 180°/s in 0.25 s acceleration (12.57 rad/s²). The elbow actuator mass is the CAD value of 0.508 kg; it was 0.40 kg in the research estimate. The extra 0.108 kg at the elbow axis adds 0.31–0.33 N·m of gravity and 0.12–0.13 N·m of inertia torque.
 
 | Case | Gravity | Gravity + acceleration | Margin vs 30 N·m |
 |---|---|---|---|
-| 157.5 cm, dummy hand (now) | 3.6 N·m | 5.3 N·m | 5.7× |
-| 157.5 cm, stage 2 | 9.0 N·m | 14.9 N·m | 2.0× |
-| **160 cm, stage 2 (nominal)** | **9.2 N·m** | **15.2 N·m** | **2.0×** |
+| 157.5 cm, dummy hand (now) | 3.6 N·m | 5.2 N·m | 5.7× |
+| 157.5 cm, stage 2 | 9.0 N·m | 14.8 N·m | 2.0× |
+| **160 cm, stage 2 (nominal)** | **9.2 N·m** | **15.1 N·m** | **2.0×** |
 | 165.1 cm, stage 2 (worst) | 9.5 N·m | 15.8 N·m | 1.9× |
 
 Gravity torque grows with arm length; inertia grows with length squared, which is why the total rises faster. Even at 165 cm the shoulder runs at about half its continuous rating.

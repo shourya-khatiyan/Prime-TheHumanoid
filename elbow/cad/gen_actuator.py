@@ -84,7 +84,7 @@ def cam_solid():
 
 
 def housing_solid():
-    """Printed housing: rear wall + motor pilot, motor bore, ring-pin grooves, front insert flange."""
+    """Printed housing: rear wall + motor pilot, motor bore with vents, ring-pin grooves, front insert flange."""
     z_ch = p.Z_FLANGE0 - (p.R_FLANGE - p.R_HOUSING)  # 45 deg chamfer under the flange, prints rear face down
     s = occ.cyl(p.R_HOUSING, p.Z_RING1, z_ch) + occ.cyl(p.R_FLANGE, p.Z_FLANGE0, p.Z_HF)
     s = s + occ.Kernel.cylinder(p.Z_FLANGE0 - z_ch, p.R_HOUSING, p.R_FLANGE).translate((0, 0, z_ch))
@@ -100,7 +100,10 @@ def housing_solid():
                     p.R_FLANGE_SCREW, p.ANG_FLANGE)
     s = s - ring_of(lambda x, y: occ.cyl(p.DOWEL_D / 2, p.Z_HF - 6.0, p.Z_HF + 1, x, y), p.R_FLANGE_SCREW, p.ANG_FLANGE_DOWEL)
     port = occ.box(p.R_MOTOR_BORE - 1, p.R_HOUSING + 1, -4.0, 4.0, p.Z_M0 + 1.0, p.Z_M0 + 7.0)
-    return s - port.rotate((0, 0, p.M_LEAD_ANGLE))
+    v = p.VENT
+    vents = occ.pattern(lambda a: occ.box(p.R_MOTOR_BORE - 1, p.R_HOUSING + 1, -v["w"] / 2, v["w"] / 2, v["z0"], v["z1"])
+                        .rotate((0, 0, a)), v["angles"])
+    return s - port.rotate((0, 0, p.M_LEAD_ANGLE)) - vents
 
 
 def lid_solid():
