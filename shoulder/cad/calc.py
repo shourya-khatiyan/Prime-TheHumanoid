@@ -1,8 +1,7 @@
 """Engineering checks for the VAYN shoulder actuator Rev 1.3.
 
-Every number quoted in docs/VAYN_Shoulder_Actuator_CAD_Spec_Rev1_3.md
-(sections 3, 9, 10, 11 and appendix A) is printed by this script.
-Units: mm, N, N*m, MPa, um, degC. Run: python calc_rev1_3.py
+Every number quoted in shoulder/parts.md is printed by this script.
+Units: mm, N, N*m, MPa, um, degC. Run: python calc.py
 """
 
 import math

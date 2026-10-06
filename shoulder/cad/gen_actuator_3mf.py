@@ -1,13 +1,13 @@
 """Build the VAYN shoulder actuator Rev 1.3 as a multi-object 3MF.
 
 Every part is a separate named, watertight mesh placed in its assembled
-position (Z = 0 at the rear outer face, axis = Z). Geometry follows
-docs/VAYN_Shoulder_Actuator_CAD_Spec_Rev1_3.md. Motor, encoder PCB and
+position (Z = 0 at the rear outer face, axis = Z). Geometry follows shoulder/parts.md. Motor, encoder PCB and
 purchased bearings are envelope models only. Tapped holes are modelled at
 thread major diameter, threads are not modelled.
 
 Run:  python gen_actuator_3mf.py   (needs numpy + manifold3d + lib3mf)
-Output: cad/rev1_3/VAYN_Shoulder_Actuator_Rev1_3.3mf and a per-part STL zip,
+Output, beside this script: actuator.3mf, actuator_stl.zip,
+and actuator_print.zip (machined stand-ins and gears; no bought parts),
 plus an interference / mass report printed to the console.
 """
 
@@ -24,9 +24,7 @@ import numpy as np
 from manifold3d import CrossSection, Manifold, OpType
 
 REV = "1.3"
-_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"rev{REV.replace('.', '_')}")
-os.makedirs(_DIR, exist_ok=True)
-OUT = os.path.join(_DIR, f"VAYN_Shoulder_Actuator_Rev{REV.replace('.', '_')}.3mf")
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "actuator.3mf")
 PA = math.radians(20.0)
 BACKLASH_HALF = 0.025  # circular thinning per gear at pitch (0.05 per mesh)
 
@@ -410,8 +408,22 @@ def write_3mf(parts, path):
     print(f"wrote {path} ({os.path.getsize(path) / 1e6:.1f} MB)")
 
 
+# object numbers printed as stand-ins, gears included. bought parts stay out.
+PRINT_PARTS = {1, 6, 8, 15, 16, 18, 21, 22, 24, 32, 33, 36, 42, 45}
+
+
+def part_no(name):
+    """Return the leading object number of a part name."""
+    return int(name.split()[0].split(".")[0])
+
+
+def print_parts(parts):
+    """Return the parts to 3d-print: machined stand-ins and gears."""
+    return [p for p in parts if part_no(p[0]) in PRINT_PARTS]
+
+
 def write_stl_zip(parts, path):
-    """Write every part as a binary STL (assembled position) into one zip."""
+    """Write every given part as a binary STL (assembled position) into one zip."""
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
         for name, _, solid in parts:
             v, t = mesh_arrays(solid)
@@ -429,4 +441,5 @@ if __name__ == "__main__":
     model = build()
     check(model)
     write_3mf(model, OUT)
-    write_stl_zip(model, OUT.replace(".3mf", "_STL_parts.zip"))
+    write_stl_zip(model, OUT.replace(".3mf", "_stl.zip"))
+    write_stl_zip(print_parts(model), OUT.replace(".3mf", "_print.zip"))

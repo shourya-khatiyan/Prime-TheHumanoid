@@ -4,9 +4,9 @@ Geometry comes from build() in gen_actuator_3mf.py (single source of truth).
 This module swaps its mesh kernel (manifold3d) for an OpenCascade kernel
 (CadQuery/OCP): true cylinders, cones, tori and involute B-spline tooth
 flanks. It then runs the same checks and writes:
-  - cad/rev<rev>/<rev>.step       : coloured, named assembly of exact solids (Fusion: File > Open)
-  - cad/rev<rev>/<rev>_OCC.3mf    : named, coloured meshes tessellated from the B-rep
-  - cad/rev<rev>/<rev>_OCC_STL_parts.zip : one STL per part, assembled position
+  - shoulder/cad/actuator.step     : coloured, named assembly of exact solids (Fusion: File > Open)
+  - shoulder/cad/actuator_occ.3mf  : named, coloured meshes tessellated from the B-rep
+  - shoulder/cad/actuator_occ_stl.zip : one STL per part, assembled position
 
 Run with the D: environment:
   D:\\VAYN-CAD-env\\venv\\Scripts\\python.exe gen_actuator_occ.py
@@ -236,6 +236,6 @@ if __name__ == "__main__":
     g.check(model)
     base = g.OUT[:-4]
     write_step(model, base + ".step")
-    g.write_3mf(model, base + "_OCC.3mf")
-    g.write_stl_zip(model, base + "_OCC_STL_parts.zip")
+    g.write_3mf(model, base + "_occ.3mf")
+    g.write_stl_zip(model, base + "_occ_stl.zip")
     print(f"total {time.time() - t0:.0f} s")

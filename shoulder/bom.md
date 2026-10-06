@@ -3,9 +3,9 @@
 **Purpose:** buy or make every part of one actuator without needing to read the CAD. For each item it lists quantity, material and grade equivalents, raw-stock size, process, heat treatment, critical features and approved alternates.
 
 **Source of truth:**
-- Geometry and part list: `build()` in `cad/gen_actuator_3mf.py`. The exact model is `cad/rev1_3/VAYN_Shoulder_Actuator_Rev1_3.step`.
-- Loads, fits and torques: `cad/calc_rev1_3.py`, with results in `cad/calc_rev1_3_output.txt`.
-- Design spec: `docs/VAYN_Shoulder_Actuator_CAD_Spec_Rev1_2.md`. A Rev 1.3 spec has not been written yet.
+- Geometry and part list: `build()` in `shoulder/cad/gen_actuator_3mf.py`. The exact model is `shoulder/cad/actuator.step`.
+- Loads, fits and torques: `shoulder/cad/calc.py`, with results in `shoulder/cad/calc.txt`.
+- Part specification: `shoulder/parts.md`.
 
 Part IDs (`M..` = make, `P..` = purchase) are used only in this doc. The "Model #" column is the object number in the STEP/3MF.
 
@@ -104,7 +104,7 @@ Stock sizes below include ≈ 5 mm on the diameter and ≈ 5 mm on the length fo
 | F11 | — | Torso bracket screws M4 | ISO 4762 12.9 | 6 | Torso to rear plate (supplied with torso) | **3.0** (slip SF 3.1) | Loctite 243 |
 | F12 | — | Arm screws M5 | ISO 4762 10.9 or 12.9 | 6 | Arm to output flange (supplied with arm) | **8.0** (slip SF 4.6) | Loctite 243 |
 
-The torques above are calculated for 12.9 screws at μ ≈ 0.12 (VDI 2230 basis in `calc_rev1_3.py`). The F01, F02, F04 and F09 values are practical limits for small screws in light joints, not calculated values.
+The torques above are calculated for 12.9 screws at μ ≈ 0.12 (VDI 2230 basis in `shoulder/cad/calc.py`). The F01, F02, F04 and F09 values are practical limits for small screws in light joints, not calculated values.
 
 ### 2.2 Consumables
 
@@ -207,7 +207,7 @@ Steel gears are needed from P1 because m0.8 and m1 teeth cannot be printed accur
 | LA8308 stator pattern, rotor thread depth and shaft protrusion | Model uses family defaults; **measure** |
 | M18 planet washers: DIN 988 ID tolerance on the Ø8 pin | Check one sample before ordering 12 |
 | Cartridge Ø89/Ø85 finishing after nitriding | Agree with the heat-treater: mask, or allow light grinding |
-| Rev 1.3 design spec | Not yet written; this BOM follows the model and the calc |
+| Part specification | Written in `shoulder/parts.md` |
 
 ---
 
@@ -227,4 +227,4 @@ Steel gears are needed from P1 because m0.8 and m1 teeth cannot be printed accur
 - [S12] Steel grade equivalents, India (EN24 = 34CrNiMo6 = 4340; EN19 = 42CrMo4 = 4140; EN31 = 100Cr6 = 52100; 16MnCr5): https://goswamiheattreatment.com/Tools/SteelGradesIndia, https://www.technocnc.in/upload/brochure/1567530912_technocnc.pdf
 - [S13] Ambhe Ferro grade guide and 16MnCr5 cross-reference: https://ambhe.com/other-info/steel-grades/, https://www.ambhe.com/16mncr5-steel/
 - [S14] ISO 286 press-fit limits (H7/r6 = R7/h6 at Ø8–10: 4–28 µm) and fit lists: https://mechsheet.com/guide/press-fit-tolerance/, https://www.threadspecification.com/hole-shaft-tolerances/
-- Project files: `cad/calc_rev1_3_output.txt` (calc §1–§8), `docs/VAYN_Shoulder_Actuator_CAD_Spec_Rev1_2.md` (spec sections), `cad/rev1_3/VAYN_Shoulder_Actuator_Rev1_3.step` (geometry).
+- Project files: `shoulder/cad/calc.txt` (calc §1–§8), `shoulder/parts.md` (part specification), `shoulder/cad/actuator.step` (geometry).
