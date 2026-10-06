@@ -1,6 +1,6 @@
 # Elbow actuator: research
 
-Status: research only, no CAD yet. Arm geometry, structure and the shoulder re-check are in [`../arm/research.md`](../arm/research.md).
+Status: CAD Rev 1.0 done. The part specification is in [`parts.md`](parts.md), ordering and print in [`bom.md`](bom.md), and the model and calc in `cad/`. Values below marked "CAD" come from `cad/calc.txt` and replace the earlier estimates. Arm geometry, structure and the shoulder re-check are in [`../arm/research.md`](../arm/research.md).
 
 ## 1. Summary
 
@@ -10,13 +10,13 @@ Status: research only, no CAD yet. Arm geometry, structure and the shoulder re-c
 | Placement | On the joint, axis 29.8 cm from the shoulder axis (nominal 160 cm humanoid) |
 | Rating | 4.9 N·m continuous, 8.2 N·m proof (sized at 165 cm, stage 2 load) |
 | Motor | T-Motor MN5008 KV170 (128 g, Ø55.6 × 32 mm), bought in India |
-| Gearbox | Single-stage printed cycloid, 20:1 (20 lobes, 21 ring pins) |
-| Envelope | about Ø70 × 65 mm, about 0.38–0.43 kg (estimate) |
+| Gearbox | Single-stage printed cycloid, 20:1 (two 20-lobe PET-CF discs, 21 steel Ø5 ring pins on Ø60) |
+| Envelope | Ø80 flange / Ø69 body × 78.3 mm, 0.514 kg (CAD) |
 | Driver | ODESC 3.6, axis 1 (shoulder on axis 0), 24 V |
 | Encoders | AS5047P motor side (ODESC), AS5047P output side (sensor MCU) |
 | Protection | Backdrivable gearbox, 10 A current limit, cushioned hard stops, software limits |
 
-For comparison the shoulder is Ø100 × 95.5 mm, 2.76 kg, 30 N·m continuous ([`../shoulder/parts.md`](../shoulder/parts.md)). The elbow is about 15% of its mass.
+For comparison the shoulder is Ø100 × 95.5 mm, 2.76 kg, 30 N·m continuous ([`../shoulder/parts.md`](../shoulder/parts.md)). The elbow is about 19% of its mass.
 
 ## 2. Requirements
 
@@ -91,7 +91,7 @@ Copper loss P = 1.5 · I² · R_phase, with R_phase = 0.270 / 2 = 0.135 Ω. Roto
 - Holding at stage 2 costs about 3.5 W; today with the dummy hand about 0.75 A and 0.1 W.
 - 1,220°/s no-load is about 7 × the 180°/s target, so voltage is never the limit.
 - Reflected motor inertia is about 14% of the stage-2 load inertia, so the joint should stay backdrivable (to be measured).
-- 25:1 halves the heat again but makes 25 lobes on a Ø52 pin circle, which is finer than we want to print.
+- 25:1 halves the heat again but needs 25 lobes, which is finer than we want to print at this size.
 
 ## 7. Gearbox
 
@@ -105,43 +105,54 @@ Copper loss P = 1.5 · I² · R_phase, with R_phase = 0.270 / 2 = 0.135 Ω. Roto
 
 Printed cycloids are proven at this scale: Berkeley Humanoid Lite uses PLA cycloids at 15:1 with a 60-hour durability test and backlash ≤ 0.023 rad ([paper](https://arxiv.org/html/2504.17249v1), [docs](https://berkeley-humanoid-lite.gitbook.io/docs/in-depth-contents/motor-characterization)).
 
-### 7.2 Geometry (20:1)
+### 7.2 Geometry (20:1, CAD)
 
 | Parameter | Value |
 |---|---|
 | Ratio | 20:1, output turns opposite to the motor (set direction in ODESC) |
-| Discs | 2 discs, 20 lobes each, phased 180° to cancel imbalance |
-| Ring pins | 21 × Ø4 hardened steel dowels on a Ø52 mm circle (pitch 7.8 mm) |
-| Eccentricity | 0.9 mm |
-| Curtate ratio | λ = e · Zp / Rp = 0.9 × 21 / 26 = 0.73 (usual window 0.5–0.8) |
-| Output | 6 output pins with rollers through disc holes (hole Ø = roller Ø + 2e) |
-| Output bearings | Two thin-section bearings (candidate 6806 pair), fixed in design phase |
-| Disc material | PLA for first discs (Berkeley-proven); ASA if discs run above about 45 °C |
+| Discs | 2 discs, 20 lobes, 9 mm thick, phased 180° (disc B outline turned −9°) to cancel imbalance |
+| Ring pins | 21 × Ø5 × 30 ISO 8734 hardened dowels on a Ø60 circle |
+| Eccentricity | 1.0 mm |
+| Curtate ratio | λ = e · Zp / Rp = 1.0 × 21 / 30 = 0.70 (usual window 0.5–0.8) |
+| Profile relief | 0.08 mm equidistant (radial play on the pins) |
+| Output | 6 × Ø5 steel pins on Ø40 straight in Ø7.2 disc holes (Ø pin + 2e + 2 × 0.10); no rollers |
+| Disc bearings | 6704-2RS (20 × 27 × 4) on two eccentric cam journals |
+| Cam support | The cam is carried by the output cage (6703 in the rear ring, 6701 in the pin plate) and driven by 4 dog screws in the rotor with 0.2 radial play, so the motor bearings carry no gearbox load. **Chosen during CAD without the user's confirmation (the question form failed twice)** |
+| Output bearing | One 61807-2RS1 (35 × 47 × 7); the arm clevis carries the tilt |
+| Disc material | Bambu PET-CF, annealed 80 °C for 12 h. PLA fails the contact check (§7.3) |
+| Backlash (CAD) | 21.3 mrad = 1.22° (Berkeley Humanoid Lite ≤ 23 mrad) |
 
-### 7.3 Contact stress (estimate, must be checked in design calc)
+The CAD replaced the research geometry (Ø4 pins on Ø52, e 0.9, λ 0.73, 6806 bearings) with the values above. All checks in §7.3 and `cad/calc.txt` use the CAD geometry. The housing wall outside the pins is 2.0 mm.
 
-- Peak pin force about 4 · T_disc / (λ · Zc · Rp) = 4 × 4.5 / (0.73 × 20 × 0.026) ≈ 47 N at proof, taking 55% of 8.2 N·m on one disc.
-- Steel pin on printed lobe, Hertz line contact: about 45–50 MPa at proof, about 35–40 MPa continuous.
-- These must be confirmed against measured PLA/ASA compressive strength and a printed test pair before CAD is frozen.
+### 7.3 Contact stress (CAD, `cad/calc.txt` §3)
 
-## 8. Size and mass (estimate)
+- Basis: Hertz line contact of a steel pin on the printed lobe, rigid-disc load share, 55% of the output torque on one disc. First yield p0 = 1.67 Y (Tresca, τmax = 0.30 p0 at 0.78 a) ([maschinenbaurechner](https://maschinenbaurechner.de/en/hertzian-contact-stress), [Experimentální mechanika 2016](http://www.experimentalni-mechanika.cz/cs/konference/konference/2016.html?download=610%3Abearing-race-and-roller-line-contact-analysis-in-2d)). The proof limit is p0 at first yield; the continuous limit is that value / 1.5.
+- Y is the data-sheet X-Y tensile strength, mean − 1 SD.
+  - PLA Basic: 35 ± 4 → 31 MPa ([Bambu PLA TDS](https://wiki.bambulab.com/filament-acc/abs-asa-pc/bambu_pla_basic_technical_data_sheet.pdf), [copy](https://cdn.shopifycdn.net/s/files/1/0584/7236/6216/files/Bambu_PLA_Basic_Technical_Data_Sheet.pdf)).
+  - PET-CF: 74 ± 6 → 68 MPa ([Bambu PET-CF TDS](https://wiki.bambulab.com/filament-acc/petcf-ppacf/07689de83afd4cc480f136c7697e6de3.pdf), [store](https://eu.store.bambulab.com/products/pet-cf)).
+- PLA discs: 46 MPa continuous against a 34.5 MPa limit. **Fails**, so the discs changed to PET-CF.
+- PET-CF discs: 61.8 MPa continuous (limit 75.7) and 79.8 MPa proof (limit 113.6), peak pin force 45 N, 10 or more pins loaded. If one disc carries 75% after a print error: 72.2 MPa continuous, still within the limit.
+- The earlier 45–50 MPa estimate used Ø4 pins on Ø52 and no data-sheet yield value.
 
-| Part | Mass |
+## 8. Size and mass (CAD)
+
+| Group | Mass |
 |---|---|
-| MN5008 KV170 | 0.128 kg |
-| Two cycloid discs, printed | about 0.03 kg |
-| Ring pins, output pins, rollers | about 0.04 kg |
-| Housing and output carrier, printed | about 0.08 kg |
-| Bearings (eccentric pair, output pair) | about 0.06 kg |
-| Encoder boards, magnets, fasteners | about 0.04 kg |
-| **Total** | **about 0.38–0.43 kg** |
+| MN5008 KV170 | 128 g |
+| Ring pins (21) and output pins (6), steel | 124.2 g |
+| Housing, lid, retainer, cover (ASA) | 105.9 g |
+| Cam, rear ring, carrier (PLA) | 41.3 g |
+| Two discs (PET-CF) | 37.2 g |
+| Bearings (61807, 2 × 6704, 6703, 6701) | 44.9 g |
+| Clamp ring, magnet cup, magnet, inserts, fasteners, dowels | 32.8 g |
+| **Total** | **514 g** (printed parts counted 100% solid) |
 
-Envelope about Ø70 × 65 mm. No hollow bore: the output magnet sits on the axis.
+Envelope Ø80 flange / Ø69 body × 78.3 mm, longer and heavier than the 65 mm / 0.38–0.43 kg estimate: the 9 mm PET-CF discs, the Ø60 pin circle and the cage bearings set the size. No hollow bore: the output magnet sits on the axis. Effect on the shoulder: [`../arm/research.md`](../arm/research.md) §8.
 
 ## 9. Electronics, sensing, protection
 
 - **Driver:** ODESC 3.6 axis 1, `pole_pairs 14`, `torque_constant 8.27 / 170 = 0.0486`, `current_lim 10 A` (about 8.3 N·m at the output, which acts as a torque fuse near the proof value).
-- **Motor encoder:** AS5047P on the motor axis for commutation. Magnet holder on the rotor back; confirm MN5008 rear shaft and mount pattern from the T-Motor drawing.
+- **Motor encoder:** AS5047P on the motor axis for commutation. In CAD the magnet cup is bonded to the rotating shaft-end retainer on the motor back, 1.0 mm from the IC. The mount pattern is taken from the official T-Motor STEP (4 × M3 on Ø25 in the base, 4 × M3 on Ø12 in the rotor top).
 - **Output encoder:** AS5047P read by the sensor MCU. The joint turns less than 360°, so it gives absolute angle at power-up with no homing (VAYN Phase-1 dual-encoder plan).
 - **Cables:** outside the joint with a slack loop covering 145° of travel.
 - **Thermal:** 7 W continuous at the stage-2 rating and 3.5 W hold. MN5008 is rated 171 W continuous with propeller airflow ([T-Motor](https://store.tmotor.com/product/mn5008-kv170-motor-antigravity-type.html), [ISWFA](https://www.iswfa.com/drone-propulsion-power/multirotor-motors/t-motor-mn5008-kv170/)); we have no airflow, so log winding temperature during the first holding tests.
@@ -151,8 +162,8 @@ Envelope about Ø70 × 65 mm. No hollow bore: the output magnet sits on the axis
 ## 10. Open items
 
 1. Team approval of the motor plan: LA8308 on both shoulders, two MN5008 KV170 for the elbows (₹16.8k–20.6k for two).
-2. Confirm MN5008 mount pattern and rear shaft for the encoder magnet (get the drawing or measure on arrival).
+2. MN5008 pattern taken from the vendor STEP; measure the rotor-top and base thread depths on arrival (model 8.5 / 7.0).
 3. Measure rotor inertia and backdrive torque on the built actuator (target breakaway under about 0.3 N·m at the output).
-4. Verify cycloid contact stress with a printed test pair.
+4. Contact stress passes in calc on annealed PET-CF (§7.3). Still to do: a printed pin-and-disc test after annealing, and confirming the cage-supported cam choice (§7.2).
 5. Test whether the ODESC clone shorts the phases when idle (dynamic braking); not confirmed from documentation.
 6. Backup if MN5008 is out of stock: Tarot 5008 340KV with a 30:1 cycloid, or import GIM6010-8.

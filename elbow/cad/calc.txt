@@ -1,0 +1,95 @@
+
+=== 1 motor, current, heat (MN5008 KV170, 20:1) =================
+Kt 0.0486 N*m/A   output 0.827 N*m per A   R_phase 0.135 ohm
+  static      3.47 N*m ->  4.20 A   Pcu25  3.57 W
+  continuous  4.93 N*m ->  5.96 A   Pcu25  7.20 W
+  proof       8.23 N*m ->  9.95 A   Pcu25 20.05 W
+  ODESC current_lim 10 A -> 8.27 N*m output; motor 180 s peak 15 A -> 12.40 N*m
+  speed @24 V: motor 4080 rpm, output 204 rpm (1224 deg/s)
+  motor torque at proof 0.484 N*m, at 15 A 0.730 N*m
+
+=== 2 cycloid geometry ==========================================
+Zp 21  Zc 20  R 30.0  pin D5.0  e 1.0  relief 0.08  lambda 0.700
+disc radius (own frame) 26.420 .. 28.420   max convex curvature 0.4454 1/mm (radius 2.24)   self-intersection: False
+output holes D7.20 on R20.0: outer web 2.82  inner web 2.90  between holes 12.80
+max disc radius in housing 29.420 (formula 29.420) -> bore R29.97 gap 0.550
+pin exposure half-angle 86.9 deg (housing backs the other 186 deg)   wall pin->OD 2.00
+pin capture in the R29.2 rear zone (4.2 long): groove opening 4.67 < pin D5.0 -> captured; rotor clearance 1.40
+disc zone bore R29.97 runs to the front face: discs enter from the front with 0.550 gap (an R29.2 front zone would block them: disc reaches 29.42)
+
+=== 2b kinematic sweep, one full input turn, both discs =========
+disc A: ring-pin gap min 0.0792 (target 0.08)  output-pin gap min 0.1000 (target 0.1)  with iso 8734 m6 pins (d max 5.012): 0.0732 / 0.0940
+disc B: ring-pin gap min 0.0792 (target 0.08)  output-pin gap min 0.1000 (target 0.1)  with iso 8734 m6 pins (d max 5.012): 0.0732 / 0.0940
+
+=== 2c backlash at the output (cam held) ========================
+profile relief 0.08: disc free 27.5 arcmin; output holes 0.1: 34.4 arcmin; dog play / 20: 11.5 arcmin
+total output backlash 21.3 mrad = 1.22 deg (Berkeley Humanoid Lite PLA cycloid <= 23 mrad)   at 0.30 m: 6.4 mm
+
+=== 3 ring-pin contact (steel pin on PET-CF lobe, rigid-disc load share) 
+allowables: first yield p0 = 1.67 x 68 = 113.6 MPa (proof), /1.5 = 75.7 MPa (continuous)
+continuous T 4.93 share 0.55: p0  61.8 MPa (limit 75.7, OK)  pin F max 27 N  loaded pins >= 10  pressure angle max 44.4 deg (< 86.9 exposure)
+proof      T 8.23 share 0.55: p0  79.8 MPa (limit 113.6, OK)  pin F max 45 N  loaded pins >= 10  pressure angle max 44.4 deg (< 86.9 exposure)
+share sensitivity (one disc carries more after print error, until run-in):
+  share 0.50: continuous  58.9  proof  76.1 MPa
+  share 0.55: continuous  61.8  proof  79.8 MPa
+  share 0.60: continuous  64.5  proof  83.4 MPa
+  share 0.65: continuous  67.2  proof  86.8 MPa
+  share 0.75: continuous  72.2  proof  93.2 MPa
+
+=== 3b output pins in disc holes, pin bending ===================
+continuous pin F max    93 N  hertz in hole  45.9 MPa  pin bending <=    49 MPa (iso 8734, >= 1500 MPa)  bearing: rear ring  3.7 / pin plate  3.4 MPa
+proof      pin F max   155 N  hertz in hole  59.4 MPa  pin bending <=    82 MPa (iso 8734, >= 1500 MPa)  bearing: rear ring  6.2 / pin plate  5.7 MPa
+
+=== 4 bearings ==================================================
+6704 eccentric (continuous): Fr   196 N  s0 3.68  (need 1.5)
+6704 eccentric (proof): Fr   328 N  s0 2.20  (need 1.0)
+6704 L10 at continuous load 136 Mrev = 529 h at full speed 4284 rpm
+continuous share A 0.50: 6703   72 N s0 9.10 | 6701   74 N s0 7.18 | cage net    5 N, tilt 1.33 N*m -> 61807 alone s0 28.2  (need 1.5)
+continuous share A 0.40: 6703   37 N s0 17.69 | 6701  110 N s0 4.82 | cage net   56 N, tilt 0.17 N*m -> 61807 alone s0 45.9  (need 1.5)
+continuous share A 0.60: 6703  108 N s0 6.10 | 6701   38 N s0 14.01 | cage net   56 N, tilt 2.52 N*m -> 61807 alone s0 12.2  (need 1.5)
+proof      share A 0.50: 6703  121 N s0 5.45 | 6701  123 N s0 4.30 | cage net    8 N, tilt 2.22 N*m -> 61807 alone s0 16.9  (need 1.0)
+proof      share A 0.40: 6703   62 N s0 10.60 | 6701  183 N s0 2.89 | cage net   94 N, tilt 0.28 N*m -> 61807 alone s0 27.5  (need 1.0)
+proof      share A 0.60: 6703  180 N s0 3.66 | 6701   63 N s0 8.39 | cage net   94 N, tilt 4.20 N*m -> 61807 alone s0  7.3  (need 1.0)
+61807 ball-load model: Q = 5 Fr / Z + 4.37 M / (Z dm sin 15 deg); clevis forearm shares the tilt in the arm
+dogs: 2 of 4 bear at 15 A: 61 N each, PLA pocket 8.1 MPa, set-screw bending 79 MPa (45H)
+motor 696 bearings: no gearbox load (dog play 0.20 mm radial, coupling passes torque only)
+
+=== 5 bolted joints, inserts, dowels (preload from vdi 2230 table, mu 0.12 thread) 
+dog set screws: 5.0 mm in the rotor of 8.5 (bottom gap 3.5); tip to pocket floor 1.0 mm axial float
+motor base -> wall (mu 0.20 Al/ASA)  4 x M3 @ 0.5 N*m: FM  991 N  slip  9.91 N*m (load 0.73, SF 13.58)
+  motor screw engagement 5.3 mm of 7.0   clamp ring on wall 2.56 MPa
+cover + retainer -> housing inserts  7 x M3 @ 0.2 N*m: FM  396 N  slip 19.69 N*m (load 8.64, SF 2.28)  head pressure 13.0 MPa
+  insert engagement 4.5 of 5.7 mm; pull-out ~1400 N vs FM 396 N (SF 3.5)
+hub -> forearm inserts               6 x M3 @ 0.2 N*m: FM  396 N  slip  6.18 N*m (load 8.23, SF 0.75)
+  hub dowels 2 x D3 carry the full proof torque: 317 N each, bearing in PLA (5 deep) 21.1 MPa (yield 31, SF 1.5), shear 45 MPa
+flange dowels 2 x D3 (backup): 122 N each, bearing in ASA (6 deep) 6.8 MPa
+
+=== 5b insert and screw walls ===================================
+hub insert wall 2.50  flange insert wall to OD 2.50, to ring pin 2.85  (ruthex min 1.6)
+cam skin outside the dog pockets 0.80 (2 perimeters; dog load is tangential into the solid web)
+slide-over: 6704-A bore r 10.0 clears the 6703 journal by 0.50 and the trimmed collar by 0.20 (6703 inner-ring land 0.30..0.50); 6704-B clears the 6701 shoulder by 2.40
+insert hole depth 6.7 in housing flange: bottom Z 60.6 (flange from 59.3)
+
+=== 6 axial stack (Z from lid rear face) ========================
+  lid                      0.00 ..   2.00  ( 2.00)
+  encoder pcb              2.50 ..   4.10  ( 1.60)
+  AS5047P                  4.10 ..   5.00  ( 0.90)
+  magnet                   6.00 ..   8.50  ( 2.50)
+  clamp ring 6061          4.10 ..   6.60  ( 2.50)
+  housing wall             6.60 ..   8.80  ( 2.20)
+  motor base..rotor top    8.80 ..  35.80  (27.00)
+  cage rear ring          36.30 ..  41.30  ( 5.00)
+  6703 cam rear           37.30 ..  41.30  ( 4.00)
+  disc A                  41.80 ..  50.80  ( 9.00)
+  disc B                  51.30 ..  60.30  ( 9.00)
+  6704 A                  44.30 ..  48.30  ( 4.00)
+  6704 B                  53.80 ..  57.80  ( 4.00)
+  cam                     36.30 ..  64.80  (28.50)
+  6701 cam front          60.80 ..  64.80  ( 4.00)
+  pin plate               60.80 ..  66.80  ( 6.00)
+  retainer                67.30 ..  69.30  ( 2.00)
+  61807                   69.30 ..  76.30  ( 7.00)
+  cover lip               76.30 ..  78.30  ( 2.00)
+  ring pins               37.10 ..  67.10  (30.00)
+  output pins             36.80 ..  66.80  (30.00)
+magnet gap to IC 1.00 mm (0.5..3.0)   overall length 78.3 mm   OD 80 flange / 69 body

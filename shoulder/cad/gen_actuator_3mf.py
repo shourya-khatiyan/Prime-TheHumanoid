@@ -347,13 +347,15 @@ def build():
 
 
 # ---------------------------------------------------------------- checks
-def check(parts):
-    """Print watertight status, overlaps between parts and mass totals."""
+SHOULDER_MESHES = [("18 Sun-1", "24.1 Planet-1"), ("24.1 Planet-1", "16 Ring-1"),
+                   ("22 Carrier-1 front", "36.1 Planet-2"), ("36.1 Planet-2", "33 Bearing cartridge")]
+
+
+def check(parts, meshes=SHOULDER_MESHES, motor_g=336):
+    """Print watertight status, min gaps of the named pairs, overlaps between parts and mass totals."""
     bad = [n for n, _, s in parts if s.is_empty() or s.status().name != "NoError" or s.volume() <= 0]
     print(f"objects: {len(parts)}   invalid meshes: {bad or 'none'}")
     named = {n: s for n, _, s in parts}
-    meshes = [("18 Sun-1", "24.1 Planet-1"), ("24.1 Planet-1", "16 Ring-1"),
-              ("22 Carrier-1 front", "36.1 Planet-2"), ("36.1 Planet-2", "33 Bearing cartridge")]
     for a, b in meshes:
         sa = next(s for n, s in named.items() if n.startswith(a))
         sb = next(s for n, s in named.items() if n.startswith(b))
@@ -371,7 +373,7 @@ def check(parts):
     for v, a, b in sorted(hits, reverse=True):
         print(f"  {v:9.2f} mm3  {a}  <->  {b}")
     mass = sum(s.volume() / 1000 * MATERIALS[m][1] for _, m, s in parts)
-    print(f"modelled mass (excl. motor/electronics): {mass:.0f} g   + motor 336 g = {mass + 336:.0f} g")
+    print(f"modelled mass (excl. motor/electronics): {mass:.0f} g   + motor {motor_g} g = {mass + motor_g:.0f} g")
     lo = np.min([b[:3] for b in boxes], axis=0)
     hi = np.max([b[3:] for b in boxes], axis=0)
     print(f"envelope: X {lo[0]:.1f}..{hi[0]:.1f}  Y {lo[1]:.1f}..{hi[1]:.1f}  Z {lo[2]:.1f}..{hi[2]:.1f} mm")
@@ -385,12 +387,12 @@ def mesh_arrays(solid):
     return np.asarray(mesh.vert_properties, dtype=np.float32)[:, :3], np.asarray(mesh.tri_verts, dtype=np.uint32)
 
 
-def write_3mf(parts, path):
+def write_3mf(parts, path, title=f"VAYN Shoulder Actuator Rev {REV}"):
     """Write parts as separate named, coloured mesh objects using lib3mf (reference 3MF writer)."""
     w = lib3mf.get_wrapper()
     model = w.CreateModel()
     model.SetUnit(lib3mf.ModelUnit.MilliMeter)
-    model.GetMetaDataGroup().AddMetaData("", "Title", f"VAYN Shoulder Actuator Rev {REV}", "string", False)
+    model.GetMetaDataGroup().AddMetaData("", "Title", title, "string", False)
     group = model.AddBaseMaterialGroup()
     mat_id = {}
     for name, (hexcol, _) in MATERIALS.items():

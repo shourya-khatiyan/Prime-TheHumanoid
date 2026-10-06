@@ -1,0 +1,35 @@
+model mass per part number (volume x density; bearings modelled as rings + balls + seals)
+ no  qty   mass g  part
+ 01    1      3.7  Encoder lid (ASA)
+ 02    4      2.2  Screw M3x8 ISO 10642 lid->ring
+ 03    1      0.0  Encoder PCB 30x30x1.6 (shoulder P12)
+ 04    1      0.0  AS5047P TSSOP-14 (envelope)
+ 05    4      1.8  Screw M2.5x5 DIN 912 pcb->ring
+ 06    1      9.7  Motor clamp ring 6061-T6 D46/D12x2.5
+ 07    4      2.7  Screw M3x10 ISO 10642 ring+wall->motor
+ 08    1      0.4  Magnet cup 6061-T6 D10x3 (on rotor retainer)
+ 09    1      0.5  Encoder magnet D6x2.5 diametric
+ 10    1     76.2  Housing (ASA)
+ 11    1      0.0  MN5008 stator + base (vendor STEP)
+ 12    1      0.0  MN5008 rotor + shaft (vendor STEP)
+ 13    4      1.8  Dog set screw M3x8 ISO 4026
+ 14    1      8.7  Cam (PLA)
+ 15    1      3.8  6703-2RS cam rear
+ 16    1      9.0  Cage rear ring (PLA)
+ 17    1      5.6  6704-2RS disc A
+ 18    1     18.6  Cycloid disc A (PET-CF)
+ 19    1      5.6  6704-2RS disc B
+ 20    1     18.6  Cycloid disc B (PET-CF)
+ 21   21     96.6  Ring pin D5x30 ISO 8734
+ 22    6     27.6  Output pin D5x30 ISO 8734
+ 23    1      2.9  6701-2RS cam front
+ 24    1     23.6  Output carrier: pin plate + hub (PLA)
+ 25    6      1.6  Insert RX-M3x5.7 hub
+ 26    1      7.1  Retainer ring (ASA)
+ 27    1     27.0  61807-2RS1 output
+ 28    1     18.9  Front cover (ASA)
+ 29    7      1.9  Insert RX-M3x5.7 housing
+ 30    7      0.8  Washer M3 ISO 7089
+ 31    7      7.9  Screw M3x12 DIN 912 cover->housing
+ 32    2      1.3  Dowel D3x12 ISO 8734 cover/housing
+total modelled 386.3 g + motor 128 g

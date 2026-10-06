@@ -1,0 +1,37 @@
+D:\VAYN-CAD-env\venv\Lib\site-packages\cadquery\utils.py:82: FutureWarning: save will be removed in the next release.
+  warn(f"{f.__name__} will be removed in the next release.", FutureWarning)
+built 113 exact solids in 4 s
+exact minimum gaps (mm):
+    0.080  18 Cycloid disc A (PET-CF)  <->  21.1 Ring pin D5x30 ISO 8734
+    0.080  20 Cycloid disc B (PET-CF)  <->  21.12 Ring pin D5x30 ISO 8734
+    0.100  18 Cycloid disc A (PET-CF)  <->  22.2 Output pin D5x30 ISO 8734
+    0.100  20 Cycloid disc B (PET-CF)  <->  22.2 Output pin D5x30 ISO 8734
+    0.500  18 Cycloid disc A (PET-CF)  <->  10 Housing (ASA)
+    0.550  20 Cycloid disc B (PET-CF)  <->  10 Housing (ASA)
+    0.827  12 MN5008 rotor + shaft (vendor STEP)  <->  10 Housing (ASA)
+    0.500  12 MN5008 rotor + shaft (vendor STEP)  <->  16 Cage rear ring (PLA)
+    0.499  12 MN5008 rotor + shaft (vendor STEP)  <->  14 Cam (PLA)
+    2.699  08 Magnet cup 6061-T6 D10x3 (on rotor retainer)  <->  11 MN5008 stator + base (vendor STEP)
+    0.750  08 Magnet cup 6061-T6 D10x3 (on rotor retainer)  <->  10 Housing (ASA)
+    0.707  14 Cam (PLA)  <->  16 Cage rear ring (PLA)
+    2.500  14 Cam (PLA)  <->  18 Cycloid disc A (PET-CF)
+    2.500  14 Cam (PLA)  <->  20 Cycloid disc B (PET-CF)
+    0.500  14 Cam (PLA)  <->  24 Output carrier: pin plate + hub (PLA)
+    0.500  16 Cage rear ring (PLA)  <->  18 Cycloid disc A (PET-CF)
+    0.500  18 Cycloid disc A (PET-CF)  <->  20 Cycloid disc B (PET-CF)
+    0.500  20 Cycloid disc B (PET-CF)  <->  24 Output carrier: pin plate + hub (PLA)
+    4.470  24 Output carrier: pin plate + hub (PLA)  <->  10 Housing (ASA)
+    0.500  24 Output carrier: pin plate + hub (PLA)  <->  26 Retainer ring (ASA)
+    4.200  16 Cage rear ring (PLA)  <->  10 Housing (ASA)
+    2.000  24 Output carrier: pin plate + hub (PLA)  <->  21.7 Ring pin D5x30 ISO 8734
+    2.500  16 Cage rear ring (PLA)  <->  21.5 Ring pin D5x30 ISO 8734
+    0.200  13.3 Dog set screw M3x8 ISO 4026  <->  14 Cam (PLA)
+objects: 113   invalid meshes: none
+interferences > 0.05 mm3: 0
+modelled mass (excl. motor/electronics): 386 g   + motor 128.0 g = 514 g
+envelope: X -40.0..40.0  Y -40.0..40.0  Z -0.0..78.3 mm
+wrote F:\Projects\Prime-TheHumanoid\elbow\cad\actuator.step (5.3 MB)
+wrote F:\Projects\Prime-TheHumanoid\elbow\cad\actuator.3mf (6.5 MB)
+wrote F:\Projects\Prime-TheHumanoid\elbow\cad\actuator_stl.zip (8.3 MB)
+wrote F:\Projects\Prime-TheHumanoid\elbow\cad\actuator_print.zip (0.9 MB)
+total 70 s

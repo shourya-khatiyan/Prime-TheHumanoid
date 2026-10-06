@@ -211,9 +211,9 @@ def ball_bearing(d, D, B, z0, d1, D1, nballs, dball, seals=False):
 
 
 # ---------------------------------------------------------------- exports
-def write_step(parts, path):
+def write_step(parts, path, assy_name=f"VAYN_Shoulder_Actuator_Rev{g.REV}"):
     """Write a named, coloured STEP assembly of the exact solids."""
-    assy = cq.Assembly(name=f"VAYN_Shoulder_Actuator_Rev{g.REV}")
+    assy = cq.Assembly(name=assy_name)
     for name, mat, solid in parts:
         r, gg, b = (int(g.MATERIALS[mat][0][i:i + 2], 16) / 255 for i in (1, 3, 5))
         assy.add(solid.s, name=name.replace("/", "-"), color=cq.Color(r, gg, b))

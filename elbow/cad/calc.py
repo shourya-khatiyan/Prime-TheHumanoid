@@ -13,21 +13,24 @@ import cycloid as cy
 import params as p
 
 E_STEEL, NU_STEEL = 210e3, 0.30
-E_PLA, NU_PLA = 2580.0, 0.36  # bambu pla basic tds, x-y modulus
-SIG_Y_PLA = 42.0  # compressive yield, low end of 100 % infill data
-P_YIELD = 1.67 * SIG_Y_PLA  # hertz line contact first-yield (tresca, tau_max = 0.30 p0)
+E_DISC, NU_DISC = 4730.0, 0.35  # bambu pet-cf tds x-y modulus; poisson assumed (p0 moves <3 % for 0.30..0.40)
+SIG_Y_DISC = 74.0 - 6.0  # bambu pet-cf tds x-y tensile, mean - 1 sd
+SIG_Y_PLA = 35.0 - 4.0  # bambu pla basic tds x-y tensile, mean - 1 sd (cam, cage, carrier)
+P_YIELD = 1.67 * SIG_Y_DISC  # hertz line contact first-yield (tresca, tau_max = 0.30 p0)
 P_ALLOW_PROOF, P_ALLOW_CONT = P_YIELD, P_YIELD / 1.5
 KT = 8.27 / p.KV
 R_PHASE = p.R_PHASE_PP / 2
 PRELOAD_PER_NM_M3 = 4240 / 2.14  # vdi 2230, mu 0.12 (same table as shoulder calc)
-BRG = {  # c, c0 (n)
-    "6704-2RS": (1040.0, 730.0),
+BRG = {  # c, c0 (n), lower of the sourced values
+    "6704-2RS": (1010.0, 722.0),
+    "6703-2RS": (999.0, 657.0),
+    "6701-2RS": (922.0, 530.0),
     "61807-2RS1": (4750.0, 3200.0),
-    "696-2Z (motor)": (1309.0, 485.0),
 }
-S0_PROOF, S0_CONT = 0.8, 1.5  # skf guideline: infrequent motion / continuous, some deformation
-Z_696 = (p.Z_M0 + 6.5, p.Z_M0 + 14.5)  # motor bearing centres (seats local 4..9, 12..17)
+S0_PROOF, S0_CONT = 1.0, 1.5  # skf ball-bearing table, low load certainty: infrequent motion / continuous, some deformation
 Z_DISC = ((p.Z_D1_0 + p.Z_D1_1) / 2, (p.Z_D2_0 + p.Z_D2_1) / 2)
+Z_CAM_BRG = (p.Z_BCR0 + p.BRG_CAM_R["B"] / 2, p.Z_BCF0 + p.BRG_CAM_F["B"] / 2)
+Z_OUT_BRG = p.Z_BRG0 + p.BRG_OUT["B"] / 2
 
 
 def line(title):
@@ -53,7 +56,7 @@ def ring_peaks(r, t_disc, length, n_alpha=48):
         d = r.loads(a, "A", t_disc)
         m = d["ring_loaded"]
         for f, kap in zip(d["f_ring"][m], d["kappa"][m]):
-            worst["p"] = max(worst["p"], cy.hertz_line(f, length, 1 / (1 / r.rp + kap), E_STEEL, NU_STEEL, E_PLA, NU_PLA))
+            worst["p"] = max(worst["p"], cy.hertz_line(f, length, 1 / (1 / r.rp + kap), E_STEEL, NU_STEEL, E_DISC, NU_DISC))
         # contact normal vs outward radial of the housing groove, housing frame
         _, phi = r.pose(a, "A")
         n_h = d["normal"] @ cy.rot(phi).T
@@ -111,8 +114,12 @@ r_sweep = r.max_radius(720)
 print(f"max disc radius in housing {r_sweep:.3f} (formula {p.R_DISC_MAX:.3f}) -> bore R{p.R_BORE_DISC:.2f} gap {p.R_BORE_DISC - r_sweep:.3f}")
 cos_psi = (p.R_PINS ** 2 + (p.D_PIN / 2) ** 2 - p.R_BORE_DISC ** 2) / (2 * p.R_PINS * p.D_PIN / 2)
 psi = math.degrees(math.acos(cos_psi))
-print(f"pin exposure half-angle {psi:.1f} deg (housing backs the other {360 - 2 * psi:.0f} deg)   "
-      f"skin pin->small bore {p.R_PINS - p.D_PIN / 2 - p.R_BORE_SMALL:.2f}   wall pin->OD {p.R_HOUSING - p.R_PINS - p.D_PIN / 2:.2f}")
+print(f"pin exposure half-angle {psi:.1f} deg (housing backs the other {360 - 2 * psi:.0f} deg)   wall pin->OD {p.R_HOUSING - p.R_PINS - p.D_PIN / 2:.2f}")
+psi_m = math.acos((p.R_PINS ** 2 + (p.D_PIN / 2) ** 2 - p.R_MOTOR_BORE ** 2) / (2 * p.R_PINS * p.D_PIN / 2))
+print(f"pin capture in the R{p.R_MOTOR_BORE} rear zone ({p.Z_D1_0 - p.GAP - p.Z_PIN0:.1f} long): groove opening "
+      f"{p.D_PIN * math.sin(psi_m):.2f} < pin D{p.D_PIN} -> captured; rotor clearance {p.R_MOTOR_BORE - p.M_ROTOR_R:.2f}")
+print(f"disc zone bore R{p.R_BORE_DISC:.2f} runs to the front face: discs enter from the front with {p.R_BORE_DISC - r_sweep:.3f} gap "
+      f"(an R{p.R_MOTOR_BORE} front zone would block them: disc reaches {r_sweep:.2f})")
 
 line("2b kinematic sweep, one full input turn, both discs")
 n_a = 1440
@@ -126,7 +133,8 @@ for disc in ("A", "B"):
         gmax_min[disc] = max(gmax_min[disc], float(np.sort(g)[0]))
         wmin[disc] = min(wmin[disc], float(r.out_clearance(a, disc).min()))
 for disc in ("A", "B"):
-    print(f"disc {disc}: ring-pin gap min {gmin[disc]:.4f} (target {p.DR})  output-pin gap min {wmin[disc]:.4f} (target {p.C_OUT})")
+    print(f"disc {disc}: ring-pin gap min {gmin[disc]:.4f} (target {p.DR})  output-pin gap min {wmin[disc]:.4f} (target {p.C_OUT})"
+          f"  with iso 8734 m6 pins (d max {p.D_PIN + 0.012}): {gmin[disc] - 0.006:.4f} / {wmin[disc] - 0.006:.4f}")
 
 line("2c backlash at the output (cam held)")
 worst_bl = 0.0
@@ -135,14 +143,16 @@ for a in np.linspace(0, 2 * math.pi / p.ZP, 6, endpoint=False):
     hi = min(free_angle(r, a, d, +1) for d in ("A", "B"))
     c_rot = p.C_OUT / p.R_OUT
     worst_bl = max(worst_bl, hi - lo + 2 * c_rot)
+dog_bl = 2 * (p.DOG_POCKET_D - p.DOG["d"]) / 2 / p.M_ROTOR_HOLES["pcd_r"] / p.RATIO
+worst_bl += dog_bl
 print(f"profile relief {p.DR}: disc free {math.degrees(hi - lo) * 60:.1f} arcmin; output holes {p.C_OUT}: "
-      f"{math.degrees(2 * p.C_OUT / p.R_OUT) * 60:.1f} arcmin")
+      f"{math.degrees(2 * p.C_OUT / p.R_OUT) * 60:.1f} arcmin; dog play / {p.RATIO}: {math.degrees(dog_bl) * 60:.1f} arcmin")
 print(f"total output backlash {worst_bl * 1000:.1f} mrad = {math.degrees(worst_bl):.2f} deg "
       f"(Berkeley Humanoid Lite PLA cycloid <= 23 mrad)   at 0.30 m: {worst_bl * 300:.1f} mm")
 
 # ---------------------------------------------------------------- 3 contact
-line("3 ring-pin contact (steel pin on PLA lobe, rigid-disc load share)")
-print(f"allowables: first yield p0 = 1.67 x {SIG_Y_PLA:.0f} = {P_YIELD:.1f} MPa (proof), /1.5 = {P_ALLOW_CONT:.1f} MPa (continuous)")
+line("3 ring-pin contact (steel pin on PET-CF lobe, rigid-disc load share)")
+print(f"allowables: first yield p0 = 1.67 x {SIG_Y_DISC:.0f} = {P_YIELD:.1f} MPa (proof), /1.5 = {P_ALLOW_CONT:.1f} MPa (continuous)")
 res = {}
 for name, t, lim in (("continuous", p.T_CONT, P_ALLOW_CONT), ("proof", p.T_PROOF, P_ALLOW_PROOF)):
     w = ring_peaks(r, disc_torque(t, p.DISC_SHARE), p.T_DISC)
@@ -160,7 +170,7 @@ line("3b output pins in disc holes, pin bending")
 for name, t in (("continuous", p.T_CONT), ("proof", p.T_PROOF)):
     fw = res[name]["fw"]
     r_eq = (p.D_PIN / 2) * hole_r / (hole_r - p.D_PIN / 2)
-    ph = cy.hertz_line(fw, p.T_DISC, r_eq, E_STEEL, NU_STEEL, E_PLA, NU_PLA)
+    ph = cy.hertz_line(fw, p.T_DISC, r_eq, E_STEEL, NU_STEEL, E_DISC, NU_DISC)
     # pin as a simply supported beam (rear ring centre -> pin-plate face), both disc loads same way
     z_s = (p.Z_OPIN0 + p.Z_RR1) / 2
     span = p.Z_PP0 - z_s
@@ -184,33 +194,50 @@ n_rel = p.KV * p.V_BUS * (1 + 1 / p.ZC)
 print(f"6704 L10 at continuous load {(c / fb) ** 3:.0f} Mrev = {(c / fb) ** 3 * 1e6 / n_rel / 60:.0f} h at full speed {n_rel:.0f} rpm")
 
 
-def motor_bearings(t_out, share_a):
-    """Worst radial load on the two motor 696 bearings from both disc bearing forces."""
-    worst = (0.0, 0.0)
+def cam_and_cage(t_out, share_a):
+    """Worst loads over one lobe pitch: cam bearings (6703 rear, 6701 front) and cage net force / tilt.
+
+    the cam is a rigid beam on its two cage bearings, loaded by both eccentric
+    bearings. the cage gets the sum of the ring-pin forces (net force + moment
+    about the 61807 centre); the motor bearings get only dog-coupling torque.
+    """
+    worst = dict(rear=0.0, front=0.0, f=0.0, m=0.0)
+    z_r, z_f = Z_CAM_BRG
     for a in np.linspace(0, 2 * math.pi / p.ZP, 24, endpoint=False):
-        fz = []
+        cam, ring = [], []
         for disc, s, z in (("A", share_a, Z_DISC[0]), ("B", 1 - share_a, Z_DISC[1])):
             d = r.loads(a, disc, disc_torque(t_out, s))
-            _, phi = r.pose(a, disc)
-            f_cam = -(cy.rot(phi) @ d["f_brg_vec"])  # force on the cam, housing frame
-            fz.append((f_cam, z))
-        # rigid shaft on two supports: moments about the front 696
-        z_r, z_f = Z_696
-        m = sum(f * (z - z_f) for f, z in fz)
+            rh = cy.rot(r.pose(a, disc)[1])
+            cam.append((-(rh @ d["f_brg_vec"]), z))  # force on the cam, housing frame
+            ring.append((rh @ d["f_ring_sum"], z))  # ring-pin force on the disc = load the cage reacts
+        m = sum(f * (z - z_f) for f, z in cam)
         f_rear = -m / (z_r - z_f)
-        f_front = -(sum(f for f, _ in fz) + f_rear)
-        worst = (max(worst[0], float(np.linalg.norm(f_rear))), max(worst[1], float(np.linalg.norm(f_front))))
+        f_front = -(sum(f for f, _ in cam) + f_rear)
+        f_net = sum(f for f, _ in ring)
+        m_cage = sum(f * (z - Z_OUT_BRG) for f, z in ring)
+        worst["rear"] = max(worst["rear"], float(np.linalg.norm(f_rear)))
+        worst["front"] = max(worst["front"], float(np.linalg.norm(f_front)))
+        worst["f"] = max(worst["f"], float(np.linalg.norm(f_net)))
+        worst["m"] = max(worst["m"], float(np.linalg.norm(m_cage)) / 1000)
     return worst
 
 
-c, c0 = BRG["696-2Z (motor)"]
+z_balls, dm = p.BRG_OUT["nballs"], (p.BRG_OUT["d1"] + p.BRG_OUT["D1"]) / 2
 for name, t, need in (("continuous", p.T_CONT, S0_CONT), ("proof", p.T_PROOF, S0_PROOF)):
-    for sa in (0.50, 0.45, 0.55):
-        fr_, ff_ = motor_bearings(t, sa)
-        print(f"696 motor bearings {name:10s} share A {sa:.2f}: rear {fr_:4.0f} N s0 {c0 / fr_:4.2f} | front {ff_:4.0f} N s0 {c0 / ff_:4.2f}  (need {need})")
-c, c0 = BRG["61807-2RS1"]
-f_ext = p.T_PROOF / 0.15  # whole proof torque as a radial force 150 mm out (upper bound, clevis halves it)
-print(f"61807 output: radial upper bound {f_ext:.0f} N  s0 {c0 / f_ext:.1f}  C/P {c / f_ext:.1f}")
+    for sa in (0.50, 0.40, 0.60):
+        w = cam_and_cage(t, sa)
+        q = 5 * w["f"] / z_balls + 4.37 * w["m"] * 1000 / (z_balls * dm * math.sin(math.radians(15)))
+        s0_out = 5 * BRG["61807-2RS1"][1] / z_balls / q
+        print(f"{name:10s} share A {sa:.2f}: 6703 {w['rear']:4.0f} N s0 {BRG['6703-2RS'][1] / w['rear']:4.2f} | "
+              f"6701 {w['front']:4.0f} N s0 {BRG['6701-2RS'][1] / w['front']:4.2f} | cage net {w['f']:4.0f} N, "
+              f"tilt {w['m']:4.2f} N*m -> 61807 alone s0 {s0_out:4.1f}  (need {need})")
+print("61807 ball-load model: Q = 5 Fr / Z + 4.37 M / (Z dm sin 15 deg); clevis forearm shares the tilt in the arm")
+f_dog = p.I_PEAK_MOTOR * KT * 1000 / (2 * p.M_ROTOR_HOLES["pcd_r"])  # only 2 of 4 dogs bear (play)
+eng = p.Z_TOP + p.DOG["protrude"] - p.Z_CAM0
+d_root = 2.39  # m3 minor diameter
+print(f"dogs: 2 of 4 bear at 15 A: {f_dog:.0f} N each, PLA pocket {f_dog / (p.DOG['d'] * eng):.1f} MPa, "
+      f"set-screw bending {32 * f_dog * (p.DOG['protrude'] - eng / 2) / (math.pi * d_root ** 3):.0f} MPa (45H)")
+print(f"motor 696 bearings: no gearbox load (dog play {(p.DOG_POCKET_D - p.DOG['d']) / 2:.2f} mm radial, coupling passes torque only)")
 
 # ---------------------------------------------------------------- 5 joints
 line("5 bolted joints, inserts, dowels (preload from vdi 2230 table, mu 0.12 thread)")
@@ -225,12 +252,10 @@ def joint(name, n, torque, r_bolt, mu, load, head_area=None):
     return fm
 
 
-a_lowhead = math.pi / 4 * (p.M3_LOWHEAD["dk"] ** 2 - p.D_M3_CLEAR ** 2)
 a_washer = math.pi / 4 * (p.WASHER_M3["od"] ** 2 - p.WASHER_M3["id"] ** 2)
-r_cam = 2 / 3 * (9.0 ** 3 - 2.0 ** 3) / (9.0 ** 2 - 2.0 ** 2)
-fm = joint("cam -> rotor (mu 0.20 PLA/Al)", 4, 0.15, r_cam, 0.20, p.I_PEAK_MOTOR * KT, a_lowhead)
-eng = p.L_CAM_SCREW - (p.Z_CAM_F - p.Z_TOP)
-print(f"  cam screw engagement in rotor {eng:.1f} mm of {p.M_ROTOR_HOLES['depth']} (tip {p.Z_CAM_F - p.L_CAM_SCREW:.1f}, hole bottom {p.Z_TOP - p.M_ROTOR_HOLES['depth']:.1f})")
+eng = p.DOG["length"] - p.DOG["protrude"]
+print(f"dog set screws: {eng:.1f} mm in the rotor of {p.M_ROTOR_HOLES['depth']} (bottom gap {p.M_ROTOR_HOLES['depth'] - eng:.1f}); "
+      f"tip to pocket floor {p.Z_CAM0 + p.DOG_POCKET_DEPTH - p.Z_TOP - p.DOG['protrude']:.1f} mm axial float")
 fm = joint("motor base -> wall (mu 0.20 Al/ASA)", 4, 0.5, p.M_BASE_HOLES["pcd_r"], 0.20, p.I_PEAK_MOTOR * KT)
 eng = p.L_MOTOR_SCREW - (p.Z_M0 - p.Z_RING0)
 print(f"  motor screw engagement {eng:.1f} mm of {p.M_BASE_HOLES['depth']}   clamp ring on wall {fm * 4 / (math.pi * (p.R_RING_O ** 2 - p.R_RING_I ** 2)):.2f} MPa")
@@ -244,8 +269,6 @@ print(f"  hub dowels 2 x D3 carry the full proof torque: {f_dowel:.0f} N each, b
       f"(yield {SIG_Y_PLA:.0f}, SF {SIG_Y_PLA / (f_dowel / 15):.1f}), shear {f_dowel / (math.pi * 9 / 4):.0f} MPa")
 f_dowel = t_housing * 1000 / p.R_FLANGE_SCREW / 2
 print(f"flange dowels 2 x D3 (backup): {f_dowel:.0f} N each, bearing in ASA (6 deep) {f_dowel / 18:.1f} MPa")
-print(f"thread strip cam screw in rotor (Al, tau 150): {0.75 * math.pi * 3 * 4.5 * 150:.0f} N vs FM {PRELOAD_PER_NM_M3 * 0.15:.0f} N")
-
 line("5b insert and screw walls")
 d_i = p.INSERT["d_hole"]
 w_hub = p.R_HUB - p.R_HUB_INSERT - d_i / 2
@@ -253,12 +276,13 @@ w_fl_out = p.R_FLANGE - p.R_FLANGE_SCREW - d_i / 2
 x, y = p.R_FLANGE_SCREW * math.cos(math.pi / p.ZP), p.R_FLANGE_SCREW * math.sin(math.pi / p.ZP)
 w_fl_pin = math.hypot(x - p.R_PINS, y) - p.D_PIN / 2 - d_i / 2
 print(f"hub insert wall {w_hub:.2f}  flange insert wall to OD {w_fl_out:.2f}, to ring pin {w_fl_pin:.2f}  (ruthex min {p.INSERT['wall_min']})")
-wall_cam = []
-for jr, sgn in ((p.BRG_ECC["d"] / 2, +1), (p.BRG_ECC["d"] / 2, -1)):
-    for ang in p.M_ROTOR_HOLES["angles"]:
-        hx, hy = p.M_ROTOR_HOLES["pcd_r"] * math.cos(math.radians(ang)), p.M_ROTOR_HOLES["pcd_r"] * math.sin(math.radians(ang))
-        wall_cam.append(jr - math.hypot(hx - sgn * p.E, hy) - p.D_M3_CLEAR / 2)
-print(f"cam wall journal -> screw hole min {min(wall_cam):.2f}   cam screw head swept r {p.M_ROTOR_HOLES['pcd_r'] + p.M3_LOWHEAD['dk'] / 2:.2f}")
+skin = p.BRG_CAM_R["d"] / 2 - p.M_ROTOR_HOLES["pcd_r"] - p.DOG_POCKET_D / 2
+print(f"cam skin outside the dog pockets {skin:.2f} (2 perimeters; dog load is tangential into the solid web)")
+rb = p.BRG_ECC["d"] / 2
+land = rb - p.SLIDE_CLEAR - p.E - p.BRG_CAM_R["d"] / 2
+print(f"slide-over: 6704-A bore r {rb} clears the 6703 journal by {rb - p.BRG_CAM_R['d'] / 2 - p.E:.2f} and the trimmed collar by "
+      f"{p.SLIDE_CLEAR:.2f} (6703 inner-ring land {land:.2f}..{p.CAM_R_SHOULDER_R - p.BRG_CAM_R['d'] / 2:.2f}); "
+      f"6704-B clears the 6701 shoulder by {rb - p.CAM_F_SHOULDER_R - p.E:.2f}")
 print(f"insert hole depth {p.INSERT['depth']} in housing flange: bottom Z {p.Z_HF - p.INSERT['depth']:.1f} (flange from {p.Z_FLANGE0:.1f})")
 
 # ---------------------------------------------------------------- 6 stack
@@ -266,8 +290,10 @@ line("6 axial stack (Z from lid rear face)")
 for name, z0, z1 in (("lid", p.Z_LID0, p.Z_LID0 + p.T_LID), ("encoder pcb", p.Z_PCB0, p.Z_PCB1), ("AS5047P", p.Z_PCB1, p.Z_IC1),
                      ("magnet", p.Z_MAG, p.Z_MAG + p.MAG["h"]), ("clamp ring 6061", p.Z_RING0, p.Z_RING1),
                      ("housing wall", p.Z_RING1, p.Z_M0), ("motor base..rotor top", p.Z_M0, p.Z_TOP),
-                     ("rear ring", p.Z_RR0, p.Z_RR1), ("disc A", p.Z_D1_0, p.Z_D1_1), ("disc B", p.Z_D2_0, p.Z_D2_1),
-                     ("6704 A", p.Z_B1_0, p.Z_B1_0 + 4), ("6704 B", p.Z_B2_0, p.Z_B2_0 + 4), ("cam", p.Z_TOP, p.Z_CAM_F),
+                     ("cage rear ring", p.Z_RR0, p.Z_RR1), ("6703 cam rear", p.Z_BCR0, p.Z_RR1),
+                     ("disc A", p.Z_D1_0, p.Z_D1_1), ("disc B", p.Z_D2_0, p.Z_D2_1),
+                     ("6704 A", p.Z_B1_0, p.Z_B1_0 + 4), ("6704 B", p.Z_B2_0, p.Z_B2_0 + 4), ("cam", p.Z_CAM0, p.Z_CAM_F),
+                     ("6701 cam front", p.Z_BCF0, p.Z_CAM_F),
                      ("pin plate", p.Z_PP0, p.Z_PP1), ("retainer", p.Z_HF, p.Z_BRG0), ("61807", p.Z_BRG0, p.Z_BRG1),
                      ("cover lip", p.Z_BRG1, p.Z_FRONT), ("ring pins", p.Z_PIN0, p.Z_PIN1), ("output pins", p.Z_OPIN0, p.Z_OPIN1)):
     print(f"  {name:22s} {z0:6.2f} .. {z1:6.2f}  ({z1 - z0:5.2f})")
