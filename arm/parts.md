@@ -8,12 +8,13 @@ All dimensions come from `arm/cad/arm_params.py`. The exact model is `arm/cad/ar
 
 | Item | Value |
 |---|---|
-| Lengths | Upper arm 298, forearm 234 (elbow axis to wrist face), hand 173 (160 cm build) |
+| Lengths | Upper arm 298, forearm 234 (elbow axis to wrist face), 160 cm build. The hand (173) is not built in v0; its centre (s 320.5) stays the LC3 / LC4 load point |
 | Range | 0–135° in software; hard stops at −5° and 140° (O-ring buffered pin in a slot) |
-| Design load | Arm never weaker than the shoulder: 50 N·m shoulder proof (LC2), 50 N·m tilt proof as a 94 N wrist / 114 N hand side load (LC3, LC4), 12.35 N·m stop (LC5) |
-| Mass | 1.535 kg incl. the 0.499 kg elbow actuator. Printed parts at the print estimate (walls solid, 40% ASA / 15% PLA infill). Research budget was 1.18 kg (+30%, see Open items) |
-| Gravity | Shoulder, arm horizontal: 4.09 N·m, 5.75 N·m with 180°/s in 0.25 s (SF 5.2 against 30 N·m continuous). Elbow, forearm horizontal: 0.63 N·m |
-| Lowest margins | Hub plate friction SF 1.82 (hex key as backup); insert pull-out SF 1.5 (estimated); hard stop needs the firmware rule in "Hard stop" |
+| Design load | Arm never weaker than the shoulder: 50 N·m shoulder proof (LC2), 50 N·m tilt proof as a 94 N wrist / 114 N future-hand side load (LC3, LC4), 12.35 N·m stop (LC5) |
+| Lattice | 45° diamond windows (print without support): upper arm front and back faces, drum, all four faces of the forearm tube; spoked cap; slotted ring; pocketed adapter |
+| Mass | 1.327 kg incl. the 0.499 kg elbow actuator (was 1.535 kg with the dummy hand and closed shells). Printed parts at the print estimate (walls solid, 40% infill). Research budget 1.18 kg (+12%) |
+| Gravity | Shoulder, arm horizontal: 3.07 N·m, 4.06 N·m with 180°/s in 0.25 s (SF 7.4 against 30 N·m continuous). Elbow, forearm horizontal: 0.16 N·m |
+| Lowest margins | Upper-arm window bypass 15.15 MPa of 17.0 at Z −70; X-bar buckling SF 2.3; hub plate friction SF 1.82 (hex key as backup); insert pull-out SF 1.5 (estimated); hard stop needs the firmware rule in "Hard stop" |
 | Checks | 0 interferences at 0°; sweep −5…140°: closest moving gaps 0.50 mm (retainer to encoder bracket, slot floor to stop pin) and 0.58 mm (cheek A boss to the 61807 seal); forearm to upper arm and ring ≥ 1.5 mm at every angle; all prints fit the P1S |
 
 The elbow is a **clevis**: cheek A (part of the forearm print) is bolted to the elbow output hub and rides on the elbow's 61807. Cheek B rides on a 61804 on a fixed aluminium pin in the upper arm's rear ear. Bearing span is 89.9 mm, so a side load at the hand becomes a 407 N couple (LC4) instead of a tilt on the 61807. The **absolute output encoder** (AS5047P on the pin, magnet in the cover that turns with the forearm) sits 33.1 mm from the motor encoder magnet (rule ≥ 30). Its stray field there is 0.37 mT against the 35–70 mT working range (calc §8) [A9].
@@ -21,17 +22,18 @@ The elbow is a **clevis**: cheek A (part of the forearm print) is bolted to the 
 Classes:
 
 - **3D print ASA (Bambu ASA):** 104, 108, 110, 125, 128, 133, 140.
-- **3D print PLA (Bambu PLA Basic):** 144.
 - **CNC / lathe 6061-T6:** 101, 115, 122, 134.
 - **Purchase:** everything else.
 
-Allowables: Bambu ASA tensile 37 ± 3 MPa in-layer, 31 ± 4 MPa across layers [A1]. The calc uses mean − 1 sd with SF 2.0: 17.0 MPa in-layer, 13.5 MPa across layers, 7.8 MPa interlayer shear.
+Allowables: Bambu ASA tensile 37 ± 3 MPa in-layer, 31 ± 4 MPa across layers; modulus across layers 2,120 ± 260 MPa [A1]. The calc uses mean − 1 sd with SF 2.0: 17.0 MPa in-layer, 13.5 MPa across layers, 7.8 MPa interlayer shear. Lattice bars in vertical walls run at 45° to the layers and are checked against the across-layer value; their buckling uses 1,860 MPa with SF 2.0.
+
+**Lattice rules (calc §3, §4).** Windows are 45° diamonds, so the upper edges print without support. Corners are R1.5. The bars between two windows form an X: each carries the face shear (torsion flow + half the direct shear) as V / (2 sin 45°). Every upper-arm window is also checked as if its face were cut through: the torque then passes the window as a couple on the inboard and outboard channels (window bypass). Aluminium is not needed: the worst lattice stress is 15.15 of 17.0 MPa in ASA.
 
 ## Shoulder interface
 
 ### 101 Adapter plate
 
-CNC from 8 mm 6061-T6, faced to 6. Quantity 1. Mass 70.3 g.
+CNC from 8 mm 6061-T6, faced to 6. Quantity 1. Mass 64.0 g.
 
 - Hexagon 76 AF, corners R6, world Y 0–6.
 - Spigot Ø39.982 (Ø40 g6) × 1.8 into the shoulder flange's Ø40 H7 pilot (0.2 short of the pilot floor).
@@ -39,6 +41,7 @@ CNC from 8 mm 6061-T6, faced to 6. Quantity 1. Mass 70.3 g.
 - 6 × Ø5.5 on Ø52 at 30° + 60° (shoulder M5).
 - 6 × M4 tapped through on Ø68 at 15° + 60° (hub plate).
 - 3 × Ø9 × 0.3 reliefs on Ø54 at 60/180/300° over the shoulder's carrier-2 screw heads.
+- Lightening on the hub face: annular groove r 15–20 × 3 deep (4.8 mm floor with the spigot), and 6 × Ø7 × 3 pockets on Ø52 at 0° + 60°, clear of the M5 washers and the M4 threads. The hub contact is still 2,837 mm² (3.2 MPa under the 6 M4).
 
 The aluminium plate carries the joint torque from the M5 pattern to a 76 mm hexagon key, so the printed hub sees bearing on six flats instead of six screw holes.
 
@@ -48,9 +51,9 @@ Purchase. 6 × M5 × 12 ISO 4762 12.9 + 6 × M5 ISO 7089. Torque **8.0 N·m**, L
 
 ### 104 Upper arm, shoulder half
 
-3D print ASA. Quantity 1. Mass 185 g (print estimate 185 g; the part is almost all walls).
+3D print ASA. Quantity 1. Mass 178 g (print estimate 177 g; the part is almost all walls).
 
-- **Drum** Ø100 (the shoulder housing diameter), world Y 1–61, wall 2.5. Rear cable exit Ø14 at Y 34.
+- **Drum** Ø100 (the shoulder housing diameter), world Y 1–61, wall 2.5. Rear cable exit Ø14 at Y 34. Four diamond windows 26 × 36 centred at Y 37.5, at flange angles 0° (front), 180° (rear, round the cable exit), 252° and 288° (top). All are clear of the beam root (50–130°) and the cap bosses.
 - **Hub plate** Y 1–16:
   - hex pocket 76.3 AF (0.15 clearance per flat), 5 deep;
   - 6 × Ø11 M5-head pockets to Y 12.5;
@@ -58,7 +61,8 @@ Purchase. 6 × M5 × 12 ISO 4762 12.9 + 6 × M5 ISO 7089. Torque **8.0 N·m**, L
   - Ø30 centre hole;
   - outside the M4 washers the floor steps down to Y 8 (r 40.5–47.5).
 - 4 × Ruthex M3 insert holes on Ø92 at 45° + 90° for the cap.
-- **Beam**: closed octagon shell, wall 2.5, Z −30 to −150. Back face X −32 tapering to −34 by Z −226; front X 32 tapering to 28 by Z −208; Y 1–61; chamfer 15.
+- **Beam**: octagon shell, wall 2.5, Z −30 to −150. Back face X −32 tapering to −34 by Z −226; front X 32 tapering to 28 by Z −208; Y 1–61; chamfer 15.
+- **Beam windows**: 3 diamonds 20 × 20 on the front and on the back face, centred at Y 31 and Z −70 / −100 / −130 (tips Z −60 to −140). The X-bars between them are 7.07 wide. The inboard and outboard faces stay closed.
 - **Mid-span collar** Z −150 to −142: 4 × Ø4.5 bolt holes (X −40.2 / 36.3 at Y 7 and 55) and 2 × Ø4 dowel holes at Y 31.
 
 Print the inboard face (Y 1) on the bed. The beam layers then run along the arm, so bending stress is in-layer.
@@ -74,16 +78,16 @@ Purchase. 6 × M4 × 16 ISO 4762 12.9 + 6 × M4 DIN 9021 (Ø12 / Ø4.3 × 1) [A1
 
 ### 107 / 108 / 109 Cap
 
-Cap: 3D print ASA, Ø100 × 2.5, 20.3 g, with a decorative groove r 40–41.2 × 0.6. Fixed with 4 Ruthex RX-M3x5.7 (107) and 4 × M3 × 8 ISO 10642 (109) at 0.4 N·m. Print the outer face down.
+Cap: 3D print ASA, Ø100 × 2.5, 12.4 g. Spoked diaphragm: four windows r 13–37 between 8 mm spokes on the screw diagonals (R2 corners); the hub screws can be reached through them. Decorative groove r 40–41.2 × 0.6. Fixed with 4 Ruthex RX-M3x5.7 (107) and 4 × M3 × 8 ISO 10642 (109) at 0.4 N·m. Print the outer face down.
 
 ## Mid-span joint
 
 ### 110 Upper arm, elbow half
 
-3D print ASA. Quantity 1. Mass 200 g solid, 157 g print estimate.
+3D print ASA. Quantity 1. Mass 199 g solid, 156 g print estimate.
 
 - **Collar** Z −160 to −150: 4 Ruthex RX-M4x8.1 insert holes (Ø5.6 × 9.1) and 2 × Ø4 dowel holes.
-- **Beam** Z −150 to −196, then flares to the **crown** (Y up to 85.3) by Z −226. The front narrows to X 12 by Z −236.
+- **Beam** Z −150 to −196, then flares to the **crown** (Y up to 85.3) by Z −226. The front narrows to X 12 by Z −236. One 20 × 20 diamond window on the front and one on the back face at Z −178.
 - **Crown pocket**: octagon pocket 3 inset from the skin, Y 44–72. **Cable channel** X −24…4, Y 6–40, from the beam cavity down to 25 above the elbow axis.
 - **Saddle** R41.5 round the elbow actuator. **Ring pocket** 1.5 deep: the front ring is let into the crown face as a shear key. 4 RX-M4x8.1 holes for the ring.
 - **Rear ear** (world Y 1–9, R24 round the axis, plus a 42 wide web up into the crown):
@@ -95,7 +99,8 @@ Print the inboard face (Y 1) on the bed.
 
 Stresses (calc §3, §6):
 
-- Beam: worst LC2 + LC4 von Mises 9.56 MPa at Z −50 (limit 17.0); Bredt shear ≤ 2.43 MPa (limit 7.8).
+- Beam (both halves): worst LC2 + LC4 von Mises 11.29 MPa at the Z −70 window (closed section at Z −50: 9.56); Bredt shear ≤ 2.43 MPa (limit 7.8).
+- Windows: X-bars 9.39 MPa (limit 13.5), buckling SF 2.3; window bypass at most 3.98 MPa on top of the beam stress, 15.15 MPa total at Z −70 (limit 17.0).
 - Crown: ≤ 3.25 MPa.
 - Ear: 10.8 MPa von Mises under the LC4 couple.
 
@@ -110,13 +115,14 @@ Stresses (calc §3, §6):
 
 ### 115 Front ring
 
-CNC from 4 mm 6061-T6. Quantity 1. Mass 53.2 g.
+CNC from 4 mm 6061-T6. Quantity 1. Mass 44.2 g.
 
 - Ø88 disc (E z 74.3–78.3, on the elbow cover flange) plus a tab up the crown: X −31…9, 69 above the axis, R4 corners.
 - Ø52.2 bore pilots on the elbow cover neck (Ø52).
 - 7 × Ø3.4 on Ø71 at the elbow flange angles + 36°.
 - 4 × M4 countersinks at (−24, −52), (2, −52), (−24, −63), (2, −63) (E frame).
 - **Stop boss** Ø10 × 3 on the front face at r 35.5, ψ −32.57° (between two flange screws), with a Ø5 press hole through ring and boss (7 mm).
+- **4 kidney slots** 11.5 wide on r 35.25, ±7.5° about the screw-gap centres at ψ 18.9°, 70.3°, 121.7° and 173.1°: below the tab and away from the stop pin, 2.0 mm clear of the washers. Net band 25.6 mm²: even with the LC5 stop and the 61807 proof load all through one band, the stress is 33 MPa (limit 138).
 
 The ring clamps the actuator cover to the housing and holds the actuator in the crown. Friction to the crown is 107 N·m against 21.0 N·m (stop + housing reaction, SF 5.1), plus the 1.5 mm pocket key.
 
@@ -166,7 +172,7 @@ Bending at the shoulder 2.0 MPa.
 
 ### 125 Forearm + cheek A
 
-3D print ASA, one piece. Quantity 1. Mass 217 g solid, 206 g print estimate.
+3D print ASA, one piece. Quantity 1. Mass 159 g solid, 155 g print estimate.
 
 - **Cheek A**: plate E z 82.8–90.8 (8 thick), R44 round the axis, flanks tangent to the disc to (30, 80).
   - Boss Ø37.5 × 0.5 clamps the 61807 inner ring (middle of SKF da 37–38 [A4]), then a teardrop to Ø43 inside the cover lip.
@@ -175,14 +181,19 @@ Bending at the shoulder 2.0 MPa.
   - Stop slot r 35.5 × 8.6 wide × 6 deep (2.0 floor).
   - Decorative groove r 24–25.2 × 0.6.
 - **Clevis root**: R47 cut-out round the cradle. Full clevis width (E z −12.5…90.8) down to s 80, with an open anterior trough from s 30 to 80.
-- **Shaft** s 80–226: closed octagon tube, wall 2.5. The cheek-side wall tapers 8 → 2.5 by s 100, and the width narrows to 44 at the wrist. A 2.5 mm centre web runs s 80–226, and a 14 mm inner roof chamfer keeps every bridge under 33 mm.
+- **Y-yoke neck** s 80–120: the section blends from the full clevis width to 44 × 44 along a cosine curve (zero slope at both ends; lofted every 4 mm). The cheek-side wall tapers 8 → 2.5 by s 100. A 2.5 mm centre web and a 14 mm inner roof chamfer keep every roof bridge under 33 mm.
+- **Lattice tube** s 120–226: straight 44 × 44 octagon (chamfer 8), wall 2.5. 4 diamond windows 22 × 22 on each of the four faces, centred at s 133 / 159.7 / 186.3 / 213. The chamfered corners are the longerons, and the X-bars between windows are 3.30 wide. From s 126 the inner roof chamfer equals the others, so the windowed roof bridges 25.9 mm.
 - **Wrist block** s 226–234:
   - Ø19.98 (Ø20 h7) × 1.8 spigot;
   - 4 RX-M3x5.7 holes on Ø30 at 45° + 90°;
   - Ø10 wire bore.
 - 4 RX-M4x8.1 holes for cheek B at (−15, 52), (−15, 70), (8, 60), (14, 72) (E frame).
 
-Print the posterior face (x −22) on the bed. Section stresses ≤ 2.37 MPa von Mises (calc §4).
+Print the posterior face (x −22) on the bed. Stresses (calc §4):
+
+- Neck: ≤ 5.00 MPa von Mises.
+- Window sections (corners only, 165 mm²): ≤ 11.90 MPa at s 133 (limit 17.0).
+- X-bars: 7.69 MPa posterior / anterior (in layer, limit 17.0) and 3.89 MPa inboard / outboard (vertical, limit 13.5); buckling SF ≥ 3.2.
 
 ### 126 / 127 Hub screws and dowels
 
@@ -240,15 +251,11 @@ The IC is on the stationary pin and the magnet turns with the forearm, so the re
 
 Cover (140): 3D print ASA, Ø50 cup to z −33.5, magnet boss Ø10, 3 bosses Ø7 on Ø53, 7.0 g. 3 × M3 × 12 DIN 912 (142) with heads in Ø6.2 counterbores at z −28.5, into RX-M3x5.7 inserts in cheek B (141), 4.5 mm engaged. Torque 0.4 N·m. Print the end face down.
 
-## Wrist and hand
+## Wrist interface
 
-### 143 / 145 Wrist screws
+### 143 Wrist inserts
 
-4 × RX-M3x5.7 in the forearm wrist face (143) + 4 × M3 × 12 DIN 912 (145) from the hand collar. Torque 0.4 N·m. This is the future wrist interface: 4 × M3 on Ø30 with a Ø20 pilot.
-
-### 144 Dummy hand
-
-3D print PLA, 15% infill. Quantity 1. Mass 121 g print estimate. Collar 44 × 44, neck, palm 80 × 26 × 58, four fingers Ø17 (61/67/63/52 long), and a thumb at 35°. A Ø20.04 × 2 recess fits the wrist spigot. Print standing on the wrist face.
+4 × RX-M3x5.7 in the forearm wrist face, on Ø30 at 45° + 90°, with the Ø20 h7 spigot. This is the interface for the future wrist or hand (it needs a Ø20 H8 recess). There is no hand in v0. Fitting the inserts now (1.2 g) means the forearm does not have to be reprinted later.
 
 ## Assembly
 
@@ -268,14 +275,14 @@ Cover (140): 3D print ASA, Ø50 cup to z −33.5, magnet boss Ø10, 3 bosses Ø7
    2. Press the 61804 onto the pin and into cheek B, pushing on the **inner ring only**.
    3. Tighten the 4 cheek B screws to 1.0 N·m; the float holes let cheek B centre on the bearing.
 10. Fit the retainer (133), the bracket (134, 3 × M2.5), the PCB (4 × M2.5), and the cover with its magnet (3 × M3 at 0.4 N·m).
-11. Fit the hand: spigot into the recess, 4 × M3 × 12 at 0.4 N·m.
-12. Re-torque the hub-plate M4s after 24 h.
+11. Re-torque the hub-plate M4s after 24 h.
 
 ## Open items
 
 | Item | Status |
 |---|---|
-| Mass 1.535 kg vs 1.18 kg budget | Shoulder margin is still 5.2 (calc §1). Heaviest items: forearm 206 g, upper halves 185 + 157 g, hand 121 g, adapter 70 g, ring 53 g |
+| Mass 1.327 kg vs 1.18 kg budget | The elbow actuator is 0.499 kg of it. Shoulder SF 7.4 (calc §1). Heaviest printed items: upper halves 177 + 156 g, forearm 155 g. The beam walls are minimum gauge (2.5) and strength-limited, so more windows would not pay off |
+| Future hand / wrist | Not built. Its mass will raise the shoulder and elbow gravity torques (calc §1); the LC3 / LC4 load point already assumes it |
 | Insert pull-out (M4 ~2,785 N, M3 ~1,400 N) | M4 is scaled from the M3 value by hole area: **pull-test one insert** in a printed ASA coupon |
 | Hub plate friction SF 1.82 | Hex key backup at 14.6 MPa (best-case contact). Re-torque after 24 h |
 | Stop impact | Firmware rules above. O-ring stiffness to be measured |
@@ -284,7 +291,6 @@ Cover (140): 3D print ASA, Ø50 cup to z −33.5, magnet boss Ø10, 3 bosses Ø7
 ## References
 
 - [A1] Bambu ASA data sheet (tensile X-Y 37 ± 3, Z 31 ± 4 MPa; E 2,450 / 2,120 MPa; 1.05 g/cm³): https://wiki.bambulab.com/filament-acc/abs-asa-pc/6eaf4c432d1d4014a1975e55a55ed00b.pdf, https://eshop.3dmanufaktura.sk/user/documents/upload/Bambu%20lab/ASA/Bambu_ASA_Technical_Data_Sheet.pdf
-- [A2] Bambu PLA Basic data sheet: https://wiki.bambulab.com/filament-acc/abs-asa-pc/bambu_pla_basic_technical_data_sheet.pdf, https://cdn.shopifycdn.net/s/files/1/0584/7236/6216/files/Bambu_PLA_Basic_Technical_Data_Sheet.pdf
 - [A3] SKF 61804-2RS1 (C 4.03 kN, C0 2.32 kN, d1 23.85, da 22–23.6): https://www.skf.com/group/products/rolling-bearings/ball-bearings/deep-groove-ball-bearings/productid-61804-2RS1, https://www.coolenbearings.com/skf/ball-bearings/deep-groove/61804-2rs1, https://www.rhia.de/datasheet/en/61804-2rs
 - [A4] SKF 61807-2RS1 (C 4.75 kN, C0 3.2 kN, da 37–38): https://www.skf.com/group/products/rolling-bearings/ball-bearings/deep-groove-ball-bearings/productid-61807-2RS1, https://www.coolenbearings.com/skf/ball-bearings/deep-groove/61807-2rs1
 - [A5] SKF static safety factor s0 = C0 / P0: https://www.skf.com/group/products/rolling-bearings/principles-of-rolling-bearing-selection/bearing-selection-process/bearing-size/size-selection-based-on-static-load, https://www.skf.com/us/products/rolling-bearings/principles-of-rolling-bearing-selection/bearing-selection-process/bearing-size/size-selection-based-on-static-load

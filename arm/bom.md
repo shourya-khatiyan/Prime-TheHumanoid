@@ -1,6 +1,6 @@
 # VAYN Arm — BOM, Print and Sourcing Guide, Rev 0
 
-**Purpose:** print, buy and assemble one arm (upper arm, elbow clevis, forearm, dummy hand) without opening the CAD. The shoulder and the elbow actuator have their own BOMs (`shoulder/bom.md`, `elbow/bom.md`).
+**Purpose:** print, buy and assemble one arm (upper arm, elbow clevis, lattice forearm; no hand in v0) without opening the CAD. The shoulder and the elbow actuator have their own BOMs (`shoulder/bom.md`, `elbow/bom.md`).
 
 **Source of truth:**
 - Geometry and part list: `build_arm()` in `arm/cad/gen_arm.py`, dimensions in `arm/cad/arm_params.py`. The exact model is `arm/cad/arm.step`.
@@ -15,9 +15,9 @@ The "Model #" column is the object number in the STEP/3MF.
 
 | Item | Value |
 |---|---|
-| Print parts | 8 (ASA 7, PLA 1) |
+| Print parts | 7 (all ASA) |
 | Metal make parts | 4 (6061-T6: adapter, front ring, passive pin, encoder bracket) |
-| Arm mass | 1.535 kg incl. the elbow actuator (0.499 kg as placed); printed parts at the print estimate |
+| Arm mass | 1.327 kg incl. the elbow actuator (0.499 kg as placed); printed parts at the print estimate |
 | Printer | Bambu P1S, all parts fit the 256³ bed with a 5 mm margin (`gen.log`) |
 | Elbow change | The elbow's 7 × M3 × 12 flange screws and washers (elbow parts 30, 31) are **not fitted**: arm parts 116/117 (M3 × 16 + washers) go through the front ring instead |
 
@@ -27,16 +27,15 @@ The "Model #" column is the object number in the STEP/3MF.
 
 | ID | Model # | Part | Material | Layer | Walls / infill | Face on plate | Critical features | Mass (g, est.) |
 |---|---|---|---|---|---|---|---|---|
-| A01 | 104 | Upper arm, shoulder half | Bambu ASA | 0.16 | 4 / 40% gyroid | Inboard face (Y 1) | Hex pocket 76.3 AF × 5; 6 × Ø4.5; collar holes Ø4.5 / Ø4 | 185 |
-| A02 | 108 | Shoulder cap | Bambu ASA | 0.16 | 3 / 40% | Outer face | 4 × M3 CSK on Ø92 | 20 |
-| A03 | 110 | Upper arm, elbow half | Bambu ASA | 0.16 | 4 / 40% gyroid | Inboard face (Y 1) | Saddle R41.5; ear bore Ø16; 4 + 4 RX-M4 holes Ø5.6; 3 RX-M3 holes Ø4.0; ring pocket 1.5 | 157 |
-| A04 | 125 | Forearm + cheek A | Bambu ASA | 0.16 | 4 / 40% gyroid | Posterior face | Boss face Ø37.5; 6 × Ø3.4 + cbore Ø6.2; 2 dowel holes Ø3 × 11; stop slot 8.6 × 6; wrist spigot Ø20 h7 | 206 |
+| A01 | 104 | Upper arm, shoulder half | Bambu ASA | 0.16 | 4 / 40% gyroid | Inboard face (Y 1) | Hex pocket 76.3 AF × 5; 6 × Ø4.5; collar holes Ø4.5 / Ø4; 4 drum + 6 beam diamond windows | 177 |
+| A02 | 108 | Shoulder cap | Bambu ASA | 0.16 | 3 / 40% | Outer face | 4 × M3 CSK on Ø92; 4 spoke windows | 12 |
+| A03 | 110 | Upper arm, elbow half | Bambu ASA | 0.16 | 4 / 40% gyroid | Inboard face (Y 1) | Saddle R41.5; ear bore Ø16; 4 + 4 RX-M4 holes Ø5.6; 3 RX-M3 holes Ø4.0; ring pocket 1.5; 2 beam windows | 156 |
+| A04 | 125 | Forearm + cheek A | Bambu ASA | 0.16 | 4 / 40% gyroid | Posterior face | Boss face Ø37.5; 6 × Ø3.4 + cbore Ø6.2; 2 dowel holes Ø3 × 11; stop slot 8.6 × 6; 16 lattice windows (X-bars 3.30); wrist spigot Ø20 h7 | 155 |
 | A05 | 128 | Cheek B | Bambu ASA | 0.16 | 4 / 40% | Lip face | 61804 bore Ø32 slip; lip Ø29; 4 × Ø4.8 float holes | 33 |
 | A06 | 133 | Bearing retainer | Bambu ASA | 0.16 | 100% | Either face | Ø29 bore | 2 |
 | A07 | 140 | Encoder cover | Bambu ASA | 0.16 | 100% | End face | Magnet pocket Ø6; 3 cbore Ø6.2 | 7 |
-| A08 | 144 | Dummy hand | Bambu PLA Basic | 0.2 | 2 / 15% | Wrist face | Recess Ø20.04 × 2; 4 × cbore Ø6.2 | 121 |
 
-The calc allowables are data-sheet values (mean − 1 sd) / 2.0 [A1]. Do not reduce walls below 4 on A01, A03, A04 and A05: the sections in calc §3–§4 assume the 2.5 mm skins are solid.
+The calc allowables are data-sheet values (mean − 1 sd) / 2.0 [A1]. Do not reduce walls below 4 on A01, A03, A04 and A05: the sections and lattice bars in calc §3–§4 assume the 2.5 mm skins are solid. No supports anywhere: every window has 45° edges.
 
 ---
 
@@ -44,8 +43,8 @@ The calc allowables are data-sheet values (mean − 1 sd) / 2.0 [A1]. Do not red
 
 | ID | Model # | Part | Qty | Finished size (mm) | Stock | Process | Critical features | Mass (g) |
 |---|---|---|---|---|---|---|---|---|
-| M01 | 101 | Adapter plate | 1 | Hex 76 AF × 6, R6 corners, spigot Ø39.982 × 1.8 | 8 mm plate | CNC | Spigot Ø40 g6; 6 × Ø5.5 on Ø52 at 30° + 60°; 6 × M4 through on Ø68 at 15° + 60°; 3 × Ø9 × 0.3 reliefs on Ø54 | 70.3 |
-| M02 | 115 | Front ring | 1 | Ø88 + tab, 4 thick, boss Ø10 × 3 | 8 mm plate (ring faced to 4, boss left at 7) | CNC | Bore Ø52.2; 7 × Ø3.4 on Ø71; 4 × M4 CSK; stop hole Ø5 H7 through ring + boss (m6 pin, light press) | 53.2 |
+| M01 | 101 | Adapter plate | 1 | Hex 76 AF × 6, R6 corners, spigot Ø39.982 × 1.8 | 8 mm plate | CNC | Spigot Ø40 g6; 6 × Ø5.5 on Ø52 at 30° + 60°; 6 × M4 through on Ø68 at 15° + 60°; 3 × Ø9 × 0.3 reliefs on Ø54; hub-face groove r 15–20 × 3 and 6 × Ø7 × 3 pockets on Ø52 at 0° + 60° | 64.0 |
+| M02 | 115 | Front ring | 1 | Ø88 + tab, 4 thick, boss Ø10 × 3 | 8 mm plate (ring faced to 4, boss left at 7) | CNC | Bore Ø52.2; 7 × Ø3.4 on Ø71; 4 × M4 CSK; stop hole Ø5 H7 through ring + boss (m6 pin, light press); 4 kidney slots 11.5 wide on r 35.25 | 44.2 |
 | M03 | 122 | Passive pin | 1 | Ø38 × 17.9 | Ø40 bar | Lathe | Journal Ø20 j6; spigot Ø16 g6; bore Ø10; 3 × M3 CSK on Ø30; 3 × M2.5 × 6 tapped on Ø15 | 16.2 |
 | M04 | 134 | Encoder bracket | 1 | Ø40 × 4.9 | Ø42 bar | Lathe | Boss Ø22 on the 61804 inner ring only; 3 × M2.5 CSK on Ø15; 4 × M2.5 tapped on Ø34 | 10.4 |
 
@@ -85,16 +84,14 @@ The calc allowables are data-sheet values (mean − 1 sd) / 2.0 [A1]. Do not red
 | F13 | 135 | M2.5 × 10 countersunk | ISO 10642 | 3 (+2) | Bracket to pin | 0.2 | Loctite 243 (metal) |
 | F14 | 138 | M2.5 × 4 socket head | DIN 912 | 4 (+2) | PCB to bracket | 0.2 | None |
 | F15 | 142 | M3 × 12 socket head | DIN 912 | 3 (+2) | Cover to cheek B | 0.4 | None |
-| F16 | 145 | M3 × 12 socket head | DIN 912 | 4 (+2) | Hand to wrist | 0.4 | None |
 
-The calculated torques use the VDI 2230 preload table at μ 0.12 [A12]. F10 and F13–F16 are practical values for light joints. Keep anaerobic threadlocker off the printed parts and out of the inserts [A10].
+The calculated torques use the VDI 2230 preload table at μ 0.12 [A12]. F10 and F13–F15 are practical values for light joints. Keep anaerobic threadlocker off the printed parts and out of the inserts [A10].
 
 ### 3.2 Consumables
 
 | Item | Spec | Where |
 |---|---|---|
-| ASA filament | Bambu ASA, ≈ 700 g with purge | A01–A07 |
-| PLA filament | Bambu PLA Basic, ≈ 140 g | A08 |
+| ASA filament | Bambu ASA, ≈ 620 g with purge | A01–A07 |
 | Retaining compound | **Loctite 641** + activator SF 7649 on aluminium [A11] | 61804 inner ring on the pin journal |
 | Threadlocker | Loctite 243 | F01, F03 (adapter threads), F13 |
 | Magnet adhesive | Structural epoxy | Magnet in the cover boss |
@@ -110,7 +107,7 @@ The CAD is nominal. Set printed fits in Bambu Studio with per-object XY hole / c
 | Adapter hex in the 104 pocket (0.15 per flat) | Slides in by hand, no rattle |
 | 61804 outer ring in cheek B (Ø32) | **Slip fit**, the ring must float axially (0.35–0.40) |
 | Pin spigot Ø16 in the ear bore | Close slide fit |
-| Wrist spigot Ø20 h7 in the hand recess | Slide fit |
+| Wrist spigot Ø20 h7 in the future wrist / hand recess (H8) | Slide fit |
 | Hub dowels Ø3 in cheek A | Light press |
 | Insert holes Ø4.0 / Ø5.6 | Ruthex sizes [A6] |
 
@@ -128,6 +125,6 @@ The CAD is nominal. Set printed fits in Bambu Studio with per-object XY hole / c
 
 1. Make M01–M04. Check the adapter spigot (Ø39.975–39.991) and the pin journal (Ø20 j6).
 2. Print an ASA coupon with one RX-M4x8.1 and pull-test it. The calc assumes about 2,785 N; the joint needs ≥ 1,864 N.
-3. Print A01–A08 and fit the inserts.
+3. Print A01–A07 and fit the inserts (including the 4 wrist inserts for the future hand).
 4. Assemble in the order in `arm/parts.md` (Assembly).
 5. Re-torque F03 after 24 h.

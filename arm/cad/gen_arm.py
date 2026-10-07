@@ -1,9 +1,10 @@
 """Build the VAYN arm Rev 0 as exact OpenCascade solids and check it.
 
-Upper arm (two ASA prints bolted at a mid-span collar, diamond windows front
-and back), elbow clevis (front ring, hard stop, passive pin with an absolute
-output encoder), lattice forearm with an integral cheek A, a separate cheek B
-and the wrist interface for a future hand (no hand in v0). The shoulder
+Upper arm (two ASA prints bolted at a mid-span collar; shoulder half = two
+plates joined by x-braced walls, elbow half = closed shell), elbow clevis
+(front ring, hard stop, passive pin with an absolute output encoder), forearm
+= octagon cone of rings and 8 corner bars with an integral cheek A, a separate
+cheek B and the wrist interface for a future hand (no hand in v0). The shoulder
 and the elbow actuator are rebuilt from their own generators and placed in
 the arm frame, so every interface is checked against the real parts.
 All dimensions come from arm_params.py. Writes, beside this script:
@@ -103,10 +104,10 @@ def teardrop(r, x, y, z0, z1):
     return occ.cyl(r, z0, z1, x, y) + prism([(x - r * math.sqrt(2), y), (x - k, y - k), (x, y), (x - k, y + k)], z0, z1)
 
 
-def diamond(au, av, r, w0, w1, origin, x_dir, normal):
-    """Diamond window prism: half-diagonals au along x_dir and av across, corners rounded r, from w0 to w1 along normal."""
-    wp = cq.Workplane(cq.Plane(origin, x_dir, normal)).workplane(offset=w0)
-    s = wp.polyline([(au, 0), (0, av), (-au, 0), (0, -av)]).close().extrude(w1 - w0)
+def window(pts, r, w0, w1, origin, x_dir, normal):
+    """Window prism: closed (u, v) polygon in the plane (origin, x_dir, normal), corners rounded r, from w0 to w1 along normal."""
+    wp = cq.Workplane(cq.Plane(tuple(map(float, origin)), tuple(map(float, x_dir)), tuple(map(float, normal)))).workplane(offset=w0)
+    s = wp.polyline(pts).close().extrude(w1 - w0)
     return occ.Solid(s.edges(cq.selectors.ParallelDirSelector(cq.Vector(*normal))).fillet(r).val())
 
 
@@ -160,6 +161,15 @@ def beam_section(z, inner=False):
     return [(u, v, z) for u, v in octagon(xb, xf, y0, y1, c)]
 
 
+def plate_section(z, inner=False):
+    """Shoulder-half beam section at world z: outer octagon, or the cavity between the plates and walls (roof chamfer under the outboard plate)."""
+    xb, xf, y1, _ = p.beam_station(z)
+    q = p.UA_TRUSS
+    if inner:
+        return [(v, u, z) for u, v in octagon(p.Y_BED + q["plate"], y1 - q["plate"], xb + q["wall"], xf - q["wall"], 1.0, q["roof_c"])]
+    return [(u, v, z) for u, v in octagon(xb, xf, p.Y_BED, y1, q["c"])]
+
+
 def joint_collar(z0, z1):
     """Octagon flange round the beam at the mid-span joint, open in the middle for cables."""
     xb, xf, _, _ = p.beam_station(p.Z_JOINT)
@@ -167,14 +177,26 @@ def joint_collar(z0, z1):
     return s - occ.box(xb + p.TAB_IN, xf - p.TAB_IN, p.Y_BED + p.BEAM_T, p.BEAM_Y1 - p.BEAM_T, z0 - 1, z1 + 1)
 
 
-def beam_windows(zone):
-    """Diamond windows through the front and back beam walls for one (tip z, tip z, count) zone."""
-    q = p.UA_WIN
-    sides = []
-    for z in p.win_centres(*zone[:2], zone[2], q["a"]):
-        xb, xf, _, _ = p.beam_station(z)
-        sides += [(xf, z, -1.0), (xb, z, 1.0)]
-    return occ.pattern(lambda v: diamond(q["a"], q["a"], q["r"], -2.0, 5.0, (v[0], q["y"], v[1]), (0, 0, 1), (v[2], 0, 0)), sides)
+def truss_windows():
+    """Four triangles per x bay through the front and back walls of the shoulder-half beam, between the plates and posts (world)."""
+    q = p.UA_TRUSS
+    v0, v1 = p.Y_BED + q["plate"], p.BEAM_Y1 - q["plate"]
+    h, length = v1 - v0, (q["z"][0] - q["z"][1] - (q["n"] - 1) * q["post"]) / q["n"]
+    m = h / length
+    k = q["bar"] / 2 * math.hypot(1.0, m)  # bar half width measured across v
+    e = (h / 2 - k) / m
+    tris = [[(-e, -h / 2), (e, -h / 2), (0, -k)], [(-e, h / 2), (0, k), (e, h / 2)],
+            [(-length / 2, -h / 2 + k), (-k / m, 0), (-length / 2, h / 2 - k)], [(length / 2, -h / 2 + k), (length / 2, h / 2 - k), (k / m, 0)]]
+    spots = []
+    for i in range(q["n"]):
+        za = q["z"][0] - i * (length + q["post"])
+        zb = za - length
+        for side, sign in ((1, -1.0), (0, 1.0)):
+            x_top, x_bot = p.beam_station(za)[side], p.beam_station(zb)[side]
+            d = np.array([x_top - x_bot, 0.0, length]) / math.hypot(x_top - x_bot, length)  # along the face, up
+            nrm = sign * np.array([d[2], 0.0, -d[0]])  # inward
+            spots += [(t, ((x_top + x_bot) / 2, (v0 + v1) / 2, (za + zb) / 2), d, nrm) for t in tris]
+    return occ.pattern(lambda v: window(v[0], q["r"], -1.0, q["wall"] + 0.3, *v[1:]), spots)
 
 
 def joint_points():
@@ -195,21 +217,17 @@ def adapter():
 
 
 def upper_shoulder_half():
-    """Upper arm, shoulder half: drum + hub plate (hex pocket), octagon shell beam, joint collar."""
-    s = flange_to_world(occ.cyl(p.DRUM_R, p.Y_BED, p.DRUM_Y1)) + loft([beam_section(z) for z in p.BEAM_Z_UP])
+    """Upper arm, shoulder half: drum + hub plate (hex pocket), two-plate beam with x-braced walls, joint collar."""
+    s = flange_to_world(occ.cyl(p.DRUM_R, p.Y_BED, p.DRUM_Y1)) + loft([plate_section(z) for z in p.BEAM_Z_UP])
     s = s - flange_to_world(occ.cyl(p.DRUM_R - p.DRUM_T, p.HUB_Y1, p.DRUM_Y1 + 1) + occ.tube(p.DRUM_R - p.DRUM_T, p.HUB_RIM["r"], p.HUB_RIM["y"], p.HUB_Y1 + 0.1))
-    s = s - loft([beam_section(z, True) for z in (p.Z_CAV_TOP, p.Z_JOINT - 1)])
+    s = s - loft([plate_section(z, True) for z in (p.Z_CAV_TOP, p.Z_JOINT - 1)])
     s = s + flange_to_world(holes(4.0, p.HUB_RIM["y"], p.DRUM_Y1, p.CAP_SCREW_R, p.CAP_SCREW_ANG))
     s = s + joint_collar(p.Z_JOINT, p.Z_JOINT + p.TAB_H_UP)
     cut = rounded_hex(p.AD_AF + 2 * p.HEX_CLEAR, p.AD_CORNER_R + p.HEX_CLEAR, p.Y_BED - 1, p.AD_T)
     cut = cut + holes(p.M5_POCKET_R, p.AD_T - 0.01, p.M5_POCKET_Y1, p.SH_M5_R, p.SH_M5_ANG)
     cut = cut + holes(2.25, p.AD_T - 0.01, p.HUB_Y1 + 0.1, p.AD_M4_R, p.AD_M4_ANG) + occ.cyl(15.0, p.Y_BED - 1, p.HUB_Y1 + 0.1)
     cut = cut + holes(ep.INSERT["d_hole"] / 2, p.DRUM_Y1 - ep.INSERT["depth"], p.DRUM_Y1 + 1, p.CAP_SCREW_R, p.CAP_SCREW_ANG)
-    d = p.DRUM_WIN
-    for a in map(math.radians, d["ang"]):
-        c, n = math.cos(a), math.sin(a)
-        cut = cut + diamond(d["au"], d["av"], d["r"], -2.0, 6.0, (p.DRUM_R * c, p.DRUM_R * n, d["y"]), (-n, c, 0), (-c, -n, 0))
-    s = s - flange_to_world(cut) - beam_windows(p.UA_WIN["zones"][0])
+    s = s - flange_to_world(cut) - truss_windows()
     s = s - occ.cyl(p.CABLE_EXIT_R, p.DRUM_R - 4, p.DRUM_R + 1, 0, p.CABLE_EXIT_Y).rotate((0, -90, 0))
     bolts, dowels = joint_points()
     for x, y in bolts:
@@ -257,7 +275,7 @@ def upper_elbow_half():
     x0, x1, ytop = p.EAR_BOX
     ear = occ.cyl(p.EAR_R, z0, z1) + occ.box(x0, x1, ytop, 0.0, z0, z1)
     s = loft([beam_section(z) for z in p.BEAM_Z_LOW]) + elbow_to_world(ear)
-    s = s - loft([beam_section(z, True) for z in (p.Z_JOINT + 1, -196.0, p.Z_CAV_BOT)]) - crown_pocket() - beam_windows(p.UA_WIN["zones"][1])
+    s = s - loft([beam_section(z, True) for z in (p.Z_JOINT + 1, -196.0, p.Z_CAV_BOT)]) - crown_pocket()
     ch = p.CHANNEL
     s = s - occ.box(*ch["x"], *ch["y"], p.Z_ELBOW + ch["z_lo"], p.Z_CAV_BOT + 1)
     cut = occ.cyl(p.SADDLE_R, z1, 100.0) + occ.cyl(p.PIN["spigot_r"], z0 - 1, z1 + 1)
@@ -321,23 +339,45 @@ def bracket():
 
 # ---------------------------------------------------------------- forearm (elbow frame)
 def fa_section(s, inner=False):
-    """Forearm octagon section at length s (outer skin, or the cavity when inner)."""
+    """Forearm octagon section at length s (outer skin, or the cavity when inner): trough walls to S_FULL, cage shell below."""
     z0, z1 = p.fa_z(s)
-    x0, x1, c, c1 = p.FA_POST, p.fa_a(s), p.FA_C, p.FA_C
+    x0, x1, c = p.FA_POST, p.fa_a(s), p.fa_c(s)
+    c1 = c
     if inner:
-        t, cheek = p.FA_T, p.CHEEK_A_Z[1] - p.CHEEK_A_Z[0]
-        w = cheek if s <= p.S_FULL else max(t, cheek - (cheek - t) * (s - p.S_FULL) / (p.S_WALL - p.S_FULL))
+        cage = s > p.S_FULL
+        t = p.FA_CAGE["t"] if cage else p.FA_T
+        w = t if cage else p.CHEEK_A_Z[1] - p.CHEEK_A_Z[0]
         c = c - t * (2 - math.sqrt(2))
-        x0, x1, z0, z1, c1 = x0 + t, x1 - t, z0 + t, z1 - w, p.FA_ROOF_C if s <= p.S_NECK else c
+        x0, x1, z0, z1, c1 = x0 + t, x1 - t, z0 + t, z1 - w, c if cage else p.FA_ROOF_C
     return [(u, s, v) for u, v in octagon(x0, x1, z0, z1, c, c1)]
 
 
-def fa_windows():
-    """Diamond windows through all four walls of the straight forearm tube (elbow frame)."""
-    q, zc, h = p.FA_WIN, p.FA_ZC, p.FA_HALF_WRIST
-    faces = [((p.FA_POST, zc), (1, 0, 0)), ((p.FA_A_WRIST, zc), (-1, 0, 0)), ((0.0, zc - h), (0, 0, 1)), ((0.0, zc + h), (0, 0, -1))]
-    spots = [(x, s, z, nrm) for s in p.win_centres(*q["s"], q["n"], q["a"]) for (x, z), nrm in faces]
-    return occ.pattern(lambda v: diamond(q["a"], q["a"], q["r"], -1.0, p.FA_T + 1.0, v[:3], (0, 1, 0), v[3]), spots)
+def gusset(ring):
+    """Anterior corner gussets that hold the roof of ring (s0, s1) to BRIDGE_MAX in print, 0.5 inside the ring faces (elbow frame)."""
+    tris = []
+    for sv in (ring[0] + 0.5, ring[1] - 0.5):
+        pts = fa_section(sv, True)
+        x1, z0, z1 = max(u for u, _, _ in pts), min(v for _, _, v in pts), max(v for _, _, v in pts)
+        c1 = min(v for u, _, v in pts if abs(u - x1) < 1e-9) - z0
+        g = c1 + max(0.0, (z1 - z0 - 2 * c1 - p.BRIDGE_MAX) / 2)
+        tris.append(([(x1 - g - 1, sv, z0 - 1), (x1 + 1, sv, z0 - 1), (x1 + 1, sv, z0 + g + 1)],
+                     [(x1 - g - 1, sv, z1 + 1), (x1 + 1, sv, z1 - g - 1), (x1 + 1, sv, z1 + 1)]))
+    return loft([tris[0][0], tris[1][0]]) + loft([tris[0][1], tris[1][1]])
+
+
+def cage_window(sa, sb, k):
+    """Window through cage face k (corners k -> k + 1) from sa to sb, inside the two corner bars, corners rounded (elbow frame)."""
+    q, secs = p.FA_CAGE, []
+    for sv in (sa, sb):
+        v = [np.array(c) for c in octagon(p.FA_POST, p.fa_a(sv), *p.fa_z(sv), p.fa_c(sv))]
+        a, b = v[k], v[(k + 1) % 8]
+        e = (b - a) / np.linalg.norm(b - a)
+        n = np.array([-e[1], e[0]])  # inward (ccw octagon)
+        ends = (a + q["bar"] / 2 * e, b - q["bar"] / 2 * e)
+        secs.append([(x, sv, z) for x, z in (ends[0] - n, ends[1] - n, ends[1] + (q["t"] + 0.3) * n, ends[0] + (q["t"] + 0.3) * n)])
+    s = loft(secs).s
+    through = [g for g in s.Edges() if abs(g.startPoint().y - g.endPoint().y) < 1e-6 and g.Length() < q["t"] + 1.4]
+    return occ.Solid(s.fillet(q["r"], through))
 
 
 def fa_window(s):
@@ -361,14 +401,16 @@ def slot_ends():
 
 
 def forearm():
-    """Forearm + cheek A in one print: clevis, y-yoke neck, straight lattice tube, wrist block, hub boss, stop slot."""
-    neck = list(np.arange(p.S_FULL, p.S_NECK + 0.1, p.FA_STEP))
-    outer = loft([fa_section(v) for v in [30.0] + neck + [p.L_FOREARM]])
+    """Forearm + cheek A in one print: clevis trough, root ring, octagon cone of rings and 8 corner bars, wrist block, hub boss, stop slot."""
+    s1, bays = p.S_FULL + p.FA_ROOT, p.fa_bays()
+    outer = loft([fa_section(v) for v in (30.0, p.S_FULL, s1, p.S_END, p.L_FOREARM)])
     za0, za1 = p.CHEEK_A_Z
     s = outer + cheek_plate(p.CHEEK_A_R, p.CHEEK_A_TIP, za0, za1)
     s = s - occ.cyl(p.FA_CUT_R, p.Z_CHEEK_B_IN - 1.5, za0)
-    s = s - loft([fa_section(v, True) for v in [40.0] + neck + [p.S_NECK + 6.0, p.S_END]]) - loft([fa_window(v) for v in (30.0, p.S_FULL)])
-    s = s + (occ.box(p.FA_POST, 60.0, p.S_FULL, p.S_NECK, p.FA_ZC - 1.25, p.FA_ZC + 1.25) ^ outer) - fa_windows()
+    rings = [(p.S_FULL, s1)] + [(a[1], b[0]) for a, b in zip(bays, bays[1:])]
+    cavity = loft([fa_section(v, True) for v in (40.0, p.S_FULL, s1, p.S_END)]) - occ.pattern(gusset, rings)
+    s = s - cavity - loft([fa_window(v) for v in (30.0, p.S_FULL)])
+    s = s - occ.pattern(lambda w: cage_window(*w), [(a, b, k) for a, b in bays for k in range(8)])
     zf = p.BOSS_Z0 + p.BOSS_FACE
     s = s + occ.cyl(p.BOSS_R, p.BOSS_Z0, zf + 0.1) + (teardrop(p.BOSS_R, 0, 0, zf, za0 + 0.5) ^ occ.cyl(p.BOSS_R_MAX, zf, za0 + 0.5))
     bosses = occ.pattern(lambda q: teardrop(p.CHEEK_B_BOSS_R, *q, p.Z_CHEEK_B_IN, -3.0), p.CHEEK_B_JOINT)

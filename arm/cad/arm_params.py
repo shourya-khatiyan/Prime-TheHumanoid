@@ -80,17 +80,16 @@ CAP_T = 2.5
 CAP_SCREW_R, CAP_SCREW_ANG = 46.0, [45.0 + 90.0 * k for k in range(4)]
 CAP_GROOVE = (40.0, 41.2, 0.6)  # decorative groove on the cap face: r in, r out, depth
 CABLE_EXIT_R, CABLE_EXIT_Y = 7.0, 34.0  # d14 hole, rear of the drum
-DRUM_WIN = dict(ang=[0.0, 180.0, 252.0, 288.0], y=37.5, au=13.0, av=18.0, r=1.5)  # diamond windows clear of the beam root (50..130) and cap bosses
 CAP_WIN = dict(r=(13.0, 37.0), spoke=8.0, r_fillet=2.0)  # four windows between spokes on the cap screws
 AD_POCKET = dict(groove=(15.0, 20.0), r=3.5, pcd_r=26.0, ang=[60.0 * k for k in range(6)], depth=3.0)  # hub face, clear of the m5 washers and m4 threads
 
-# ---------------------------------------------------------------- upper arm beam (asa, octagon shell, diamond windows front and back)
+# ---------------------------------------------------------------- upper arm beam (asa: shoulder half = two plates + x-braced walls, elbow half = octagon shell)
 BEAM_T = 2.5
 BEAM_Y1 = 61.0
 Z_JOINT = -150.0  # bolted joint between the two upper-arm prints
 Z_CAV_TOP = -46.0  # shell cavity opens into the drum here
 Z_CAV_BOT = -200.0
-UA_WIN = dict(zones=[(-60.0, -140.0, 3), (-168.0, -188.0, 1)], y=31.0, a=10.0, r=1.5)  # (tip z, tip z, count) per half; 45 deg edges print unsupported
+UA_TRUSS = dict(plate=5.0, wall=4.0, c=4.0, roof_c=12.0, z=(-46.0, -138.0), n=2, post=6.0, bar=8.0, r=1.5)  # plates inboard / outboard, x bays front and back between posts
 CROWN_POCKET = dict(inset=3.0, y=(44.0, 72.0), c=10.0)  # lightening pocket in the crown, clear of channel and ring inserts
 RING_POCKET = 1.5  # front ring sits this deep in the crown face (shear key for the housing torque)
 CROWN_Y1 = 9.5 + ep.Z_BRG0 + ep.T_FLANGE_COVER + RING_POCKET  # crown outboard face (world y); pocket floor = cover-flange face
@@ -167,49 +166,52 @@ HUB_DOWEL = dict(d=3.0, l=16.0, in_boss=11.0)  # iso 8734; 5 in the elbow hub (a
 SLOT_DEPTH = 6.0  # 2 mm floor left in cheek a
 FA_POST = -22.0  # posterior face (print bed)
 FA_CUT_R = 47.0  # concave clearance round the cradle
-FA_T = 2.5  # shell wall
+FA_T = 2.5  # clevis trough wall
 Z_CHEEK_B_IN = -12.5  # forearm inboard face = cheek b inner face
 FA_ZC = (Z_CHEEK_B_IN + CHEEK_A_Z[0]) / 2  # forearm centre plane (elbow z)
-FA_HALF_WRIST = 22.0
-S_FULL = 80.0  # full clevis width down to here; open anterior trough above, closed tube + web below
-S_WALL = 100.0  # cheek-side wall tapers 8 -> 2.5 mm by here
-S_NECK = 120.0  # y-yoke neck ends here: straight 44 x 44 lattice tube from here to the wrist
+S_FULL = 80.0  # full clevis width down to here; open anterior trough above, root ring + cage below
+FA_ROOT = 8.0  # root ring: trough -> cage, corner chamfer opens 8 -> 14 over it
 S_END = 226.0  # wrist end block start
 FA_C = 8.0
-FA_ROOF_C = 14.0  # inner chamfer at the anterior corners up to the neck: keeps every roof bridge of the print under 33 mm
+FA_ROOF_C = 14.0  # inner chamfer at the anterior corners of the trough
 FA_ANT = [(30.0, 10.0 - 16.0 * 20.0 / 34.0), (S_FULL, 30.0)]  # anterior edge (s, a): straight flank up to the clevis end
-FA_A_WRIST = 22.0
-FA_STEP = 4.0  # loft section spacing through the neck
-FA_WIN = dict(s=(122.0, 224.0), n=4, a=11.0, r=1.5)  # diamond windows on all four faces: tip s, tip s, count, half-diagonal
+FA_WRIST = dict(a=22.0, half=28.0, c=12.9)  # wrist block: anterior x, half width (z), chamfer (posterior stays FA_POST)
+FA_CAGE = dict(c=14.0, t=6.0, bar=10.0, ring=7.0, n=4, r=2.0)  # octagon cone: chamfer at the root ring, shell, bar width over each corner, ring width, bays, window corner radius
 
 
-def neck(s):
-    """Neck blend 0..1 between S_FULL and S_NECK, with zero slope at both ends."""
-    t = min(1.0, max(0.0, (s - S_FULL) / (S_NECK - S_FULL)))
-    return (1.0 - math.cos(math.pi * t)) / 2.0
+def fa_lin(s, v0, v1):
+    """Straight blend from v0 at S_FULL to v1 at S_END, held flat outside."""
+    t = min(1.0, max(0.0, (s - S_FULL) / (S_END - S_FULL)))
+    return v0 + t * (v1 - v0)
 
 
 def fa_z(s):
-    """Inboard and outboard forearm faces (elbow z) at length s."""
-    t = neck(s)
-    return (Z_CHEEK_B_IN + t * (FA_ZC - FA_HALF_WRIST - Z_CHEEK_B_IN),
-            CHEEK_A_Z[1] + t * (FA_ZC + FA_HALF_WRIST - CHEEK_A_Z[1]))
+    """Inboard and outboard forearm faces (elbow z) at length s: clevis width, then a straight cone to the wrist."""
+    w = FA_WRIST["half"]
+    return fa_lin(s, Z_CHEEK_B_IN, FA_ZC - w), fa_lin(s, CHEEK_A_Z[1], FA_ZC + w)
 
 
 def fa_a(s):
-    """Anterior face of the forearm at length s: straight flank, then the neck blend to the wrist."""
+    """Anterior face of the forearm at length s: straight flank up to S_FULL, then a straight cone to the wrist."""
     (s0, a0), (s1, a1) = FA_ANT
     if s <= s1:
         return a0 + (a1 - a0) * (s - s0) / (s1 - s0)
-    return a1 + (FA_A_WRIST - a1) * neck(s)
+    return fa_lin(s, a1, FA_WRIST["a"])
 
 
-def win_centres(u0, u1, n, a):
-    """Centres of n diamond windows of half-diagonal a whose outer tips sit at u0 and u1."""
-    if n == 1:
-        return [(u0 + u1) / 2]
-    step = (u1 - u0 - math.copysign(2 * a, u1 - u0)) / (n - 1)
-    return [u0 + math.copysign(a, u1 - u0) + k * step for k in range(n)]
+def fa_c(s):
+    """Corner chamfer at length s: clevis chamfer, opened to the cage chamfer over the root ring, then straight to the wrist."""
+    s1 = S_FULL + FA_ROOT
+    if s <= s1:
+        return FA_C + (FA_CAGE["c"] - FA_C) * max(0.0, s - S_FULL) / FA_ROOT
+    return FA_CAGE["c"] + (FA_WRIST["c"] - FA_CAGE["c"]) * min(1.0, (s - s1) / (S_END - s1))
+
+
+def fa_bays():
+    """(start, end) s of each open cage bay between the root ring, the rings and the wrist block (0.5 band before the block)."""
+    q, s0 = FA_CAGE, S_FULL + FA_ROOT
+    length = (S_END - 0.5 - s0 - (q["n"] - 1) * q["ring"]) / q["n"]
+    return [(s0 + k * (length + q["ring"]), s0 + k * (length + q["ring"]) + length) for k in range(q["n"])]
 
 
 CHEEK_B_JOINT = [(-15.0, 52.0), (-15.0, 70.0), (8.0, 60.0), (14.0, 72.0)]  # m4 bosses, elbow frame (x, y)
@@ -248,6 +250,7 @@ MAG_SPACING_MIN = 30.0  # stray-field rule between the two encoder magnets / ics
 
 # ---------------------------------------------------------------- print bed (bambu p1s 256 x 256 x 256, 5 mm margin)
 BED = 246.0
+BRIDGE_MAX = 33.0  # longest unsupported roof bridge allowed in any print
 
 
 def polar(r, deg):

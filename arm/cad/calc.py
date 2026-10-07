@@ -10,6 +10,7 @@ import math
 import os
 
 import cadquery as cq
+import numpy as np
 
 import arm_params as p
 import gen_arm as ga
@@ -79,17 +80,62 @@ def stress(s, m_y, m_x, torque, a_m, t):
     return sig, tau, math.hypot(sig, math.sqrt(3) * tau)
 
 
-def x_bars(name, torque, a_m, h, shear, pitch, a, t, sig_allow):
-    """X-bars between two 45 deg diamond windows: face shear (torsion flow + half the direct shear) -> bar stress, buckling."""
+def x_bars(name, torque, a_m, h, shear, length, height, b, t, sig_allow):
+    """Diagonals of an x-braced bay (clear length x height): face shear (torsion flow over h + half the direct shear) -> bar stress, buckling."""
     v = torque * 1000 / (2 * a_m) * h + shear / 2
-    n = v / (2 * math.sin(math.pi / 4))
-    b = (pitch - 2 * a) * math.sin(math.pi / 4)
+    theta = math.atan2(height, length)
+    n = v / (2 * math.sin(theta))
     sig = n / (b * t)
-    l_half = h / 2 / math.sin(math.pi / 4)  # crossing braced by the tension bar
+    l_half = math.hypot(length, height) / 2  # crossing braced by the tension bar
     sig_cr = math.pi ** 2 * p.E_ASA_Z * t ** 2 / (12 * l_half ** 2)
     ok = "OK" if sig <= sig_allow and sig <= sig_cr / p.SF_PRINT else "FAIL"
-    print(f"  {name:34s} V {v:5.0f} N -> bar {b:.2f} x {t} mm: {n:4.0f} N, {sig:5.2f} MPa (limit {sig_allow:.1f}); "
+    print(f"  {name:34s} V {v:5.0f} N at {math.degrees(theta):.1f} deg -> bar {b:.0f} x {t:.0f} mm: {n:4.0f} N, {sig:5.2f} MPa (limit {sig_allow:.1f}); "
           f"buckling {sig_cr:5.1f} MPa over {l_half:.1f} mm (SF {sig_cr / sig:4.1f})   {ok}")
+
+
+def poly_props(pts):
+    """Area, centroid and central second-moment tensor [[sum x2, sum xz], [sum xz, sum z2]] of a closed (x, z) polygon."""
+    a = cx = cz = ixx = izz = ixz = 0.0
+    for (x0, z0), (x1, z1) in zip(pts, pts[1:] + pts[:1]):
+        k = x0 * z1 - x1 * z0
+        a, cx, cz = a + k / 2, cx + (x0 + x1) * k / 6, cz + (z0 + z1) * k / 6
+        ixx, izz = ixx + (x0 * x0 + x0 * x1 + x1 * x1) * k / 12, izz + (z0 * z0 + z0 * z1 + z1 * z1) * k / 12
+        ixz += (x0 * z1 + 2 * x0 * z0 + 2 * x1 * z1 + x1 * z0) * k / 24
+    if a < 0:
+        return poly_props(pts[::-1])
+    cx, cz = cx / a, cz / a
+    return a, np.array([cx, cz]), np.array([[ixx - a * cx * cx, ixz - a * cx * cz], [ixz - a * cx * cz, izz - a * cz * cz]])
+
+
+def cage_bars(sv):
+    """The eight corner bars of the forearm cage at length sv: [(outline, area, centroid, tensor)], octagon centre (elbow x, z)."""
+    q = p.FA_CAGE
+    v = [np.array(c) for c in ga.octagon(p.FA_POST, p.fa_a(sv), *p.fa_z(sv), p.fa_c(sv))]
+    out = []
+    for i in range(8):
+        e0 = (v[i] - v[i - 1]) / np.linalg.norm(v[i] - v[i - 1])
+        e1 = (v[(i + 1) % 8] - v[i]) / np.linalg.norm(v[(i + 1) % 8] - v[i])
+        n0, n1 = np.array([-e0[1], e0[0]]), np.array([-e1[1], e1[0]])  # inward normals (ccw octagon)
+        pts = [v[i] - q["bar"] / 2 * e0, v[i], v[i] + q["bar"] / 2 * e1]
+        pts += [pts[2] + q["t"] * n1, v[i] + q["t"] * (n0 + n1) / (1 + n0 @ n1), pts[0] + q["t"] * n0]
+        out.append((pts, *poly_props([tuple(c) for c in pts])))
+    return out, np.mean(v, axis=0)
+
+
+def vierendeel(bars, centre, shear, torque, length):
+    """Bars fixed in rigid rings over a bay: shear (x, z) and torque shared by bending stiffness; peak bar stress (MPa), end forces (N)."""
+    qs = [np.array([centre[1] - c[1], c[0] - centre[0]]) for _, _, c, _ in bars]  # ring-rotation direction at each bar
+    k = np.zeros((3, 3))
+    for (_, _, _, j), q in zip(bars, qs):
+        jq = j @ q
+        k[:2, :2] += j
+        k[:2, 2] += jq
+        k[2, :2] += jq
+        k[2, 2] += q @ jq
+    sol = np.linalg.solve(k, [*shear, torque])
+    d = [sol[:2] + sol[2] * q for q in qs]
+    sig = max(length / 2 * max(abs(di @ (c_pt - c)) for c_pt in pts) for (pts, _, c, _), di in zip(bars, d))
+    return sig, [j @ di for (_, _, _, j), di in zip(bars, d)]
 
 
 def joint(name, n, size, r_bolt, mu, torque_load, r_in=None, r_out=None, tilt=0.0):
@@ -151,16 +197,24 @@ print(f"allowables (mean - 1 sd / {p.SF_PRINT}): ASA in-layer {SIG_XY:.1f}, acro
 
 # ---------------------------------------------------------------- 3 upper arm
 line("3 upper-arm sections (exact slices; bending sums both axes at the extreme fibres)")
-print("    z   part    A mm2   Iy(x2) cm4  Ix(y2) cm4  Ixy/Ixx   LC2 sig  LC3 sig  LC4 sig/tau   LC2+LC4 vm   limit  (w = window centre)")
-UA = p.UA_WIN
-UA_C = [z for z0, z1, n in UA["zones"] for z in p.win_centres(z0, z1, n, UA["a"])]
-vm_at = {}
-for z in sorted({-50.0, -141.0, -165.0, -196.0, -220.0, -236.0} | set(UA_C), reverse=True):
+print("    z   part    A mm2   Iy(x2) cm4  Ix(y2) cm4  Ixy/Ixx   LC2 sig  LC3 sig  LC4 sig/tau   LC2+LC4 vm   limit  (p = plates only)")
+UA = p.UA_TRUSS
+V0, V1 = p.Y_BED + UA["plate"], p.BEAM_Y1 - UA["plate"]
+BAY_L = (UA["z"][0] - UA["z"][1] - (UA["n"] - 1) * UA["post"]) / UA["n"]
+BAY_TOP = [UA["z"][0] - i * (BAY_L + UA["post"]) for i in range(UA["n"])]
+for z in sorted({-141.0, -165.0, -196.0, -220.0, -236.0} | set(BAY_TOP), reverse=True):
     solid, name = (UPPER, "104") if z > p.Z_JOINT else (LOWER, "110")
-    s = section(solid, z)
     xb, xf, y1, c = p.beam_station(z)
-    t = p.BEAM_T if z >= -196.0 else p.CROWN_POCKET["inset"]
-    a_m, _ = bredt(xb, xf, p.Y_BED, y1, c, t)
+    if z in BAY_TOP:  # x bays: plates alone in bending (walls cut away), clear of the drum
+        s = section(solid - occ.box(-400, 400, V0, V1, -400, 400), min(z, -52.0))
+        a_m, t = bredt(xb, xf, p.Y_BED, y1, UA["c"], UA["plate"])[0], UA["plate"]
+    elif name == "104":
+        s = section(solid, z)
+        a_m, t = bredt(xb, xf, p.Y_BED, y1, UA["c"], UA["plate"])[0], UA["wall"]
+    else:
+        s = section(solid, z)
+        t = p.BEAM_T if z >= -196.0 else p.CROWN_POCKET["inset"]
+        a_m, _ = bredt(xb, xf, p.Y_BED, y1, c, t)
     m2 = p.T_EL + (p.T_SH - p.T_EL) * (z - p.Z_ELBOW) / -p.Z_ELBOW
     m3 = F3 * (z - p.Z_ELBOW + p.L_FOREARM) / 1000
     m4 = F4 * (z - p.Z_ELBOW) / 1000
@@ -168,49 +222,67 @@ for z in sorted({-50.0, -141.0, -165.0, -196.0, -220.0, -236.0} | set(UA_C), rev
     s3, _, _ = stress(s, 0, m3, 0, 0, t)
     s4, t4, _ = stress(s, 0, m4, F4 * S_H / 1000, a_m, t)
     _, _, vm = stress(s, m2, m4, F4 * S_H / 1000, a_m, t)
-    vm_at[z] = vm
     ok = "OK" if max(s2, s3, vm) <= SIG_XY and t4 <= TAU_Z else "FAIL"
-    print(f"{z:6.1f}{'w' if z in UA_C else ' '}  {name}  {s['a']:7.0f}  {s['iyy'] / 1e4:9.2f}  {s['ixx'] / 1e4:9.2f}   {s['ixy'] / s['ixx']:6.3f}  "
+    print(f"{z:6.1f}{'p' if z in BAY_TOP else ' '}  {name}  {s['a']:7.0f}  {s['iyy'] / 1e4:9.2f}  {s['ixx'] / 1e4:9.2f}   {s['ixy'] / s['ixx']:6.3f}  "
           f"{s2:7.2f}  {s3:7.2f}  {s4:6.2f}/{t4:4.2f}   {vm:9.2f}   {ok}")
-print("torsion: bredt on the octagon midline (wall 2.5 in the beam, 3.0 pocket inset in the crown); below z -236 the "
-      "LC4 couple enters through the ring bolts and the ear (section 6)")
-print(f"front/back diamond windows ({UA['a'] * 2:.0f} mm, 45 deg), LC4 torsion {F4 * S_H / 1000:.1f} N*m + lateral {F4:.0f} N:")
-h_ua = p.BEAM_Y1 - p.Y_BED - 2 * p.beam_station(UA_C[0])[3]
-for z0, z1, n in UA["zones"]:
-    zc = p.win_centres(z0, z1, n, UA["a"])
-    if n > 1:
-        zm = (zc[0] + zc[1]) / 2
-        a_m, _ = bredt(*p.beam_station(zm)[:2], p.Y_BED, *p.beam_station(zm)[2:], p.BEAM_T)
-        x_bars(f"x-bars z {z0:.0f}..{z1:.0f} (vertical walls)", F4 * S_H / 1000, a_m, h_ua, F4, abs(zc[1] - zc[0]), UA["a"], p.BEAM_T, SIG_Z)
-for z in UA_C:
-    solid = UPPER if z > p.Z_JOINT else LOWER
-    ch = [section(solid ^ occ.box(-400, 400, y0, y1, -400, 400), z) for y0, y1 in ((-400, UA["y"]), (UA["y"], 400))]
-    f_x = F4 * S_H / (ch[1]["yc"] - ch[0]["yc"])  # torque as a couple on the inboard / outboard channels across the window
-    sig_v = max(f_x * UA["a"] * c["cx"] / c["iyy"] + F4 / 2 * UA["a"] * c["cy"] / c["ixx"] for c in ch)
-    print(f"  window bypass z {z:6.1f}: channels carry {f_x:.0f} N + {F4 / 2:.0f} N over {UA['a']:.1f} mm -> {sig_v:.2f} MPa "
-          f"+ beam {vm_at[z]:.2f} = {sig_v + vm_at[z]:.2f} (limit {SIG_XY:.1f})   {'OK' if sig_v + vm_at[z] <= SIG_XY else 'FAIL'}")
+print(f"torsion: bredt on the octagon midline (104: plates {UA['plate']:.0f} / walls {UA['wall']:.0f}, 110: wall 2.5, 3.0 pocket inset "
+      "in the crown); below z -236 the LC4 couple enters through the ring bolts and the ear (section 6)")
+xb, xf, _, _ = p.beam_station(UA["z"][0])
+h_m = p.BEAM_Y1 - p.Y_BED - UA["plate"]
+e_top = ((V1 - V0) / 2 - UA["bar"] / 2 * math.hypot(1, (V1 - V0) / BAY_L)) / ((V1 - V0) / BAY_L)
+print(f"x-braced front / back walls: {UA['n']} bays {BAY_L:.1f} x {V1 - V0:.0f} mm per face between {UA['post']:.0f} mm posts, "
+      f"LC4 torsion {F4 * S_H / 1000:.1f} N*m + lateral {F4:.0f} N:")
+x_bars("x-bars (vertical walls)", F4 * S_H / 1000, bredt(xb, xf, p.Y_BED, p.BEAM_Y1, UA["c"], UA["plate"])[0], h_m, F4,
+       BAY_L, V1 - V0, UA["bar"], UA["wall"], SIG_Z)
+print(f"  print (inboard plate on the bed): top-triangle bridge {2 * e_top:.1f} mm, cavity roof "
+      f"{xf - xb - 2 * UA['wall'] - 2 * UA['roof_c']:.1f} mm (max {p.BRIDGE_MAX:.0f}); diagonals "
+      f"{math.degrees(math.atan2(V1 - V0, BAY_L)):.1f} deg from the bed")
 
 # ---------------------------------------------------------------- 4 forearm
 line("4 forearm sections (forearm at 90 deg; LC4 + elbow proof + LC3 palm-edge twist together)")
-print("     s    A mm2   Iy(x2) cm4  Ix(y2) cm4   in-plane  lateral  tau    vm    limit  (w = window centre, corners only)")
-FW = p.FA_WIN
-FA_C_S = p.win_centres(*FW["s"], FW["n"], FW["a"])
-for sv in [90.0, 100.0, 110.0, p.S_NECK] + FA_C_S:
+print("     s    A mm2   Iy(x2) cm4  Ix(y2) cm4   in-plane  lateral  tau    vm    limit  (trough open, root ring closed)")
+TWIST = F3 * 0.040
+for sv in (45.0, 75.0, p.S_FULL + p.FA_ROOT / 2):
     s = section(FORE, p.Z_ELBOW - sv)
-    z0, z1 = p.fa_z(sv)
-    a_m, _ = bredt(p.FA_POST, p.fa_a(sv), z0, z1, p.FA_C, p.FA_T)
-    m_in = p.T_EL * (S_H - sv) / S_H
-    m_lat = F4 * (S_H - sv) / 1000
-    sig, tau, vm = stress(s, m_in, m_lat, F3 * 0.040, a_m, p.FA_T)
-    s_in, _, _ = stress(s, m_in, 0, 0, 0, p.FA_T)
+    x0, x1, (z0, z1) = p.FA_POST, p.fa_a(sv), p.fa_z(sv)
+    m_in, m_lat = p.T_EL * (S_H - sv) / S_H, F4 * (S_H - sv) / 1000
+    sig, _, _ = stress(s, m_in, m_lat, 0, 0, 1)
+    s_in, _, _ = stress(s, m_in, 0, 0, 0, 1)
+    if sv < p.S_FULL:  # open trough: saint-venant torsion of the posterior wall and the two cheeks
+        w = p.CHEEK_A_Z[1] - p.CHEEK_A_Z[0]
+        tau = TWIST * 1000 * w / (((x1 - x0) * (p.FA_T ** 3 + w ** 3) + (z1 - z0) * p.FA_T ** 3) / 3)
+    else:
+        tau = TWIST * 1000 / (2 * bredt(x0, x1, z0, z1, p.fa_c(sv), p.FA_CAGE["t"])[0] * p.FA_CAGE["t"])
+    vm = math.hypot(sig, math.sqrt(3) * tau)
     ok = "OK" if vm <= SIG_XY and tau <= TAU_Z else "FAIL"
-    print(f"{sv:6.1f}{'w' if sv in FA_C_S else ' '} {s['a']:7.0f}  {s['iyy'] / 1e4:9.2f}  {s['ixx'] / 1e4:9.2f}   {s_in:7.2f}  {sig - s_in:7.2f}  {tau:5.2f}  {vm:5.2f}   {ok}")
-sm = (FA_C_S[0] + FA_C_S[1]) / 2
-a_m, _ = bredt(p.FA_POST, p.fa_a(sm), *p.fa_z(sm), p.FA_C, p.FA_T)
-h_fa, pitch = 2 * (p.FA_HALF_WRIST - p.FA_C), FA_C_S[1] - FA_C_S[0]
-print(f"diamond lattice on all four faces ({FW['n']} x {FW['a'] * 2:.0f} mm per face), twist {F3 * 0.040:.2f} N*m:")
-x_bars("x-bars posterior / anterior (in layer)", F3 * 0.040, a_m, h_fa, F4, pitch, FW["a"], p.FA_T, SIG_XY)
-x_bars("x-bars inboard / outboard (vertical)", F3 * 0.040, a_m, h_fa, p.T_EL * 1000 / S_H, pitch, FW["a"], p.FA_T, SIG_Z)
+    print(f"{sv:6.1f}  {s['a']:7.0f}  {s['iyy'] / 1e4:9.2f}  {s['ixx'] / 1e4:9.2f}   {s_in:7.2f}  {sig - s_in:7.2f}  {tau:5.2f}  {vm:5.2f}   {ok}")
+q = p.FA_CAGE
+shear = (p.T_EL * 1000 / S_H, F4)
+print(f"cone cage: {q['n']} bays, 8 corner bars {q['bar']:.0f} wide x {q['t']:.0f} shell, rings {q['ring']:.0f}; bars fixed in rigid rings "
+      f"(vierendeel) carry shear {shear[0]:.1f} / {shear[1]:.1f} N + twist {TWIST:.2f} N*m, axial from the bending at the bay top:")
+bays, forces = p.fa_bays(), []
+for sa, sb in bays:
+    bars, centre = cage_bars(sb)
+    sig_v, f_end = vierendeel(bars, centre, shear, TWIST * 1000, sb - sa)
+    forces.append((sb - sa, f_end, bars))
+    s = section(FORE, p.Z_ELBOW - (sa + q["r"] + 0.1))
+    sig_a, _, _ = stress(s, p.T_EL * (S_H - sa) / S_H, F4 * (S_H - sa) / 1000, 0, 0, 1)
+    v = ga.octagon(p.FA_POST, p.fa_a(sb), *p.fa_z(sb), p.fa_c(sb))
+    gap = min(math.dist(a, b) for a, b in zip(v, v[1:] + v[:1])) - q["bar"]
+    print(f"  bay s {sa:5.1f}..{sb:5.1f}: vierendeel {sig_v:5.2f} + axial {sig_a:5.2f} = {sig_v + sig_a:5.2f} MPa (limit {SIG_XY:.1f}); "
+          f"narrowest window {gap:.1f} mm   {'OK' if sig_v + sig_a <= SIG_XY else 'FAIL'}")
+vm_r = 0.0
+for (l0, f0, _), (l1, f1, bars) in zip(forces, forces[1:]):
+    for f_a, f_b, (pts, *_) in zip(f0, f1, bars):
+        m = (f_a * l0 + f_b * l1) / 4  # bar end moments from both bays meet in the ring node
+        nv = (pts[1] - pts[4]) / np.linalg.norm(pts[1] - pts[4])  # outward through the corner
+        sig_b = abs(m @ np.array([-nv[1], nv[0]])) * 6 / (q["t"] * q["ring"] ** 2)
+        tau_t = abs(m @ nv) / (0.208 * max(q["ring"], q["t"]) * min(q["ring"], q["t"]) ** 2)
+        vm_r = max(vm_r, math.hypot(sig_b, math.sqrt(3) * tau_t))
+print(f"  ring nodes ({q['ring']:.0f} x {q['t']:.0f}, bending + twist from both bays): vm {vm_r:.2f} MPa (limit across layers {SIG_Z:.1f})   "
+      f"{'OK' if vm_r <= SIG_Z else 'FAIL'}")
+print(f"  print (posterior face on the bed): bars bridge {bays[0][1] - bays[0][0]:.1f} mm between rings, ring roofs held to "
+      f"{p.BRIDGE_MAX:.0f} mm by the anterior corner gussets (max {p.BRIDGE_MAX:.0f})")
 
 # ---------------------------------------------------------------- 5 joints
 line("5 bolted joints (12.9 screws, preload vdi 2230 table mu 0.12; joint friction mu 0.15 metal, 0.30 printed)")
