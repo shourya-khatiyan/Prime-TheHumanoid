@@ -1,0 +1,156 @@
+# arm masses, solid material (g); groups use the print estimate for printed parts;
+# centres of mass in world mm at 0 deg (y outboard, z up)
+101 Adapter plate 6061-T6 (CNC)                                70.3 g
+102.1 Screw M5x12 ISO 4762 12.9 adapter->shoulder               4.0 g
+103.1 Washer M5 ISO 7089                                        0.4 g
+102.2 Screw M5x12 ISO 4762 12.9 adapter->shoulder               4.0 g
+103.2 Washer M5 ISO 7089                                        0.4 g
+102.3 Screw M5x12 ISO 4762 12.9 adapter->shoulder               4.0 g
+103.3 Washer M5 ISO 7089                                        0.4 g
+102.4 Screw M5x12 ISO 4762 12.9 adapter->shoulder               4.0 g
+103.4 Washer M5 ISO 7089                                        0.4 g
+102.5 Screw M5x12 ISO 4762 12.9 adapter->shoulder               4.0 g
+103.5 Washer M5 ISO 7089                                        0.4 g
+102.6 Screw M5x12 ISO 4762 12.9 adapter->shoulder               4.0 g
+103.6 Washer M5 ISO 7089                                        0.4 g
+104 Upper arm, shoulder half (ASA)                            185.2 g   print est   184.8 g
+105.1 Screw M4x16 ISO 4762 hub->adapter                         2.7 g
+106.1 Washer M4 DIN 9021 hub                                    0.8 g
+105.2 Screw M4x16 ISO 4762 hub->adapter                         2.7 g
+106.2 Washer M4 DIN 9021 hub                                    0.8 g
+105.3 Screw M4x16 ISO 4762 hub->adapter                         2.7 g
+106.3 Washer M4 DIN 9021 hub                                    0.8 g
+105.4 Screw M4x16 ISO 4762 hub->adapter                         2.7 g
+106.4 Washer M4 DIN 9021 hub                                    0.8 g
+105.5 Screw M4x16 ISO 4762 hub->adapter                         2.7 g
+106.5 Washer M4 DIN 9021 hub                                    0.8 g
+105.6 Screw M4x16 ISO 4762 hub->adapter                         2.7 g
+106.6 Washer M4 DIN 9021 hub                                    0.8 g
+107.1 Insert RX-M3x5.7 cap                                      0.3 g
+109.1 Screw M3x8 ISO 10642 cap                                  0.6 g
+107.2 Insert RX-M3x5.7 cap                                      0.3 g
+109.2 Screw M3x8 ISO 10642 cap                                  0.6 g
+107.3 Insert RX-M3x5.7 cap                                      0.3 g
+109.3 Screw M3x8 ISO 10642 cap                                  0.6 g
+107.4 Insert RX-M3x5.7 cap                                      0.3 g
+109.4 Screw M3x8 ISO 10642 cap                                  0.6 g
+108 Shoulder cap (ASA)                                         20.3 g   print est    20.3 g
+110 Upper arm, elbow half (ASA)                               199.9 g   print est   157.2 g
+111.1 Insert RX-M4x8.1 joint                                    0.8 g
+112.1 Screw M4x16 ISO 4762 joint                                2.7 g
+113.1 Washer M4 DIN 9021 joint                                  0.8 g
+111.2 Insert RX-M4x8.1 joint                                    0.8 g
+112.2 Screw M4x16 ISO 4762 joint                                2.7 g
+113.2 Washer M4 DIN 9021 joint                                  0.8 g
+111.3 Insert RX-M4x8.1 joint                                    0.8 g
+112.3 Screw M4x16 ISO 4762 joint                                2.7 g
+113.3 Washer M4 DIN 9021 joint                                  0.8 g
+111.4 Insert RX-M4x8.1 joint                                    0.8 g
+112.4 Screw M4x16 ISO 4762 joint                                2.7 g
+113.4 Washer M4 DIN 9021 joint                                  0.8 g
+114.1 Dowel D4x16 ISO 8734 joint                                1.6 g
+114.2 Dowel D4x16 ISO 8734 joint                                1.6 g
+115 Front ring 6061-T6 (CNC 4 mm)                              53.2 g
+116.1 Screw M3x16 DIN 912 ring+cover->housing                   1.4 g
+117.1 Washer M3 ISO 7089 ring                                   0.1 g
+116.2 Screw M3x16 DIN 912 ring+cover->housing                   1.4 g
+117.2 Washer M3 ISO 7089 ring                                   0.1 g
+116.3 Screw M3x16 DIN 912 ring+cover->housing                   1.4 g
+117.3 Washer M3 ISO 7089 ring                                   0.1 g
+116.4 Screw M3x16 DIN 912 ring+cover->housing                   1.4 g
+117.4 Washer M3 ISO 7089 ring                                   0.1 g
+116.5 Screw M3x16 DIN 912 ring+cover->housing                   1.4 g
+117.5 Washer M3 ISO 7089 ring                                   0.1 g
+116.6 Screw M3x16 DIN 912 ring+cover->housing                   1.4 g
+117.6 Washer M3 ISO 7089 ring                                   0.1 g
+116.7 Screw M3x16 DIN 912 ring+cover->housing                   1.4 g
+117.7 Washer M3 ISO 7089 ring                                   0.1 g
+118.1 Insert RX-M4x8.1 crown                                    0.8 g
+119.1 Screw M4x12 ISO 10642 ring->crown                         1.4 g
+118.2 Insert RX-M4x8.1 crown                                    0.8 g
+119.2 Screw M4x12 ISO 10642 ring->crown                         1.4 g
+118.3 Insert RX-M4x8.1 crown                                    0.8 g
+119.3 Screw M4x12 ISO 10642 ring->crown                         1.4 g
+118.4 Insert RX-M4x8.1 crown                                    0.8 g
+119.4 Screw M4x12 ISO 10642 ring->crown                         1.4 g
+120 Stop pin D5x14 ISO 8734                                     2.1 g
+121.1 O-ring 4.5x1.5 NBR 70 stop                                0.0 g
+121.2 O-ring 4.5x1.5 NBR 70 stop                                0.0 g
+121.3 O-ring 4.5x1.5 NBR 70 stop                                0.0 g
+122 Passive pin 6061-T6 (turned)                               16.2 g
+123.1 Insert RX-M3x5.7 ear                                      0.3 g
+124.1 Screw M3x8 ISO 10642 pin->ear                             0.6 g
+123.2 Insert RX-M3x5.7 ear                                      0.3 g
+124.2 Screw M3x8 ISO 10642 pin->ear                             0.6 g
+123.3 Insert RX-M3x5.7 ear                                      0.3 g
+124.3 Screw M3x8 ISO 10642 pin->ear                             0.6 g
+125 Forearm + cheek A (ASA)                                   217.2 g   print est   205.8 g
+126.1 Screw M3x16 DIN 912 cheek A->hub                          1.4 g
+126.2 Screw M3x16 DIN 912 cheek A->hub                          1.4 g
+126.3 Screw M3x16 DIN 912 cheek A->hub                          1.4 g
+126.4 Screw M3x16 DIN 912 cheek A->hub                          1.4 g
+126.5 Screw M3x16 DIN 912 cheek A->hub                          1.4 g
+126.6 Screw M3x16 DIN 912 cheek A->hub                          1.4 g
+127.1 Dowel D3x16 ISO 8734 cheek A/hub                          0.9 g
+127.2 Dowel D3x16 ISO 8734 cheek A/hub                          0.9 g
+128 Cheek B (ASA)                                              43.1 g   print est    32.5 g
+129.1 Insert RX-M4x8.1 forearm                                  0.8 g
+130.1 Screw M4x16 ISO 4762 cheek B->forearm                     2.7 g
+131.1 Washer M4 DIN 9021 cheek B                                0.8 g
+129.2 Insert RX-M4x8.1 forearm                                  0.8 g
+130.2 Screw M4x16 ISO 4762 cheek B->forearm                     2.7 g
+131.2 Washer M4 DIN 9021 cheek B                                0.8 g
+129.3 Insert RX-M4x8.1 forearm                                  0.8 g
+130.3 Screw M4x16 ISO 4762 cheek B->forearm                     2.7 g
+131.3 Washer M4 DIN 9021 cheek B                                0.8 g
+129.4 Insert RX-M4x8.1 forearm                                  0.8 g
+130.4 Screw M4x16 ISO 4762 cheek B->forearm                     2.7 g
+131.4 Washer M4 DIN 9021 cheek B                                0.8 g
+132 61804-2RS1 passive inner ring                               6.8 g
+132 61804-2RS1 passive outer ring                               9.2 g
+132 61804-2RS1 passive ball set                                 2.0 g
+132 61804-2RS1 passive seal rear                                0.7 g
+132 61804-2RS1 passive seal front                               0.7 g
+133 Bearing retainer (ASA)                                      2.2 g   print est     2.2 g
+134 Encoder bracket 6061-T6 (turned)                           10.4 g
+135.1 Screw M2.5x10 ISO 10642 bracket->pin                      0.4 g
+135.2 Screw M2.5x10 ISO 10642 bracket->pin                      0.4 g
+135.3 Screw M2.5x10 ISO 10642 bracket->pin                      0.4 g
+136 Output encoder PCB 30x30x1.6 (shoulder P12)                 0.0 g
+137 AS5047P TSSOP-14 output (envelope)                          0.0 g
+138.1 Screw M2.5x4 DIN 912 pcb->bracket                         0.4 g
+138.2 Screw M2.5x4 DIN 912 pcb->bracket                         0.4 g
+138.3 Screw M2.5x4 DIN 912 pcb->bracket                         0.4 g
+138.4 Screw M2.5x4 DIN 912 pcb->bracket                         0.4 g
+139 Output magnet D6x2.5 diametric                              0.5 g
+140 Encoder cover (ASA)                                         7.0 g   print est     7.0 g
+141.1 Insert RX-M3x5.7 cheek B                                  0.3 g
+142.1 Screw M3x12 DIN 912 cover->cheek B                        1.1 g
+141.2 Insert RX-M3x5.7 cheek B                                  0.3 g
+142.2 Screw M3x12 DIN 912 cover->cheek B                        1.1 g
+141.3 Insert RX-M3x5.7 cheek B                                  0.3 g
+142.3 Screw M3x12 DIN 912 cover->cheek B                        1.1 g
+143.1 Insert RX-M3x5.7 wrist                                    0.3 g
+145.1 Screw M3x12 DIN 912 hand->wrist                           1.1 g
+143.2 Insert RX-M3x5.7 wrist                                    0.3 g
+145.2 Screw M3x12 DIN 912 hand->wrist                           1.1 g
+143.3 Insert RX-M3x5.7 wrist                                    0.3 g
+145.3 Screw M3x12 DIN 912 hand->wrist                           1.1 g
+143.4 Insert RX-M3x5.7 wrist                                    0.3 g
+145.4 Screw M3x12 DIN 912 hand->wrist                           1.1 g
+144 Dummy hand (PLA)                                          309.8 g   print est   120.9 g
+
+m_upper = 1129.3
+com_upper_x = -1.2
+com_upper_y = 39.8
+com_upper_z = -204.6
+m_fore = 405.7
+com_fore_x = 3.1
+com_fore_y = 44.7
+com_fore_z = -457.3
+m_hand = 120.9
+com_hand_x = 2.3
+com_hand_y = 44.7
+com_hand_z = -614.7
+m_elbow = 499.3
+m_arm = 1535.0

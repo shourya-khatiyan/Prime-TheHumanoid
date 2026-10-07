@@ -82,7 +82,7 @@ The 100% infill on the cam, the rear ring, the carrier and the discs is required
 | P06 | 21 | Ring pins | 21 (+3) | **ISO 8734 Ø5 × 30, type A, m6**, 550–650 HV30 | DIN 6325 5 m6 × 30 | m6 = Ø5.004–5.012 [E6]; calc §2b checks the maximum size |
 | P07 | 22 | Output pins | 6 (+2) | As P06 | As P06 | Pressed into PLA |
 | P08 | 32 | Flange dowels | 2 (+2) | ISO 8734 Ø3 × 12 | DIN 6325 | — |
-| P09 | — | Hub dowels | 2 (+2) | ISO 8734 Ø3, length set by the forearm (arm CAD) | DIN 6325 | 5 mm into the carrier; they carry the output torque (calc §5) |
+| P09 | — | Hub dowels | 2 (+2) | ISO 8734 Ø3 × 16 (arm part 127) | DIN 6325 | 5 mm into the carrier, 11 mm into the forearm; they carry the output torque (calc §5, `arm/cad/calc.txt` §5) |
 | P10 | 25, 29 | Heat-set inserts | 13 (+7) | **Ruthex RX-M3x5.7**, hole Ø4.0, wall ≥ 1.6, depth ≥ 6.7 [E5] | CNC Kitchen M3 × 5.7 (same hole) | 6 in the hub, 7 in the housing flange |
 | P11 | 09 | Encoder magnet | 1 (+1) | Ø6 × 2.5 NdFeB, diametric | ams **AS5000-MD6H-2** [E13] | Gap 1.0 to the IC, centred ≤ 0.5 mm |
 | P12 | 04 | Encoder IC | 1 (+1) | **AS5047P-ATSM** | — | Same as shoulder P11 |
@@ -99,7 +99,9 @@ The 100% infill on the cam, the rear ring, the carrier and the discs is required
 | F04 | 13 | M3 × 8 set screw, flat point | ISO 4026, 45H | 4 (+2) | Dogs in the rotor top | Snug, then set 3.0 protrusion | Loctite 243 in the bottom third of the rotor holes |
 | F05 | 31 | M3 × 12 socket head | DIN 912 | 7 (+3) | Cover + retainer to housing inserts | **0.2** (calc §5: slip SF 2.28) | None |
 | F06 | 30 | M3 washer | ISO 7089 | 7 (+3) | Under F05 | — | — |
-| F07 | — | M3 forearm screws | DIN 912 | 6 | Forearm to hub inserts (arm CAD) | **0.2** (calc §5) | None |
+| F07 | — | M3 × 16 forearm screws | DIN 912 | 6 | Forearm to hub inserts (arm part 126) | **0.2** (calc §5) | None |
+
+In the arm, F05 and F06 are replaced by arm parts 116 / 117 (M3 × 16 + washers through the front ring, `arm/bom.md`).
 
 Calculated torques use the VDI 2230 preload table at μ 0.12 (`elbow/cad/calc.py`, same basis as the shoulder). F01, F02 and F04 are practical values for light joints.
 
