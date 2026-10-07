@@ -1,4 +1,4 @@
-# Arm Rev 0 (upper arm, elbow clevis, forearm, dummy hand)
+# Arm Rev 0 (upper arm, elbow clevis, lattice forearm; no hand in v0)
 
 World frame: origin on the shoulder axis at the shoulder output-flange face. +Y is the shoulder axis pointing outboard, +X forward, +Z up; at 0° the arm hangs along −Z. The elbow axis is parallel to Y at Z −298. Part positions near the elbow are given in the **elbow frame E**: z along the elbow axis (z 0 = elbow lid rear face, world Y = z + 9.5), y downward from the axis (the forearm length s), x forward.
 

@@ -79,6 +79,19 @@ def stress(s, m_y, m_x, torque, a_m, t):
     return sig, tau, math.hypot(sig, math.sqrt(3) * tau)
 
 
+def x_bars(name, torque, a_m, h, shear, pitch, a, t, sig_allow):
+    """X-bars between two 45 deg diamond windows: face shear (torsion flow + half the direct shear) -> bar stress, buckling."""
+    v = torque * 1000 / (2 * a_m) * h + shear / 2
+    n = v / (2 * math.sin(math.pi / 4))
+    b = (pitch - 2 * a) * math.sin(math.pi / 4)
+    sig = n / (b * t)
+    l_half = h / 2 / math.sin(math.pi / 4)  # crossing braced by the tension bar
+    sig_cr = math.pi ** 2 * p.E_ASA_Z * t ** 2 / (12 * l_half ** 2)
+    ok = "OK" if sig <= sig_allow and sig <= sig_cr / p.SF_PRINT else "FAIL"
+    print(f"  {name:34s} V {v:5.0f} N -> bar {b:.2f} x {t} mm: {n:4.0f} N, {sig:5.2f} MPa (limit {sig_allow:.1f}); "
+          f"buckling {sig_cr:5.1f} MPa over {l_half:.1f} mm (SF {sig_cr / sig:4.1f})   {ok}")
+
+
 def joint(name, n, size, r_bolt, mu, torque_load, r_in=None, r_out=None, tilt=0.0):
     """Friction torque (and annular separation moment) of n bolts on radius r_bolt."""
     fm = preload(size)
@@ -97,7 +110,7 @@ def joint(name, n, size, r_bolt, mu, torque_load, r_in=None, r_out=None, tilt=0.
 occ.use_occ_kernel()
 UPPER, LOWER, FORE = ga.upper_shoulder_half(), ga.upper_elbow_half(), ga.elbow_to_world(ga.forearm())
 M = read_mass()
-S_H = p.L_FOREARM + p.L_HAND / 2  # hand centre from the elbow axis
+S_H = p.L_FOREARM + p.L_HAND / 2  # future hand centre from the elbow axis
 F3 = p.M_SH_TILT * 1000 / (p.L_UPPER + p.L_FOREARM)  # lateral at the wrist, forearm straight
 F4 = p.M_SH_TILT * 1000 / math.hypot(p.L_UPPER, S_H)  # lateral at the hand centre, forearm at 90 deg
 Y_BRG_A = p.Y_E0 + ep.Z_BRG0 + ep.BRG_OUT["B"] / 2  # 61807 centre, world y
@@ -107,11 +120,11 @@ F_COUPLE = F4 * S_H / SPAN  # clevis bearing couple in lc4
 
 # ---------------------------------------------------------------- 1 mass
 line("1 mass, gravity, inertia (mass.txt: printed parts at the print estimate)")
-m_u, m_f, m_h = M["m_upper"] / 1000, M["m_fore"] / 1000, M["m_hand"] / 1000
+m_u, m_f = M["m_upper"] / 1000, M["m_fore"] / 1000
 r_u, r_f = -M["com_upper_z"] / 1000, -M["com_fore_z"] / 1000
 r_fe = r_f - p.L_UPPER / 1000  # forearm group com from the elbow axis
-print(f"upper arm + elbow actuator {m_u:.3f} kg at {r_u * 1000:.0f} mm   forearm + hand {m_f:.3f} kg at {r_f * 1000:.0f} mm "
-      f"(hand {m_h:.3f} kg)   arm {M['m_arm'] / 1000:.3f} kg vs research budget 1.18 kg ({M['m_arm'] / 1180 - 1:+.0%})")
+print(f"upper arm + elbow actuator {m_u:.3f} kg at {r_u * 1000:.0f} mm   forearm {m_f:.3f} kg at {r_f * 1000:.0f} mm "
+      f"(no hand in v0)   arm {M['m_arm'] / 1000:.3f} kg vs research budget 1.18 kg ({M['m_arm'] / 1180 - 1:+.0%})")
 alpha = OMEGA_MAX / 0.25
 t_g = p.G * (m_u * r_u + m_f * r_f)
 j_sh = m_u * r_u ** 2 + m_f * r_f ** 2  # point masses: lower bound
@@ -129,7 +142,7 @@ print(f"LC1 shoulder proof as a force at the elbow: {p.T_SH * 1000 / p.L_UPPER:.
 print(f"LC2 envelope: in-plane moment {p.T_SH:.0f} N*m at the shoulder -> {p.T_EL:.2f} N*m (elbow proof) at the elbow")
 print(f"LC3 tilt proof as a lateral force at the wrist (forearm straight, {p.L_UPPER + p.L_FOREARM:.0f} mm): {F3:.1f} N; "
       f"at the palm edge (40 mm) it also twists the forearm {F3 * 0.040:.2f} N*m")
-print(f"LC4 tilt proof as a lateral force at the hand centre, forearm at 90 deg ({S_H:.1f} mm out, lever "
+print(f"LC4 tilt proof as a lateral force at the future hand centre, forearm at 90 deg ({S_H:.1f} mm out, lever "
       f"{math.hypot(p.L_UPPER, S_H):.1f}): {F4:.1f} N -> upper-arm torsion {F4 * S_H / 1000:.2f} N*m, "
       f"clevis couple {F_COUPLE:.0f} N on {SPAN:.1f} mm bearing span")
 print(f"LC5 hard stop: elbow current limit {p.T_EL:.2f} N*m x 1.5 = {1.5 * p.T_EL:.2f} N*m (impact: section 7)")
@@ -138,8 +151,11 @@ print(f"allowables (mean - 1 sd / {p.SF_PRINT}): ASA in-layer {SIG_XY:.1f}, acro
 
 # ---------------------------------------------------------------- 3 upper arm
 line("3 upper-arm sections (exact slices; bending sums both axes at the extreme fibres)")
-print("    z   part    A mm2   Iy(x2) cm4  Ix(y2) cm4  Ixy/Ixx   LC2 sig  LC3 sig  LC4 sig/tau   LC2+LC4 vm   limit")
-for z in (-50.0, -100.0, -140.0, -165.0, -196.0, -220.0, -236.0):
+print("    z   part    A mm2   Iy(x2) cm4  Ix(y2) cm4  Ixy/Ixx   LC2 sig  LC3 sig  LC4 sig/tau   LC2+LC4 vm   limit  (w = window centre)")
+UA = p.UA_WIN
+UA_C = [z for z0, z1, n in UA["zones"] for z in p.win_centres(z0, z1, n, UA["a"])]
+vm_at = {}
+for z in sorted({-50.0, -141.0, -165.0, -196.0, -220.0, -236.0} | set(UA_C), reverse=True):
     solid, name = (UPPER, "104") if z > p.Z_JOINT else (LOWER, "110")
     s = section(solid, z)
     xb, xf, y1, c = p.beam_station(z)
@@ -152,16 +168,34 @@ for z in (-50.0, -100.0, -140.0, -165.0, -196.0, -220.0, -236.0):
     s3, _, _ = stress(s, 0, m3, 0, 0, t)
     s4, t4, _ = stress(s, 0, m4, F4 * S_H / 1000, a_m, t)
     _, _, vm = stress(s, m2, m4, F4 * S_H / 1000, a_m, t)
+    vm_at[z] = vm
     ok = "OK" if max(s2, s3, vm) <= SIG_XY and t4 <= TAU_Z else "FAIL"
-    print(f"{z:6.0f}   {name}  {s['a']:7.0f}  {s['iyy'] / 1e4:9.2f}  {s['ixx'] / 1e4:9.2f}   {s['ixy'] / s['ixx']:6.3f}  "
+    print(f"{z:6.1f}{'w' if z in UA_C else ' '}  {name}  {s['a']:7.0f}  {s['iyy'] / 1e4:9.2f}  {s['ixx'] / 1e4:9.2f}   {s['ixy'] / s['ixx']:6.3f}  "
           f"{s2:7.2f}  {s3:7.2f}  {s4:6.2f}/{t4:4.2f}   {vm:9.2f}   {ok}")
 print("torsion: bredt on the octagon midline (wall 2.5 in the beam, 3.0 pocket inset in the crown); below z -236 the "
       "LC4 couple enters through the ring bolts and the ear (section 6)")
+print(f"front/back diamond windows ({UA['a'] * 2:.0f} mm, 45 deg), LC4 torsion {F4 * S_H / 1000:.1f} N*m + lateral {F4:.0f} N:")
+h_ua = p.BEAM_Y1 - p.Y_BED - 2 * p.beam_station(UA_C[0])[3]
+for z0, z1, n in UA["zones"]:
+    zc = p.win_centres(z0, z1, n, UA["a"])
+    if n > 1:
+        zm = (zc[0] + zc[1]) / 2
+        a_m, _ = bredt(*p.beam_station(zm)[:2], p.Y_BED, *p.beam_station(zm)[2:], p.BEAM_T)
+        x_bars(f"x-bars z {z0:.0f}..{z1:.0f} (vertical walls)", F4 * S_H / 1000, a_m, h_ua, F4, abs(zc[1] - zc[0]), UA["a"], p.BEAM_T, SIG_Z)
+for z in UA_C:
+    solid = UPPER if z > p.Z_JOINT else LOWER
+    ch = [section(solid ^ occ.box(-400, 400, y0, y1, -400, 400), z) for y0, y1 in ((-400, UA["y"]), (UA["y"], 400))]
+    f_x = F4 * S_H / (ch[1]["yc"] - ch[0]["yc"])  # torque as a couple on the inboard / outboard channels across the window
+    sig_v = max(f_x * UA["a"] * c["cx"] / c["iyy"] + F4 / 2 * UA["a"] * c["cy"] / c["ixx"] for c in ch)
+    print(f"  window bypass z {z:6.1f}: channels carry {f_x:.0f} N + {F4 / 2:.0f} N over {UA['a']:.1f} mm -> {sig_v:.2f} MPa "
+          f"+ beam {vm_at[z]:.2f} = {sig_v + vm_at[z]:.2f} (limit {SIG_XY:.1f})   {'OK' if sig_v + vm_at[z] <= SIG_XY else 'FAIL'}")
 
 # ---------------------------------------------------------------- 4 forearm
 line("4 forearm sections (forearm at 90 deg; LC4 + elbow proof + LC3 palm-edge twist together)")
-print("     s    A mm2   Iy(x2) cm4  Ix(y2) cm4   in-plane  lateral  tau    vm    limit")
-for sv in (90.0, 100.0, 160.0, 220.0):
+print("     s    A mm2   Iy(x2) cm4  Ix(y2) cm4   in-plane  lateral  tau    vm    limit  (w = window centre, corners only)")
+FW = p.FA_WIN
+FA_C_S = p.win_centres(*FW["s"], FW["n"], FW["a"])
+for sv in [90.0, 100.0, 110.0, p.S_NECK] + FA_C_S:
     s = section(FORE, p.Z_ELBOW - sv)
     z0, z1 = p.fa_z(sv)
     a_m, _ = bredt(p.FA_POST, p.fa_a(sv), z0, z1, p.FA_C, p.FA_T)
@@ -170,7 +204,13 @@ for sv in (90.0, 100.0, 160.0, 220.0):
     sig, tau, vm = stress(s, m_in, m_lat, F3 * 0.040, a_m, p.FA_T)
     s_in, _, _ = stress(s, m_in, 0, 0, 0, p.FA_T)
     ok = "OK" if vm <= SIG_XY and tau <= TAU_Z else "FAIL"
-    print(f"{sv:6.0f}  {s['a']:7.0f}  {s['iyy'] / 1e4:9.2f}  {s['ixx'] / 1e4:9.2f}   {s_in:7.2f}  {sig - s_in:7.2f}  {tau:5.2f}  {vm:5.2f}   {ok}")
+    print(f"{sv:6.1f}{'w' if sv in FA_C_S else ' '} {s['a']:7.0f}  {s['iyy'] / 1e4:9.2f}  {s['ixx'] / 1e4:9.2f}   {s_in:7.2f}  {sig - s_in:7.2f}  {tau:5.2f}  {vm:5.2f}   {ok}")
+sm = (FA_C_S[0] + FA_C_S[1]) / 2
+a_m, _ = bredt(p.FA_POST, p.fa_a(sm), *p.fa_z(sm), p.FA_C, p.FA_T)
+h_fa, pitch = 2 * (p.FA_HALF_WRIST - p.FA_C), FA_C_S[1] - FA_C_S[0]
+print(f"diamond lattice on all four faces ({FW['n']} x {FW['a'] * 2:.0f} mm per face), twist {F3 * 0.040:.2f} N*m:")
+x_bars("x-bars posterior / anterior (in layer)", F3 * 0.040, a_m, h_fa, F4, pitch, FW["a"], p.FA_T, SIG_XY)
+x_bars("x-bars inboard / outboard (vertical)", F3 * 0.040, a_m, h_fa, p.T_EL * 1000 / S_H, pitch, FW["a"], p.FA_T, SIG_Z)
 
 # ---------------------------------------------------------------- 5 joints
 line("5 bolted joints (12.9 screws, preload vdi 2230 table mu 0.12; joint friction mu 0.15 metal, 0.30 printed)")
@@ -178,6 +218,12 @@ joint("adapter -> shoulder flange", 6, "M5", p.SH_M5_R, p.MU_METAL, p.T_SH, 20.0
 fm, t_slip = joint("hub plate -> adapter (ASA on 6061)", 6, "M4", p.AD_M4_R, p.MU_PRINT, p.T_SH, 15.0, p.AD_AF / 2, p.M_SH_TILT)
 print(f"  DIN 9021 washer on ASA {fm / WASHER_M4_A:.1f} MPa (compression, limit {SIG_XY:.1f}); thread in 6061 "
       f"{p.AD_T:.0f} mm = {p.AD_T / 0.7:.0f} pitches")
+q = p.AD_POCKET
+a_hex = math.sqrt(3) / 2 * p.AD_AF ** 2 - 6 * p.AD_CORNER_R ** 2 * (1 / math.tan(math.radians(60)) - math.pi / 6)
+a_hub = a_hex - math.pi * (q["groove"][1] ** 2 + 6 * (p.M5_POCKET_R ** 2 + 2.25 ** 2 + q["r"] ** 2))
+print(f"  adapter hub face after the r{q['groove'][0]:.0f}..{q['groove'][1]:.0f} groove and {len(q['ang'])} x D{2 * q['r']:.0f} pockets: "
+      f"contact {a_hub:.0f} mm2, {6 * fm / a_hub:.1f} MPa on the hub (limit {SIG_XY:.1f}); floor under the groove "
+      f"{p.AD_T - q['depth'] + p.AD_SPIGOT_H:.1f} mm with the spigot")
 flat = p.AD_AF / math.sqrt(3) / 2 - p.AD_CORNER_R * math.tan(math.radians(30))
 f_flat = (p.T_SH - 0) * 1000 / (6 * 2 / 3 * flat)
 key_d = p.AD_T - p.Y_BED
@@ -204,6 +250,14 @@ t_ring = sum(preload("M4") * p.MU_PRINT * r / 1000 for r in r_ring)
 t_in = 1.5 * p.T_EL + p.T_EL * (1 + 1 / ep.RATIO)
 print(f"front ring -> crown 4 x M4 csk @ {TORQUE['M4']}: friction {t_ring:.0f} N*m vs stop + housing reaction "
       f"{t_in:.1f} N*m (SF {t_ring / t_in:.1f}), plus the {p.RING_POCKET} mm pocket key")
+q = p.RING_WIN
+a_net = (q["r"] - q["w"] / 2 - p.RING_ID_R + p.RING_R - q["r"] - q["w"] / 2) * p.RING_T
+f_ring = 1.5 * p.T_EL * 1000 / p.STOP_R + F_COUPLE + 94.0
+th = math.radians(360 / len(ep.ANG_FLANGE) / 2 - q["half"])
+d_end = math.sqrt(q["r"] ** 2 + ep.R_FLANGE_SCREW ** 2 - 2 * q["r"] * ep.R_FLANGE_SCREW * math.cos(th))
+print(f"  front ring slots (w {q['w']}): net band {a_net:.1f} mm2; LC5 stop + 61807 proof load all through one band "
+      f"{f_ring:.0f} N -> {f_ring / a_net:.0f} MPa (6061 limit {SIG_6061:.0f}); slot ends "
+      f"{d_end - q['w'] / 2 - ep.WASHER_M3['od'] / 2:.1f} mm clear of the washers")
 fm3 = preload("M3 elbow")
 t_fl = len(ep.ANG_FLANGE) * fm3 * p.MU_PRINT * ep.R_FLANGE_SCREW / 1000
 tip = p.RING_Z1 + ep.WASHER_M3["t"] - p.FLANGE_SCREW_L

@@ -1,8 +1,9 @@
 """Build the VAYN arm Rev 0 as exact OpenCascade solids and check it.
 
-Upper arm (two ASA prints bolted at a mid-span collar), elbow clevis (front
-ring, hard stop, passive pin with an absolute output encoder), forearm with
-an integral cheek A, a separate cheek B and a dummy PLA hand. The shoulder
+Upper arm (two ASA prints bolted at a mid-span collar, diamond windows front
+and back), elbow clevis (front ring, hard stop, passive pin with an absolute
+output encoder), lattice forearm with an integral cheek A, a separate cheek B
+and the wrist interface for a future hand (no hand in v0). The shoulder
 and the elbow actuator are rebuilt from their own generators and placed in
 the arm frame, so every interface is checked against the real parts.
 All dimensions come from arm_params.py. Writes, beside this script:
@@ -41,11 +42,11 @@ import gen_actuator_occ as occ  # noqa: E402
 
 OUT = os.path.join(HERE, "arm")
 REV = "0"
-g.MATERIALS.update({"PLA grey": ("#8E9196", 1.24), "NBR O-ring": ("#1A1A1A", 1.30)})
+g.MATERIALS.update({"NBR O-ring": ("#1A1A1A", 1.30)})
 # printed part -> rotation (deg, x then y then z) that puts its bed face down
 PRINT = {104: (90, 0, 0), 108: (90, 0, 0), 110: (90, 0, 0), 125: (0, -90, 0), 128: (-90, 0, 0),
-         133: (90, 0, 0), 140: (90, 0, 0), 144: (180, 0, 0)}
-MOVING = {125, 126, 127, 128, 129, 130, 131, 133, 139, 140, 141, 142, 143, 144, 145}  # turn with the forearm
+         133: (90, 0, 0), 140: (90, 0, 0)}
+MOVING = {125, 126, 127, 128, 129, 130, 131, 133, 139, 140, 141, 142, 143}  # turn with the forearm
 ELBOW_SKIP = ("30.", "31.")  # elbow flange washers + m3 x 12: replaced by arm parts 116/117
 
 
@@ -100,6 +101,13 @@ def teardrop(r, x, y, z0, z1):
     """Cylinder along z with a 45 deg point toward -x, so it prints with -x down and no support."""
     k = r / math.sqrt(2)
     return occ.cyl(r, z0, z1, x, y) + prism([(x - r * math.sqrt(2), y), (x - k, y - k), (x, y), (x - k, y + k)], z0, z1)
+
+
+def diamond(au, av, r, w0, w1, origin, x_dir, normal):
+    """Diamond window prism: half-diagonals au along x_dir and av across, corners rounded r, from w0 to w1 along normal."""
+    wp = cq.Workplane(cq.Plane(origin, x_dir, normal)).workplane(offset=w0)
+    s = wp.polyline([(au, 0), (0, av), (-au, 0), (0, -av)]).close().extrude(w1 - w0)
+    return occ.Solid(s.edges(cq.selectors.ParallelDirSelector(cq.Vector(*normal))).fillet(r).val())
 
 
 def tangent_point(px, py, r):
@@ -159,6 +167,16 @@ def joint_collar(z0, z1):
     return s - occ.box(xb + p.TAB_IN, xf - p.TAB_IN, p.Y_BED + p.BEAM_T, p.BEAM_Y1 - p.BEAM_T, z0 - 1, z1 + 1)
 
 
+def beam_windows(zone):
+    """Diamond windows through the front and back beam walls for one (tip z, tip z, count) zone."""
+    q = p.UA_WIN
+    sides = []
+    for z in p.win_centres(*zone[:2], zone[2], q["a"]):
+        xb, xf, _, _ = p.beam_station(z)
+        sides += [(xf, z, -1.0), (xb, z, 1.0)]
+    return occ.pattern(lambda v: diamond(q["a"], q["a"], q["r"], -2.0, 5.0, (v[0], q["y"], v[1]), (0, 0, 1), (v[2], 0, 0)), sides)
+
+
 def joint_points():
     """World (x, y) of the joint bolts and of the joint dowels."""
     xb, xf, _, _ = p.beam_station(p.Z_JOINT)
@@ -171,6 +189,8 @@ def adapter():
     s = rounded_hex(p.AD_AF, p.AD_CORNER_R, 0.0, p.AD_T) + occ.cyl(p.AD_SPIGOT_R, -p.AD_SPIGOT_H, 0.0)
     s = s - occ.cyl(p.AD_BORE_R, -3, p.AD_T + 1) - holes(p.AD_M5_HOLE_R, -3, p.AD_T + 1, p.SH_M5_R, p.SH_M5_ANG)
     s = s - holes(2.0, -1, p.AD_T + 1, p.AD_M4_R, p.AD_M4_ANG)
+    q = p.AD_POCKET
+    s = s - occ.tube(q["groove"][1], q["groove"][0], p.AD_T - q["depth"], p.AD_T + 1) - holes(q["r"], p.AD_T - q["depth"], p.AD_T + 1, q["pcd_r"], q["ang"])
     return flange_to_world(s - holes(p.AD_RELIEF_R, -0.1, p.AD_RELIEF_DEPTH, p.SH_M4_HEAD_R, p.SH_M4_HEAD_ANG))
 
 
@@ -185,7 +205,11 @@ def upper_shoulder_half():
     cut = cut + holes(p.M5_POCKET_R, p.AD_T - 0.01, p.M5_POCKET_Y1, p.SH_M5_R, p.SH_M5_ANG)
     cut = cut + holes(2.25, p.AD_T - 0.01, p.HUB_Y1 + 0.1, p.AD_M4_R, p.AD_M4_ANG) + occ.cyl(15.0, p.Y_BED - 1, p.HUB_Y1 + 0.1)
     cut = cut + holes(ep.INSERT["d_hole"] / 2, p.DRUM_Y1 - ep.INSERT["depth"], p.DRUM_Y1 + 1, p.CAP_SCREW_R, p.CAP_SCREW_ANG)
-    s = s - flange_to_world(cut)
+    d = p.DRUM_WIN
+    for a in map(math.radians, d["ang"]):
+        c, n = math.cos(a), math.sin(a)
+        cut = cut + diamond(d["au"], d["av"], d["r"], -2.0, 6.0, (p.DRUM_R * c, p.DRUM_R * n, d["y"]), (-n, c, 0), (-c, -n, 0))
+    s = s - flange_to_world(cut) - beam_windows(p.UA_WIN["zones"][0])
     s = s - occ.cyl(p.CABLE_EXIT_R, p.DRUM_R - 4, p.DRUM_R + 1, 0, p.CABLE_EXIT_Y).rotate((0, -90, 0))
     bolts, dowels = joint_points()
     for x, y in bolts:
@@ -196,10 +220,14 @@ def upper_shoulder_half():
 
 
 def cap():
-    """Shoulder cap: closes the drum, 4 x m3 countersunk, decorative groove."""
+    """Shoulder cap: spoked diaphragm over the drum, 4 x m3 countersunk on the spokes, decorative groove."""
     z1 = p.DRUM_Y1 + p.CAP_T
     r0, r1, d = p.CAP_GROOVE
-    s = occ.cyl(p.DRUM_R, p.DRUM_Y1, z1) - occ.tube(r1, r0, z1 - d, z1 + 1)
+    q = p.CAP_WIN
+    spokes = occ.pattern(lambda a: occ.box(-60, 60, -q["spoke"] / 2, q["spoke"] / 2, p.DRUM_Y1 - 2, z1 + 2).rotate((0, 0, a)), p.CAP_SCREW_ANG[:2])
+    win = occ.tube(q["r"][1], q["r"][0], p.DRUM_Y1 - 1, z1 + 1) - spokes
+    win = occ.Solid(cq.Workplane().add(win.s).edges("|Z").fillet(q["r_fillet"]).val())
+    s = occ.cyl(p.DRUM_R, p.DRUM_Y1, z1) - occ.tube(r1, r0, z1 - d, z1 + 1) - win
     for a in p.CAP_SCREW_ANG:
         s = s - g.csk_hole(*p.polar(p.CAP_SCREW_R, a), z1, p.CAP_T, 3.0, -1)
     return flange_to_world(s)
@@ -229,7 +257,7 @@ def upper_elbow_half():
     x0, x1, ytop = p.EAR_BOX
     ear = occ.cyl(p.EAR_R, z0, z1) + occ.box(x0, x1, ytop, 0.0, z0, z1)
     s = loft([beam_section(z) for z in p.BEAM_Z_LOW]) + elbow_to_world(ear)
-    s = s - loft([beam_section(z, True) for z in (p.Z_JOINT + 1, -196.0, p.Z_CAV_BOT)]) - crown_pocket()
+    s = s - loft([beam_section(z, True) for z in (p.Z_JOINT + 1, -196.0, p.Z_CAV_BOT)]) - crown_pocket() - beam_windows(p.UA_WIN["zones"][1])
     ch = p.CHANNEL
     s = s - occ.box(*ch["x"], *ch["y"], p.Z_ELBOW + ch["z_lo"], p.Z_CAV_BOT + 1)
     cut = occ.cyl(p.SADDLE_R, z1, 100.0) + occ.cyl(p.PIN["spigot_r"], z0 - 1, z1 + 1)
@@ -256,6 +284,10 @@ def front_ring():
     s = s - occ.cyl(p.STOP_PIN["d"] / 2, p.RING_Z0 - 1, p.RING_Z1 + p.STOP_BOSS["h"] + 1, *pin)
     for x, y in p.RING_BOLTS:
         s = s - g.csk_hole(x, y, p.RING_Z1, p.RING_T, 4.0, -1)
+    q, fl = p.RING_WIN, flange_angles()
+    for m in [(a + b) / 2 for a, b in zip(fl, fl[1:] + [fl[0] + 360.0])]:
+        if q["psi"][0] < m % 360.0 < q["psi"][1]:
+            s = s - arc_slot(q["r"], q["w"], m - q["half"], m + q["half"], p.RING_Z0 - 1, p.RING_Z1 + 1)
     return s
 
 
@@ -295,8 +327,17 @@ def fa_section(s, inner=False):
     if inner:
         t, cheek = p.FA_T, p.CHEEK_A_Z[1] - p.CHEEK_A_Z[0]
         w = cheek if s <= p.S_FULL else max(t, cheek - (cheek - t) * (s - p.S_FULL) / (p.S_WALL - p.S_FULL))
-        x0, x1, z0, z1, c, c1 = x0 + t, x1 - t, z0 + t, z1 - w, c - t * (2 - math.sqrt(2)), p.FA_ROOF_C
+        c = c - t * (2 - math.sqrt(2))
+        x0, x1, z0, z1, c1 = x0 + t, x1 - t, z0 + t, z1 - w, p.FA_ROOF_C if s <= p.S_NECK else c
     return [(u, s, v) for u, v in octagon(x0, x1, z0, z1, c, c1)]
+
+
+def fa_windows():
+    """Diamond windows through all four walls of the straight forearm tube (elbow frame)."""
+    q, zc, h = p.FA_WIN, p.FA_ZC, p.FA_HALF_WRIST
+    faces = [((p.FA_POST, zc), (1, 0, 0)), ((p.FA_A_WRIST, zc), (-1, 0, 0)), ((0.0, zc - h), (0, 0, 1)), ((0.0, zc + h), (0, 0, -1))]
+    spots = [(x, s, z, nrm) for s in p.win_centres(*q["s"], q["n"], q["a"]) for (x, z), nrm in faces]
+    return occ.pattern(lambda v: diamond(q["a"], q["a"], q["r"], -1.0, p.FA_T + 1.0, v[:3], (0, 1, 0), v[3]), spots)
 
 
 def fa_window(s):
@@ -320,13 +361,14 @@ def slot_ends():
 
 
 def forearm():
-    """Forearm + cheek A in one print: octagon shell, open trough, wrist block, hub boss, stop slot."""
-    outer = loft([fa_section(v) for v in (30.0, p.S_FULL, p.S_WALL, p.S_END, p.L_FOREARM)])
+    """Forearm + cheek A in one print: clevis, y-yoke neck, straight lattice tube, wrist block, hub boss, stop slot."""
+    neck = list(np.arange(p.S_FULL, p.S_NECK + 0.1, p.FA_STEP))
+    outer = loft([fa_section(v) for v in [30.0] + neck + [p.L_FOREARM]])
     za0, za1 = p.CHEEK_A_Z
     s = outer + cheek_plate(p.CHEEK_A_R, p.CHEEK_A_TIP, za0, za1)
     s = s - occ.cyl(p.FA_CUT_R, p.Z_CHEEK_B_IN - 1.5, za0)
-    s = s - loft([fa_section(v, True) for v in (40.0, p.S_FULL, p.S_WALL, p.S_END)]) - loft([fa_window(v) for v in (30.0, p.S_FULL)])
-    s = s + (occ.box(p.FA_POST, 60.0, p.S_FULL, p.S_END, p.FA_ZC - 1.25, p.FA_ZC + 1.25) ^ outer)
+    s = s - loft([fa_section(v, True) for v in [40.0] + neck + [p.S_NECK + 6.0, p.S_END]]) - loft([fa_window(v) for v in (30.0, p.S_FULL)])
+    s = s + (occ.box(p.FA_POST, 60.0, p.S_FULL, p.S_NECK, p.FA_ZC - 1.25, p.FA_ZC + 1.25) ^ outer) - fa_windows()
     zf = p.BOSS_Z0 + p.BOSS_FACE
     s = s + occ.cyl(p.BOSS_R, p.BOSS_Z0, zf + 0.1) + (teardrop(p.BOSS_R, 0, 0, zf, za0 + 0.5) ^ occ.cyl(p.BOSS_R_MAX, zf, za0 + 0.5))
     bosses = occ.pattern(lambda q: teardrop(p.CHEEK_B_BOSS_R, *q, p.Z_CHEEK_B_IN, -3.0), p.CHEEK_B_JOINT)
@@ -366,24 +408,6 @@ def cover():
     s = s - occ.cyl(ep.MAG["d"] / 2, zw, p.Z_MAG_OUT[1] + 0.1)
     s = s - holes(ep.D_M3_CLEAR / 2, z0 - 0.1, z1 + 0.1, c["boss_pcd_r"], p.COVER_ANG)
     return s - holes(p.HUB_CBORE["d"] / 2, z0 - 0.1, c["seat"], c["boss_pcd_r"], p.COVER_ANG)
-
-
-def hand():
-    """Dummy PLA hand (elbow frame), palm facing inboard, thumb forward; prints standing on its wrist face."""
-    L, h, w = p.L_FOREARM, p.HAND, p.WRIST
-    s = prism(octagon(-22, 22, -22, 22, p.FA_C), *h["collar"])
-    s = s + fillet_box(-20, 20, -7, 7, h["neck"][0] - 1, h["neck"][1] + 1, 3.0)
-    s = s + loft([[(x * 20, y * 7, h["neck"][1]) for x, y in ((-1, -1), (1, -1), (1, 1), (-1, 1))],
-                  [(x * 40, y * 13, h["palm"][0]) for x, y in ((-1, -1), (1, -1), (1, 1), (-1, 1))]])
-    s = s + fillet_box(-40, 40, -13, 13, h["palm"][0] - 0.01, h["palm"][1], 6.0)
-    for xc, length in p.FINGERS:
-        s = s + fillet_box(xc - 8.5, xc + 8.5, -9, 9, h["fingers"] - 2, h["fingers"] + length, 4.0, None)
-    s = s + fillet_box(-8, 8, -8, 8, 0, 50, 4.0, None).rotate((0, 35, 0)).translate((34, 0, h["palm"][0] + 2))
-    s = s - occ.cyl(w["recess_r"], L - 0.1, L + w["recess_h"])
-    for a in g.every(w["n"], w["ang0"]):
-        x, y = p.polar(w["pcd_r"], a)
-        s = s - occ.cyl(ep.D_M3_CLEAR / 2, L - 0.1, p.HAND_SEAT, x, y) - occ.cyl(p.HUB_CBORE["d"] / 2, p.HAND_SEAT, h["collar"][1] + 0.1, x, y)
-    return s.rotate((-90, 0, 0)).translate((0, 0, p.FA_ZC))
 
 
 # ---------------------------------------------------------------- assembly
@@ -489,14 +513,11 @@ def build_arm():
         x, y = p.polar(p.COVER["boss_pcd_r"], a)
         add(f"141.{i + 1} Insert RX-M3x5.7 cheek B", "Brass insert", insert(ep.INSERT["d_hole"], 3.0, zb0, ep.INSERT["length"], 1, x, y), E)
         add(f"142.{i + 1} Screw M3x12 DIN 912 cover->cheek B", "Steel 12.9 fastener", g.shcs(x, y, p.COVER["seat"], p.L_COVER_SCREW, 3.0, 1), E)
-    # ---- wrist + hand
+    # ---- wrist interface (future hand)
     for i, a in enumerate(g.every(p.WRIST["n"], p.WRIST["ang0"])):
         x, z = p.polar(p.WRIST["pcd_r"], a)
         ins = occ.tube(ep.INSERT["d_hole"] / 2, 1.5, p.L_FOREARM - ep.INSERT["length"], p.L_FOREARM)
         add(f"143.{i + 1} Insert RX-M3x5.7 wrist", "Brass insert", along_y(ins, x, p.FA_ZC + z), E)
-        add(f"145.{i + 1} Screw M3x12 DIN 912 hand->wrist", "Steel 12.9 fastener",
-            along_y(g.shcs(0, 0, p.HAND_SEAT, p.HAND_SCREW_L, 3.0, -1), x, p.FA_ZC + z), E)
-    add("144 Dummy hand (PLA)", "PLA grey", hand(), E)
     return parts
 
 
@@ -609,7 +630,7 @@ def bed_check(arm):
 
 def masses(arm, elbow):
     """Write mass.txt: per-part masses, printed-mass estimates and group centres of mass."""
-    lines, groups = [], {"upper": [0.0, np.zeros(3)], "fore": [0.0, np.zeros(3)], "hand": [0.0, np.zeros(3)]}
+    lines, groups = [], {"upper": [0.0, np.zeros(3)], "fore": [0.0, np.zeros(3)]}
     for n, m, s in arm + elbow:
         rho = g.MATERIALS[m][1]
         mass = s.volume() / 1000 * rho
@@ -619,16 +640,13 @@ def masses(arm, elbow):
         if not n.startswith("E") and g.part_no(n) in PRINT:
             # walls + top/bottom skins solid, the rest at the infill fraction
             shell = min(s.volume(), s.s.Area() * 1.7)
-            infill = 0.15 if m.startswith("PLA") else 0.40
-            printed = (shell + (s.volume() - shell) * infill) / 1000 * rho
+            printed = (shell + (s.volume() - shell) * 0.40) / 1000 * rho
             est = f"   print est {printed:7.1f} g"
         else:
             printed = mass
         key = "fore" if not n.startswith(("E", "S")) and g.part_no(n) in MOVING else "upper"
         groups[key][0] += printed
         groups[key][1] += printed * c
-        if n.startswith("144 "):
-            groups["hand"] = [printed, printed * c]
         if not n.startswith("E"):
             lines.append(f"{n:58s} {mass:8.1f} g{est}")
     motor = el.p.MOTOR_MASS_G
@@ -644,8 +662,7 @@ def masses(arm, elbow):
     out += [f"m_elbow = {m_elbow:.1f}", f"m_arm = {groups['upper'][0] + groups['fore'][0]:.1f}"]
     with open(os.path.join(HERE, "mass.txt"), "w", encoding="utf-8") as f:
         f.write("\n".join(out) + "\n")
-    print(f"mass: upper arm + elbow {groups['upper'][0]:.0f} g, forearm + hand {groups['fore'][0]:.0f} g "
-          f"(hand {groups['hand'][0]:.0f} g), elbow actuator {m_elbow:.0f} g")
+    print(f"mass: upper arm + elbow {groups['upper'][0]:.0f} g, forearm {groups['fore'][0]:.0f} g, elbow actuator {m_elbow:.0f} g")
 
 
 def preview(groups, path):

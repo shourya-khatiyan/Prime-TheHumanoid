@@ -26,7 +26,7 @@ import params as ep  # noqa: E402  (elbow params, path set above)
 # ---------------------------------------------------------------- geometry (arm/research.md s2, 160 cm)
 L_UPPER = 298.0  # shoulder axis -> elbow axis
 L_FOREARM = 234.0  # elbow axis -> wrist flange face
-L_HAND = 173.0  # wrist flange face -> fingertip
+L_HAND = 173.0  # future hand (not built in v0): sets the lc3 / lc4 load point only
 Z_ELBOW = -L_UPPER
 THETA_MIN, THETA_MAX = -5.0, 140.0  # hard stops (software 0..135)
 SWEEP = [-5.0, 0.0, 20.0, 40.0, 60.0, 80.0, 100.0, 120.0, 135.0, 140.0]
@@ -39,7 +39,7 @@ G = 9.81
 
 # ---------------------------------------------------------------- materials
 SIG_ASA_XY, SIG_ASA_Z = 37.0 - 3.0, 31.0 - 4.0  # bambu asa tds tensile, mean - 1 sd
-SIG_PLA_XY = 35.0 - 4.0  # bambu pla basic tds
+E_ASA_Z = 2120.0 - 260.0  # bambu asa tds young's modulus across layers, mean - 1 sd (lattice bar buckling)
 SF_PRINT = 2.0  # printed parts against mean - 1 sd at the limit loads
 MU_PRINT = 0.30  # asa on asa / asa on 6061 static friction used for printed joints
 MU_METAL = 0.15  # steel / aluminium faces (shoulder calc)
@@ -80,13 +80,17 @@ CAP_T = 2.5
 CAP_SCREW_R, CAP_SCREW_ANG = 46.0, [45.0 + 90.0 * k for k in range(4)]
 CAP_GROOVE = (40.0, 41.2, 0.6)  # decorative groove on the cap face: r in, r out, depth
 CABLE_EXIT_R, CABLE_EXIT_Y = 7.0, 34.0  # d14 hole, rear of the drum
+DRUM_WIN = dict(ang=[0.0, 180.0, 252.0, 288.0], y=37.5, au=13.0, av=18.0, r=1.5)  # diamond windows clear of the beam root (50..130) and cap bosses
+CAP_WIN = dict(r=(13.0, 37.0), spoke=8.0, r_fillet=2.0)  # four windows between spokes on the cap screws
+AD_POCKET = dict(groove=(15.0, 20.0), r=3.5, pcd_r=26.0, ang=[60.0 * k for k in range(6)], depth=3.0)  # hub face, clear of the m5 washers and m4 threads
 
-# ---------------------------------------------------------------- upper arm beam (asa, closed octagon shell)
+# ---------------------------------------------------------------- upper arm beam (asa, octagon shell, diamond windows front and back)
 BEAM_T = 2.5
 BEAM_Y1 = 61.0
 Z_JOINT = -150.0  # bolted joint between the two upper-arm prints
 Z_CAV_TOP = -46.0  # shell cavity opens into the drum here
 Z_CAV_BOT = -200.0
+UA_WIN = dict(zones=[(-60.0, -140.0, 3), (-168.0, -188.0, 1)], y=31.0, a=10.0, r=1.5)  # (tip z, tip z, count) per half; 45 deg edges print unsupported
 CROWN_POCKET = dict(inset=3.0, y=(44.0, 72.0), c=10.0)  # lightening pocket in the crown, clear of channel and ring inserts
 RING_POCKET = 1.5  # front ring sits this deep in the crown face (shear key for the housing torque)
 CROWN_Y1 = 9.5 + ep.Z_BRG0 + ep.T_FLANGE_COVER + RING_POCKET  # crown outboard face (world y); pocket floor = cover-flange face
@@ -135,6 +139,7 @@ RING_R = 44.0
 RING_TAB = (-31.0, 9.0, -69.0)  # x0, x1, y top (69 above the axis)
 RING_FILLET = 4.0
 RING_BOLTS = [(-24.0, -52.0), (2.0, -52.0), (-24.0, -63.0), (2.0, -63.0)]  # elbow frame (x, y)
+RING_WIN = dict(r=35.25, w=11.5, half=7.5, psi=(0.0, 200.0))  # kidney slots in the screw gaps centred in this psi range: below the tab, away from the stop pin
 M4_RING_L = 12.0  # iso 10642, flush in the ring
 FLANGE_SCREW_L = 16.0  # din 912 m3: replaces the elbow m3 x 12 (ring under the heads)
 Z_FLANGE_HEAD1 = RING_Z1 + ep.WASHER_M3["t"] + ep.M3_SHCS["k"]
@@ -167,37 +172,52 @@ Z_CHEEK_B_IN = -12.5  # forearm inboard face = cheek b inner face
 FA_ZC = (Z_CHEEK_B_IN + CHEEK_A_Z[0]) / 2  # forearm centre plane (elbow z)
 FA_HALF_WRIST = 22.0
 S_FULL = 80.0  # full clevis width down to here; open anterior trough above, closed tube + web below
-S_WALL = 100.0  # cheek-side wall tapers 8 -> 2.5 mm by here; anterior face straight to here
+S_WALL = 100.0  # cheek-side wall tapers 8 -> 2.5 mm by here
+S_NECK = 120.0  # y-yoke neck ends here: straight 44 x 44 lattice tube from here to the wrist
 S_END = 226.0  # wrist end block start
 FA_C = 8.0
-FA_ROOF_C = 14.0  # inner chamfer at the anterior corners: keeps every roof bridge of the print under 33 mm
-# anterior edge (s, a): straight flank from (46, 10) to (80, 30), then the tube
-FA_ANT = [(30.0, 10.0 - 16.0 * 20.0 / 34.0), (S_FULL, 30.0), (S_WALL, 30.0), (S_END, 22.0), (L_FOREARM, 22.0)]
+FA_ROOF_C = 14.0  # inner chamfer at the anterior corners up to the neck: keeps every roof bridge of the print under 33 mm
+FA_ANT = [(30.0, 10.0 - 16.0 * 20.0 / 34.0), (S_FULL, 30.0)]  # anterior edge (s, a): straight flank up to the clevis end
+FA_A_WRIST = 22.0
+FA_STEP = 4.0  # loft section spacing through the neck
+FA_WIN = dict(s=(122.0, 224.0), n=4, a=11.0, r=1.5)  # diamond windows on all four faces: tip s, tip s, count, half-diagonal
+
+
+def neck(s):
+    """Neck blend 0..1 between S_FULL and S_NECK, with zero slope at both ends."""
+    t = min(1.0, max(0.0, (s - S_FULL) / (S_NECK - S_FULL)))
+    return (1.0 - math.cos(math.pi * t)) / 2.0
 
 
 def fa_z(s):
     """Inboard and outboard forearm faces (elbow z) at length s."""
-    if s <= S_FULL:
-        return Z_CHEEK_B_IN, CHEEK_A_Z[1]
-    t = min(1.0, (s - S_FULL) / (S_END - S_FULL))
+    t = neck(s)
     return (Z_CHEEK_B_IN + t * (FA_ZC - FA_HALF_WRIST - Z_CHEEK_B_IN),
             CHEEK_A_Z[1] + t * (FA_ZC + FA_HALF_WRIST - CHEEK_A_Z[1]))
 
 
 def fa_a(s):
-    """Anterior face of the forearm at length s (linear between FA_ANT points)."""
-    for (s0, a0), (s1, a1) in zip(FA_ANT, FA_ANT[1:]):
-        if s <= s1:
-            return a0 + (a1 - a0) * (s - s0) / (s1 - s0)
-    return FA_ANT[-1][1]
+    """Anterior face of the forearm at length s: straight flank, then the neck blend to the wrist."""
+    (s0, a0), (s1, a1) = FA_ANT
+    if s <= s1:
+        return a0 + (a1 - a0) * (s - s0) / (s1 - s0)
+    return a1 + (FA_A_WRIST - a1) * neck(s)
+
+
+def win_centres(u0, u1, n, a):
+    """Centres of n diamond windows of half-diagonal a whose outer tips sit at u0 and u1."""
+    if n == 1:
+        return [(u0 + u1) / 2]
+    step = (u1 - u0 - math.copysign(2 * a, u1 - u0)) / (n - 1)
+    return [u0 + math.copysign(a, u1 - u0) + k * step for k in range(n)]
 
 
 CHEEK_B_JOINT = [(-15.0, 52.0), (-15.0, 70.0), (8.0, 60.0), (14.0, 72.0)]  # m4 bosses, elbow frame (x, y)
 CHEEK_B_BOSS_R = 5.5
 CHEEK_B_HOLE_R = 4.8 / 2  # 0.4 radial float: cheek b is aligned to the pin before tightening
 M4_CHEEK_B_L = 16.0
-WRIST = dict(pcd_r=15.0, n=4, ang0=45.0, spigot_r=10.0 - 0.01, spigot_h=1.8, recess_r=10.0 + 0.02, recess_h=2.0,
-             bore_r=5.0)  # 4 x m3 on d30; d20 h7 spigot on the forearm, h8 recess in the wrist part
+WRIST = dict(pcd_r=15.0, n=4, ang0=45.0, spigot_r=10.0 - 0.01, spigot_h=1.8,
+             bore_r=5.0)  # 4 x m3 inserts on d30 + d20 h7 spigot, kept for the future wrist / hand (d20 h8 recess in that part)
 
 # ---------------------------------------------------------------- passive side (elbow frame z, outward = more negative)
 BRG_P = dict(d=20.0, D=32.0, B=7.0, d1=23.85, D1=28.2, nballs=18, dball=3.0)  # skf 61804-2rs1
@@ -225,13 +245,6 @@ COVER = dict(r=25.0, ri=23.5, z_end=Z_MAG_OUT[0] - 2.0, boss_r=3.5, boss_pcd_r=2
 COVER_ANG = [0.0, 120.0, 240.0]  # forearm frame
 L_COVER_SCREW = 12.0  # din 912 m3, head in a counterbore at COVER["seat"]
 MAG_SPACING_MIN = 30.0  # stray-field rule between the two encoder magnets / ics
-
-# ---------------------------------------------------------------- dummy hand (pla)
-HAND = dict(collar=(L_FOREARM, L_FOREARM + 10.0), neck=(L_FOREARM + 10.0, L_FOREARM + 28.0),
-            palm=(L_FOREARM + 48.0, L_FOREARM + 106.0), fingers=L_FOREARM + 106.0)
-FINGERS = [(28.5, 61.0), (9.5, 67.0), (-9.5, 63.0), (-28.5, 52.0)]  # x centre, length (index on the thumb side, +x)
-HAND_SCREW_L = 12.0  # din 912 m3
-HAND_SEAT = L_FOREARM + 6.0  # screw head seat in the collar
 
 # ---------------------------------------------------------------- print bed (bambu p1s 256 x 256 x 256, 5 mm margin)
 BED = 246.0
