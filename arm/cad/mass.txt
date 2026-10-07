@@ -13,7 +13,7 @@
 103.5 Washer M5 ISO 7089                                        0.4 g
 102.6 Screw M5x12 ISO 4762 12.9 adapter->shoulder               4.0 g
 103.6 Washer M5 ISO 7089                                        0.4 g
-104 Upper arm, shoulder half (ASA)                            177.5 g   print est   177.2 g
+104 Upper arm, shoulder half (ASA)                            232.3 g   print est   232.3 g
 105.1 Screw M4x16 ISO 4762 hub->adapter                         2.7 g
 106.1 Washer M4 DIN 9021 hub                                    0.8 g
 105.2 Screw M4x16 ISO 4762 hub->adapter                         2.7 g
@@ -35,7 +35,7 @@
 107.4 Insert RX-M3x5.7 cap                                      0.3 g
 109.4 Screw M3x8 ISO 10642 cap                                  0.6 g
 108 Shoulder cap (ASA)                                         12.4 g   print est    12.4 g
-110 Upper arm, elbow half (ASA)                               198.9 g   print est   156.2 g
+110 Upper arm, elbow half (ASA)                               199.9 g   print est   157.2 g
 111.1 Insert RX-M4x8.1 joint                                    0.8 g
 112.1 Screw M4x16 ISO 4762 joint                                2.7 g
 113.1 Washer M4 DIN 9021 joint                                  0.8 g
@@ -84,7 +84,7 @@
 124.2 Screw M3x8 ISO 10642 pin->ear                             0.6 g
 123.3 Insert RX-M3x5.7 ear                                      0.3 g
 124.3 Screw M3x8 ISO 10642 pin->ear                             0.6 g
-125 Forearm + cheek A (ASA)                                   159.1 g   print est   154.8 g
+125 Forearm + cheek A (ASA)                                   186.1 g   print est   186.1 g
 126.1 Screw M3x16 DIN 912 cheek A->hub                          1.4 g
 126.2 Screw M3x16 DIN 912 cheek A->hub                          1.4 g
 126.3 Screw M3x16 DIN 912 cheek A->hub                          1.4 g
@@ -135,13 +135,13 @@
 143.3 Insert RX-M3x5.7 wrist                                    0.3 g
 143.4 Insert RX-M3x5.7 wrist                                    0.3 g
 
-m_upper = 1097.5
+m_upper = 1153.5
 com_upper_x = -1.2
-com_upper_y = 39.5
-com_upper_z = -207.6
-m_fore = 229.3
-com_fore_x = 2.3
-com_fore_y = 44.3
-com_fore_z = -370.8
+com_upper_y = 39.4
+com_upper_z = -201.7
+m_fore = 260.6
+com_fore_x = 2.5
+com_fore_y = 44.8
+com_fore_z = -381.8
 m_elbow = 499.3
-m_arm = 1326.8
+m_arm = 1414.1

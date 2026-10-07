@@ -1,8 +1,8 @@
 
 === 1 mass, gravity, inertia (mass.txt: printed parts at the print estimate) 
-upper arm + elbow actuator 1.097 kg at 208 mm   forearm 0.229 kg at 371 mm (no hand in v0)   arm 1.327 kg vs research budget 1.18 kg (+12%)
-shoulder, arm horizontal: gravity 3.07 N*m, + 12.57 rad/s2 (point-mass J 0.0788) 4.06 N*m vs 30 N*m continuous (SF 7.4)
-elbow, forearm horizontal: gravity 0.16 N*m (com 73 mm) vs 3.47 static / 4.93 continuous rating; load J 0.0250 + reflected rotor 0.0160 kg*m2
+upper arm + elbow actuator 1.153 kg at 202 mm   forearm 0.261 kg at 382 mm (no hand in v0)   arm 1.414 kg vs research budget 1.18 kg (+20%)
+shoulder, arm horizontal: gravity 3.26 N*m, + 12.57 rad/s2 (point-mass J 0.0849) 4.33 N*m vs 30 N*m continuous (SF 6.9)
+elbow, forearm horizontal: gravity 0.21 N*m (com 84 mm) vs 3.47 static / 4.93 continuous rating; load J 0.0250 + reflected rotor 0.0160 kg*m2
 
 === 2 load cases (arm never weaker than the shoulder: 50 N*m proof, 50 N*m tilt proof) 
 LC1 shoulder proof as a force at the elbow: 167.8 N
@@ -13,38 +13,31 @@ LC5 hard stop: elbow current limit 8.23 N*m x 1.5 = 12.35 N*m (impact: section 7
 allowables (mean - 1 sd / 2.0): ASA in-layer 17.0, across layers 13.5, interlayer shear 7.8 MPa; 6061-T6 138 MPa
 
 === 3 upper-arm sections (exact slices; bending sums both axes at the extreme fibres) 
-    z   part    A mm2   Iy(x2) cm4  Ix(y2) cm4  Ixy/Ixx   LC2 sig  LC3 sig  LC4 sig/tau   LC2+LC4 vm   limit  (w = window centre)
- -50.0   104      510      26.57      24.35    0.000     5.16     5.58    3.49/2.35        9.56   OK
- -70.0w  104      415      17.58      23.97    0.000     7.26     5.43    3.26/2.36       11.29   OK
--100.0w  104      413      17.30      23.82    0.000     6.57     5.11    2.85/2.38       10.28   OK
--130.0w  104      412      17.02      23.67    0.000     5.86     4.79    2.43/2.39        9.27   OK
--141.0   104      505      25.41      23.89    0.000     3.73     4.62    2.25/2.40        7.28   OK
+    z   part    A mm2   Iy(x2) cm4  Ix(y2) cm4  Ixy/Ixx   LC2 sig  LC3 sig  LC4 sig/tau   LC2+LC4 vm   limit  (p = plates only)
+ -46.0p  104      605      18.58      45.70    0.000     7.47     3.00    1.89/1.14        9.56   OK
+ -95.0p  104      600      18.10      45.30    0.000     6.40     2.72    1.54/1.15        8.18   OK
+-141.0   104     1139      60.06      58.94    0.000     1.58     2.03    0.99/1.45        3.59   OK
 -165.0   110      503      25.11      23.76    0.000     3.34     4.35    1.92/2.41        6.72   OK
--178.0w  110      409      16.59      23.42    0.000     4.70     4.26    1.76/2.42        7.69   OK
 -196.0   110      501      24.72      23.61    0.000     2.82     4.01    1.48/2.43        6.02   OK
 -220.0   110     2133      76.64     132.53    0.042     0.73     0.91    0.28/1.57        2.90   OK
 -236.0   110     1785      47.37     123.39    0.015     0.84     0.95    0.24/1.77        3.25   OK
-torsion: bredt on the octagon midline (wall 2.5 in the beam, 3.0 pocket inset in the crown); below z -236 the LC4 couple enters through the ring bolts and the ear (section 6)
-front/back diamond windows (20 mm, 45 deg), LC4 torsion 36.6 N*m + lateral 114 N:
-  x-bars z -60..-140 (vertical walls) V   235 N -> bar 7.07 x 2.5 mm:  166 N,  9.39 MPa (limit 13.5); buckling  21.2 MPa over 21.2 mm (SF  2.3)   OK
-  window bypass z  -70.0: channels carry 788 N + 57 N over 10.0 mm -> 3.86 MPa + beam 11.29 = 15.15 (limit 17.0)   OK
-  window bypass z -100.0: channels carry 789 N + 57 N over 10.0 mm -> 3.89 MPa + beam 10.28 = 14.17 (limit 17.0)   OK
-  window bypass z -130.0: channels carry 790 N + 57 N over 10.0 mm -> 3.93 MPa + beam 9.27 = 13.20 (limit 17.0)   OK
-  window bypass z -178.0: channels carry 791 N + 57 N over 10.0 mm -> 3.98 MPa + beam 7.69 = 11.68 (limit 17.0)   OK
+torsion: bredt on the octagon midline (104: plates 5 / walls 4, 110: wall 2.5, 3.0 pocket inset in the crown); below z -236 the LC4 couple enters through the ring bolts and the ear (section 6)
+x-braced front / back walls: 2 bays 43.0 x 50 mm per face between 6 mm posts, LC4 torsion 36.6 N*m + lateral 114 N:
+  x-bars (vertical walls)            V   370 N at 49.3 deg -> bar 8 x 4 mm:  244 N,  7.62 MPa (limit 13.5); buckling  22.5 MPa over 33.0 mm (SF  3.0)   OK
+  print (inboard plate on the bed): top-triangle bridge 32.4 mm, cavity roof 31.8 mm (max 33); diagonals 49.3 deg from the bed
 
 === 4 forearm sections (forearm at 90 deg; LC4 + elbow proof + LC3 palm-edge twist together) 
-     s    A mm2   Iy(x2) cm4  Ix(y2) cm4   in-plane  lateral  tau    vm    limit  (w = window centre, corners only)
-  90.0     1052      36.96     116.29      0.45     1.17   0.17   1.65   OK
- 100.0      801      24.79      50.81      0.62     1.84   0.24   2.49   OK
- 110.0      677      16.52      21.25      0.85     3.01   0.37   3.91   OK
- 120.0      574      12.74      12.94      1.04     3.89   0.47   5.00   OK
- 133.0w     165       4.86       4.86      2.18     9.69   0.47  11.90   OK
- 159.7w     165       4.86       4.86      1.87     8.31   0.47  10.21   OK
- 186.3w     165       4.86       4.86      1.56     6.94   0.47   8.53   OK
- 213.0w     165       4.86       4.86      1.25     5.56   0.47   6.85   OK
-diamond lattice on all four faces (4 x 22 mm per face), twist 3.76 N*m:
-  x-bars posterior / anterior (in layer) V    90 N -> bar 3.30 x 2.5 mm:   63 N,  7.69 MPa (limit 17.0); buckling  24.4 MPa over 19.8 mm (SF  3.2)   OK
-  x-bars inboard / outboard (vertical) V    45 N -> bar 3.30 x 2.5 mm:   32 N,  3.89 MPa (limit 13.5); buckling  24.4 MPa over 19.8 mm (SF  6.3)   OK
+     s    A mm2   Iy(x2) cm4  Ix(y2) cm4   in-plane  lateral  tau    vm    limit  (trough open, root ring closed)
+  45.0      731      26.00      62.83      1.06     4.10   4.96  10.02   OK
+  75.0     1012      30.63     168.99      0.63     1.06   3.28   5.93   OK
+  84.0     2082      59.36     263.07      0.31     0.53   0.07   0.85   OK
+cone cage: 4 bays, 8 corner bars 10 wide x 6 shell, rings 7; bars fixed in rigid rings (vierendeel) carry shear 25.7 / 114.3 N + twist 3.76 N*m, axial from the bending at the bay top:
+  bay s  88.0..117.1: vierendeel  9.24 + axial  3.56 = 12.79 MPa (limit 17.0); narrowest window 9.5 mm   OK
+  bay s 124.1..153.2: vierendeel  9.86 + axial  3.42 = 13.28 MPa (limit 17.0); narrowest window 9.1 mm   OK
+  bay s 160.2..189.4: vierendeel 10.68 + axial  3.26 = 13.94 MPa (limit 17.0); narrowest window 8.7 mm   OK
+  bay s 196.4..225.5: vierendeel 11.79 + axial  3.06 = 14.85 MPa (limit 17.0); narrowest window 8.2 mm   OK
+  ring nodes (7 x 6, bending + twist from both bays): vm 9.77 MPa (limit across layers 13.5)   OK
+  print (posterior face on the bed): bars bridge 29.1 mm between rings, ring roofs held to 33 mm by the anterior corner gussets (max 33)
 
 === 5 bolted joints (12.9 screws, preload vdi 2230 table mu 0.12; joint friction mu 0.15 metal, 0.30 printed) 
 adapter -> shoulder flange         6 x M5 @ 8.0 N*m: FM  9920 N  slip  232.1 N*m (load 50.0, SF 4.64)  separation 732.9 N*m (load 50.0, SF 14.7)

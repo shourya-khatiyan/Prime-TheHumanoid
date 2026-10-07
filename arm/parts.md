@@ -1,4 +1,4 @@
-# Arm Rev 0 (upper arm, elbow clevis, lattice forearm; no hand in v0)
+# Arm Rev 0 (two-plate upper arm, elbow clevis, cone-cage forearm; no hand in v0)
 
 World frame: origin on the shoulder axis at the shoulder output-flange face. +Y is the shoulder axis pointing outboard, +X forward, +Z up; at 0° the arm hangs along −Z. The elbow axis is parallel to Y at Z −298. Part positions near the elbow are given in the **elbow frame E**: z along the elbow axis (z 0 = elbow lid rear face, world Y = z + 9.5), y downward from the axis (the forearm length s), x forward.
 
@@ -11,10 +11,10 @@ All dimensions come from `arm/cad/arm_params.py`. The exact model is `arm/cad/ar
 | Lengths | Upper arm 298, forearm 234 (elbow axis to wrist face), 160 cm build. The hand (173) is not built in v0; its centre (s 320.5) stays the LC3 / LC4 load point |
 | Range | 0–135° in software; hard stops at −5° and 140° (O-ring buffered pin in a slot) |
 | Design load | Arm never weaker than the shoulder: 50 N·m shoulder proof (LC2), 50 N·m tilt proof as a 94 N wrist / 114 N future-hand side load (LC3, LC4), 12.35 N·m stop (LC5) |
-| Lattice | 45° diamond windows (print without support): upper arm front and back faces, drum, all four faces of the forearm tube; spoked cap; slotted ring; pocketed adapter |
-| Mass | 1.327 kg incl. the 0.499 kg elbow actuator (was 1.535 kg with the dummy hand and closed shells). Printed parts at the print estimate (walls solid, 40% infill). Research budget 1.18 kg (+12%) |
-| Gravity | Shoulder, arm horizontal: 3.07 N·m, 4.06 N·m with 180°/s in 0.25 s (SF 7.4 against 30 N·m continuous). Elbow, forearm horizontal: 0.16 N·m |
-| Lowest margins | Upper-arm window bypass 15.15 MPa of 17.0 at Z −70; X-bar buckling SF 2.3; hub plate friction SF 1.82 (hex key as backup); insert pull-out SF 1.5 (estimated); hard stop needs the firmware rule in "Hard stop" |
+| Structure | Upper arm, shoulder half: two 5 mm plates (inboard / outboard) with X-braced front and back walls (2 bays, 4 triangular windows each). Drum closed, cap spoked (X). Elbow half: closed octagon shell. Forearm: octagon cone of rings joined by 8 corner bars (4 bays), wrist 56 × 44. All prints without support |
+| Mass | 1.414 kg incl. the 0.499 kg elbow actuator (1.327 kg with the earlier diamond lattice). Printed parts at the print estimate (skins solid, 40% infill; 104 and 125 print solid, see `bom.md`). Research budget 1.18 kg (+20%) |
+| Gravity | Shoulder, arm horizontal: 3.26 N·m, 4.33 N·m with 180°/s in 0.25 s (SF 6.9 against 30 N·m continuous). Elbow, forearm horizontal: 0.21 N·m |
+| Lowest margins | Forearm cage bar 14.85 MPa of 17.0 (wrist bay); hub plate friction SF 1.82 (hex key as backup); insert pull-out SF 1.5 (estimated); upper-arm X-bar buckling SF 3.0; hard stop needs the firmware rule in "Hard stop" |
 | Checks | 0 interferences at 0°; sweep −5…140°: closest moving gaps 0.50 mm (retainer to encoder bracket, slot floor to stop pin) and 0.58 mm (cheek A boss to the 61807 seal); forearm to upper arm and ring ≥ 1.5 mm at every angle; all prints fit the P1S |
 
 The elbow is a **clevis**: cheek A (part of the forearm print) is bolted to the elbow output hub and rides on the elbow's 61807. Cheek B rides on a 61804 on a fixed aluminium pin in the upper arm's rear ear. Bearing span is 89.9 mm, so a side load at the hand becomes a 407 N couple (LC4) instead of a tilt on the 61807. The **absolute output encoder** (AS5047P on the pin, magnet in the cover that turns with the forearm) sits 33.1 mm from the motor encoder magnet (rule ≥ 30). Its stray field there is 0.37 mT against the 35–70 mT working range (calc §8) [A9].
@@ -25,9 +25,14 @@ Classes:
 - **CNC / lathe 6061-T6:** 101, 115, 122, 134.
 - **Purchase:** everything else.
 
-Allowables: Bambu ASA tensile 37 ± 3 MPa in-layer, 31 ± 4 MPa across layers; modulus across layers 2,120 ± 260 MPa [A1]. The calc uses mean − 1 sd with SF 2.0: 17.0 MPa in-layer, 13.5 MPa across layers, 7.8 MPa interlayer shear. Lattice bars in vertical walls run at 45° to the layers and are checked against the across-layer value; their buckling uses 1,860 MPa with SF 2.0.
+Allowables: Bambu ASA tensile 37 ± 3 MPa in-layer, 31 ± 4 MPa across layers; modulus across layers 2,120 ± 260 MPa [A1]. The calc uses mean − 1 sd with SF 2.0: 17.0 MPa in-layer, 13.5 MPa across layers, 7.8 MPa interlayer shear. Diagonal bars in vertical walls cross the layers and are checked against the across-layer value; their buckling uses 1,860 MPa with SF 2.0.
 
-**Lattice rules (calc §3, §4).** Windows are 45° diamonds, so the upper edges print without support. Corners are R1.5. The bars between two windows form an X: each carries the face shear (torsion flow + half the direct shear) as V / (2 sin 45°). Every upper-arm window is also checked as if its face were cut through: the torque then passes the window as a couple on the inboard and outboard channels (window bypass). Aluminium is not needed: the worst lattice stress is 15.15 of 17.0 MPa in ASA.
+**Frame rules (calc §3, §4).**
+
+- **Upper-arm X bays.** Each diagonal carries the face shear (torsion flow + half the direct shear) as V / (2 sin θ), with θ = 49.3° from the arm axis (the braced-frame V / (2 cos φ), with φ measured from the shear) [A14]. In the bays the plates alone carry the bending.
+- **Forearm cage.** The rings are taken as rigid and the bars as fixed-fixed between them (Vierendeel frame: each bar end takes its shear × L / 2) [A15]. Shear and twist are shared by bar bending stiffness. Each bar adds this bending to the axial stress from the arm bending; each ring node takes the end moments of the bars from both bays.
+- **Print rules.** No edge is flatter than 45° unless it is a bridge, and no bridge is longer than 33 mm.
+- **Material.** Aluminium is not needed: the worst frame stress is 14.85 of 17.0 MPa in ASA.
 
 ## Shoulder interface
 
@@ -51,9 +56,9 @@ Purchase. 6 × M5 × 12 ISO 4762 12.9 + 6 × M5 ISO 7089. Torque **8.0 N·m**, L
 
 ### 104 Upper arm, shoulder half
 
-3D print ASA. Quantity 1. Mass 178 g (print estimate 177 g; the part is almost all walls).
+3D print ASA. Quantity 1. Mass 232 g (prints solid: 6 walls, 2.5 mm top / bottom shells).
 
-- **Drum** Ø100 (the shoulder housing diameter), world Y 1–61, wall 2.5. Rear cable exit Ø14 at Y 34. Four diamond windows 26 × 36 centred at Y 37.5, at flange angles 0° (front), 180° (rear, round the cable exit), 252° and 288° (top). All are clear of the beam root (50–130°) and the cap bosses.
+- **Drum** Ø100 (the shoulder housing diameter), world Y 1–61, wall 2.5, closed. Rear cable exit Ø14 at Y 34.
 - **Hub plate** Y 1–16:
   - hex pocket 76.3 AF (0.15 clearance per flat), 5 deep;
   - 6 × Ø11 M5-head pockets to Y 12.5;
@@ -61,8 +66,8 @@ Purchase. 6 × M5 × 12 ISO 4762 12.9 + 6 × M5 ISO 7089. Torque **8.0 N·m**, L
   - Ø30 centre hole;
   - outside the M4 washers the floor steps down to Y 8 (r 40.5–47.5).
 - 4 × Ruthex M3 insert holes on Ø92 at 45° + 90° for the cap.
-- **Beam**: octagon shell, wall 2.5, Z −30 to −150. Back face X −32 tapering to −34 by Z −226; front X 32 tapering to 28 by Z −208; Y 1–61; chamfer 15.
-- **Beam windows**: 3 diamonds 20 × 20 on the front and on the back face, centred at Y 31 and Z −70 / −100 / −130 (tips Z −60 to −140). The X-bars between them are 7.07 wide. The inboard and outboard faces stay closed.
+- **Beam** Z −30 to −150: two parallel plates 5 thick (inboard Y 1–6, outboard Y 56–61) joined by front and back walls 4 thick. Back face X −32 tapering to −34 by Z −226; front X 32 tapering to 28 by Z −208; outer chamfer 4. Cavity roof chamfer 12 under the outboard plate (roof bridge 31.8 mm).
+- **X bays**: on the front and back walls, Z −46 to −89 and −95 to −138, each 43 × 50 between 6 mm posts. Each bay holds an X of 8 mm bars at 49.3°, leaving 4 triangular windows (R1.5 corners). The top triangle bridges 32.4 mm. Z −138 to −150 is closed.
 - **Mid-span collar** Z −150 to −142: 4 × Ø4.5 bolt holes (X −40.2 / 36.3 at Y 7 and 55) and 2 × Ø4 dowel holes at Y 31.
 
 Print the inboard face (Y 1) on the bed. The beam layers then run along the arm, so bending stress is in-layer.
@@ -84,10 +89,10 @@ Cap: 3D print ASA, Ø100 × 2.5, 12.4 g. Spoked diaphragm: four windows r 13–3
 
 ### 110 Upper arm, elbow half
 
-3D print ASA. Quantity 1. Mass 199 g solid, 156 g print estimate.
+3D print ASA. Quantity 1. Mass 200 g solid, 157 g print estimate.
 
 - **Collar** Z −160 to −150: 4 Ruthex RX-M4x8.1 insert holes (Ø5.6 × 9.1) and 2 × Ø4 dowel holes.
-- **Beam** Z −150 to −196, then flares to the **crown** (Y up to 85.3) by Z −226. The front narrows to X 12 by Z −236. One 20 × 20 diamond window on the front and one on the back face at Z −178.
+- **Beam** Z −150 to −196, then flares to the **crown** (Y up to 85.3) by Z −226. The front narrows to X 12 by Z −236. Closed octagon shell, wall 2.5.
 - **Crown pocket**: octagon pocket 3 inset from the skin, Y 44–72. **Cable channel** X −24…4, Y 6–40, from the beam cavity down to 25 above the elbow axis.
 - **Saddle** R41.5 round the elbow actuator. **Ring pocket** 1.5 deep: the front ring is let into the crown face as a shear key. 4 RX-M4x8.1 holes for the ring.
 - **Rear ear** (world Y 1–9, R24 round the axis, plus a 42 wide web up into the crown):
@@ -99,8 +104,9 @@ Print the inboard face (Y 1) on the bed.
 
 Stresses (calc §3, §6):
 
-- Beam (both halves): worst LC2 + LC4 von Mises 11.29 MPa at the Z −70 window (closed section at Z −50: 9.56); Bredt shear ≤ 2.43 MPa (limit 7.8).
-- Windows: X-bars 9.39 MPa (limit 13.5), buckling SF 2.3; window bypass at most 3.98 MPa on top of the beam stress, 15.15 MPa total at Z −70 (limit 17.0).
+- Beam, shoulder half: plates alone 9.56 MPa LC2 + LC4 von Mises at the top bay (limit 17.0); closed at Z −141: 3.59.
+- Beam, elbow half: ≤ 6.72 MPa; Bredt shear ≤ 2.43 MPa (limit 7.8).
+- X bays: diagonals 244 N, 7.62 MPa (limit 13.5), buckling SF 3.0.
 - Crown: ≤ 3.25 MPa.
 - Ear: 10.8 MPa von Mises under the LC4 couple.
 
@@ -172,7 +178,7 @@ Bending at the shoulder 2.0 MPa.
 
 ### 125 Forearm + cheek A
 
-3D print ASA, one piece. Quantity 1. Mass 159 g solid, 155 g print estimate.
+3D print ASA, one piece. Quantity 1. Mass 186 g (prints solid: 8 walls, 3.4 mm top / bottom shells).
 
 - **Cheek A**: plate E z 82.8–90.8 (8 thick), R44 round the axis, flanks tangent to the disc to (30, 80).
   - Boss Ø37.5 × 0.5 clamps the 61807 inner ring (middle of SKF da 37–38 [A4]), then a teardrop to Ø43 inside the cover lip.
@@ -181,9 +187,9 @@ Bending at the shoulder 2.0 MPa.
   - Stop slot r 35.5 × 8.6 wide × 6 deep (2.0 floor).
   - Decorative groove r 24–25.2 × 0.6.
 - **Clevis root**: R47 cut-out round the cradle. Full clevis width (E z −12.5…90.8) down to s 80, with an open anterior trough from s 30 to 80.
-- **Y-yoke neck** s 80–120: the section blends from the full clevis width to 44 × 44 along a cosine curve (zero slope at both ends; lofted every 4 mm). The cheek-side wall tapers 8 → 2.5 by s 100. A 2.5 mm centre web and a 14 mm inner roof chamfer keep every roof bridge under 33 mm.
-- **Lattice tube** s 120–226: straight 44 × 44 octagon (chamfer 8), wall 2.5. 4 diamond windows 22 × 22 on each of the four faces, centred at s 133 / 159.7 / 186.3 / 213. The chamfered corners are the longerons, and the X-bars between windows are 3.30 wide. From s 126 the inner roof chamfer equals the others, so the windowed roof bridges 25.9 mm.
-- **Wrist block** s 226–234:
+- **Root ring** s 80–88: the closed octagon at full clevis width, shell 6. Its outer corner chamfer opens from 8 to 14 over the ring.
+- **Cone cage** s 88–226: a straight octagon cone from the clevis (x 103.5 × z 52 at s 80) to the wrist (x 44 × z 56, chamfer 12.9), shell 6. It has 3 free rings 7 wide at s 117.1, 153.2 and 189.4, with 8 corner bars 10 wide over each corner. The 4 bays are each 29.1 long, and the narrowest window is 8.2 mm (wrist bay). Anterior corner gussets in every ring hold its inner roof to a 33 mm bridge. Window corners are R2.
+- **Wrist block** s 226–234, 56 (z) × 44 (x):
   - Ø19.98 (Ø20 h7) × 1.8 spigot;
   - 4 RX-M3x5.7 holes on Ø30 at 45° + 90°;
   - Ø10 wire bore.
@@ -191,9 +197,10 @@ Bending at the shoulder 2.0 MPa.
 
 Print the posterior face (x −22) on the bed. Stresses (calc §4):
 
-- Neck: ≤ 5.00 MPa von Mises.
-- Window sections (corners only, 165 mm²): ≤ 11.90 MPa at s 133 (limit 17.0).
-- X-bars: 7.69 MPa posterior / anterior (in layer, limit 17.0) and 3.89 MPa inboard / outboard (vertical, limit 13.5); buckling SF ≥ 3.2.
+- Open trough: ≤ 10.02 MPa von Mises at s 45 (Saint-Venant torsion of the three walls); root ring 0.85.
+- Cage bars: Vierendeel bending + axial 12.79 / 13.28 / 13.94 / 14.85 MPa root to wrist (limit 17.0).
+- Ring nodes: 9.77 MPa von Mises (limit across layers 13.5).
+- Print: the bars bridge 29.1 mm between rings.
 
 ### 126 / 127 Hub screws and dowels
 
@@ -281,7 +288,7 @@ Cover (140): 3D print ASA, Ø50 cup to z −33.5, magnet boss Ø10, 3 bosses Ø7
 
 | Item | Status |
 |---|---|
-| Mass 1.327 kg vs 1.18 kg budget | The elbow actuator is 0.499 kg of it. Shoulder SF 7.4 (calc §1). Heaviest printed items: upper halves 177 + 156 g, forearm 155 g. The beam walls are minimum gauge (2.5) and strength-limited, so more windows would not pay off |
+| Mass 1.414 kg vs 1.18 kg budget | The elbow actuator is 0.499 kg of it. Shoulder SF 6.9 (calc §1). Heaviest printed items: upper halves 232 + 157 g, forearm 186 g. The open frames (plates + X bays, ring-and-bar cage) weigh 87 g more than the closed shells with diamond windows: a frame resists twist through bar bending, a closed skin through shear flow |
 | Future hand / wrist | Not built. Its mass will raise the shoulder and elbow gravity torques (calc §1); the LC3 / LC4 load point already assumes it |
 | Insert pull-out (M4 ~2,785 N, M3 ~1,400 N) | M4 is scaled from the M3 value by hole area: **pull-test one insert** in a printed ASA coupon |
 | Hub plate friction SF 1.82 | Hex key backup at 14.6 MPa (best-case contact). Re-torque after 24 h |
@@ -302,3 +309,5 @@ Cover (140): 3D print ASA, Ø50 cup to z −33.5, magnet boss Ø10, 3 bosses Ø7
 - [A11] Loctite 641 (bearing retaining, medium strength, gap ≤ 0.15, activator for slow substrates): https://www.farnell.com/datasheets/306464.pdf, https://loctiteadhesive.com/wp-content/uploads/2025/10/LOCTITE-641.pdf
 - [A12] VDI 2230 preload basis: `shoulder/cad/calc.py` (same table used for the shoulder and elbow).
 - [A13] DIN 9021 M4 washer 4.3 / 12 × 1.0: https://www.aspenfasteners.com/content/pdf/Metric_DIN_9021_spec.pdf, https://www.aramfix.com/content/files/9021hv0zp/datasheet%20din%209021.pdf
+- [A14] X-bracing, both diagonals active (one tension, one compression): each takes V / (2 cos φ); compression diagonal buckles over half its length when connected at the crossing: https://calcsteel.com/blog/cross-braced-frame-the-criterion-behind-the-code-with-a-worked-check, https://steelcalculator.app/reference/bracing-design-guide/
+- [A15] Vierendeel frame, chords fixed at the joints: sidesway end moment = panel shear × panel length / 4 per chord pair (inflection at mid-length): https://ej.aisc.org/index.php/engj/article/download/329/328, https://ascelibrary.org/doi/pdf/10.1061/JSDEAG.0000904

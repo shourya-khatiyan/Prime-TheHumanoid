@@ -681,7 +681,7 @@ def masses(arm, elbow):
         est = ""
         if not n.startswith("E") and g.part_no(n) in PRINT:
             # walls + top/bottom skins solid, the rest at the infill fraction
-            shell = min(s.volume(), s.s.Area() * 1.7)
+            shell = min(s.volume(), s.s.Area() * p.PRINT_SKIN.get(g.part_no(n), 1.7))
             printed = (shell + (s.volume() - shell) * 0.40) / 1000 * rho
             est = f"   print est {printed:7.1f} g"
         else:

@@ -251,6 +251,7 @@ MAG_SPACING_MIN = 30.0  # stray-field rule between the two encoder magnets / ics
 # ---------------------------------------------------------------- print bed (bambu p1s 256 x 256 x 256, 5 mm margin)
 BED = 246.0
 BRIDGE_MAX = 33.0  # longest unsupported roof bridge allowed in any print
+PRINT_SKIN = {104: 2.5, 125: 3.4}  # solid depth from every surface (walls x 0.42, top / bottom shell), default 1.7 = 4 walls; plates, x walls and cage print solid
 
 
 def polar(r, deg):

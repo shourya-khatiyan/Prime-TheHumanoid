@@ -1,11 +1,11 @@
 # VAYN Arm — BOM, Print and Sourcing Guide, Rev 0
 
-**Purpose:** print, buy and assemble one arm (upper arm, elbow clevis, lattice forearm; no hand in v0) without opening the CAD. The shoulder and the elbow actuator have their own BOMs (`shoulder/bom.md`, `elbow/bom.md`).
+**Purpose:** print, buy and assemble one arm (two-plate upper arm, elbow clevis, cone-cage forearm; no hand in v0) without opening the CAD. The shoulder and the elbow actuator have their own BOMs (`shoulder/bom.md`, `elbow/bom.md`).
 
 **Source of truth:**
 - Geometry and part list: `build_arm()` in `arm/cad/gen_arm.py`, dimensions in `arm/cad/arm_params.py`. The exact model is `arm/cad/arm.step`.
 - Loads, fits and torques: `arm/cad/calc.py`, results in `arm/cad/calc.txt`.
-- Part specification and assembly order: `arm/parts.md`. References [A1]–[A13] are listed there.
+- Part specification and assembly order: `arm/parts.md`. References [A1]–[A15] are listed there.
 
 The "Model #" column is the object number in the STEP/3MF.
 
@@ -17,7 +17,7 @@ The "Model #" column is the object number in the STEP/3MF.
 |---|---|
 | Print parts | 7 (all ASA) |
 | Metal make parts | 4 (6061-T6: adapter, front ring, passive pin, encoder bracket) |
-| Arm mass | 1.327 kg incl. the elbow actuator (0.499 kg as placed); printed parts at the print estimate |
+| Arm mass | 1.414 kg incl. the elbow actuator (0.499 kg as placed); printed parts at the print estimate |
 | Printer | Bambu P1S, all parts fit the 256³ bed with a 5 mm margin (`gen.log`) |
 | Elbow change | The elbow's 7 × M3 × 12 flange screws and washers (elbow parts 30, 31) are **not fitted**: arm parts 116/117 (M3 × 16 + washers) go through the front ring instead |
 
@@ -27,15 +27,21 @@ The "Model #" column is the object number in the STEP/3MF.
 
 | ID | Model # | Part | Material | Layer | Walls / infill | Face on plate | Critical features | Mass (g, est.) |
 |---|---|---|---|---|---|---|---|---|
-| A01 | 104 | Upper arm, shoulder half | Bambu ASA | 0.16 | 4 / 40% gyroid | Inboard face (Y 1) | Hex pocket 76.3 AF × 5; 6 × Ø4.5; collar holes Ø4.5 / Ø4; 4 drum + 6 beam diamond windows | 177 |
+| A01 | 104 | Upper arm, shoulder half | Bambu ASA | 0.16 | 6 / 40% gyroid, shells 2.5 | Inboard face (Y 1) | Hex pocket 76.3 AF × 5; 6 × Ø4.5; collar holes Ø4.5 / Ø4; plates 5; 2 X bays per wall (8 triangles a side) | 232 |
 | A02 | 108 | Shoulder cap | Bambu ASA | 0.16 | 3 / 40% | Outer face | 4 × M3 CSK on Ø92; 4 spoke windows | 12 |
-| A03 | 110 | Upper arm, elbow half | Bambu ASA | 0.16 | 4 / 40% gyroid | Inboard face (Y 1) | Saddle R41.5; ear bore Ø16; 4 + 4 RX-M4 holes Ø5.6; 3 RX-M3 holes Ø4.0; ring pocket 1.5; 2 beam windows | 156 |
-| A04 | 125 | Forearm + cheek A | Bambu ASA | 0.16 | 4 / 40% gyroid | Posterior face | Boss face Ø37.5; 6 × Ø3.4 + cbore Ø6.2; 2 dowel holes Ø3 × 11; stop slot 8.6 × 6; 16 lattice windows (X-bars 3.30); wrist spigot Ø20 h7 | 155 |
+| A03 | 110 | Upper arm, elbow half | Bambu ASA | 0.16 | 4 / 40% gyroid | Inboard face (Y 1) | Saddle R41.5; ear bore Ø16; 4 + 4 RX-M4 holes Ø5.6; 3 RX-M3 holes Ø4.0; ring pocket 1.5; closed beam | 157 |
+| A04 | 125 | Forearm + cheek A | Bambu ASA | 0.16 | 8 / 40% gyroid, shells 3.4 | Posterior face | Boss face Ø37.5; 6 × Ø3.4 + cbore Ø6.2; 2 dowel holes Ø3 × 11; stop slot 8.6 × 6; cone cage 4 bays × 8 windows (bars 10); wrist 56 × 44, spigot Ø20 h7 | 186 |
 | A05 | 128 | Cheek B | Bambu ASA | 0.16 | 4 / 40% | Lip face | 61804 bore Ø32 slip; lip Ø29; 4 × Ø4.8 float holes | 33 |
 | A06 | 133 | Bearing retainer | Bambu ASA | 0.16 | 100% | Either face | Ø29 bore | 2 |
 | A07 | 140 | Encoder cover | Bambu ASA | 0.16 | 100% | End face | Magnet pocket Ø6; 3 cbore Ø6.2 | 7 |
 
-The calc allowables are data-sheet values (mean − 1 sd) / 2.0 [A1]. Do not reduce walls below 4 on A01, A03, A04 and A05: the sections and lattice bars in calc §3–§4 assume the 2.5 mm skins are solid. No supports anywhere: every window has 45° edges.
+The calc allowables are data-sheet values (mean − 1 sd) / 2.0 [A1]. The sections and frame bars in calc §3–§4 assume solid members, so do not reduce the slicer shells below:
+
+- **A01**: 6 walls and top / bottom shells of 2.5 mm, so the 5 mm plates and 4 mm X walls print solid.
+- **A04**: 8 walls and top / bottom shells of 3.4 mm, so the 6 mm cage shell, bars and rings print solid.
+- **A03, A05**: 4 walls (the 2.5 mm skins print solid).
+
+No supports anywhere: every window edge is 45° or steeper, and no bridge is longer than 33 mm.
 
 ---
 
