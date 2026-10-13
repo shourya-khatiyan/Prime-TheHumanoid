@@ -1,4 +1,4 @@
-"""Build the VAYN shoulder actuator Rev 1.3 as a multi-object 3MF.
+"""Build the VAYN shoulder actuator Rev 1.4 as a multi-object 3MF.
 
 Every part is a separate named, watertight mesh placed in its assembled
 position (Z = 0 at the rear outer face, axis = Z). Geometry follows shoulder/parts.md. Motor, encoder PCB and
@@ -23,7 +23,7 @@ import lib3mf
 import numpy as np
 from manifold3d import CrossSection, Manifold, OpType
 
-REV = "1.3"
+REV = "1.4"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "actuator.3mf")
 PA = math.radians(20.0)
 BACKLASH_HALF = 0.025  # circular thinning per gear at pitch (0.05 per mesh)
