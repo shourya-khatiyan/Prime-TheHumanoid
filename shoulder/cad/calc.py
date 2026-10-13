@@ -1,4 +1,4 @@
-"""Engineering checks for the VAYN shoulder actuator Rev 1.3.
+"""Engineering checks for the VAYN shoulder actuator Rev 1.4.
 
 Every number quoted in shoulder/parts.md is printed by this script.
 Units: mm, N, N*m, MPa, um, degC. Run: python calc.py
@@ -21,7 +21,7 @@ CASES = {
 
 # 61813 (skf): c, c0, f0, ball pitch dia, assumed ball set
 C_DYN, C0, F0, DPW, Z_BALLS, DW = 11900.0, 9650.0, 17.0, 75.0, 24, 5.5
-Z_REAR_BRG, Z_FRONT_BRG, Z_LOAD = 65.5, 86.5, 95.5  # bearing centres, flange face
+Z_REAR_BRG, Z_FRONT_BRG, Z_LOAD = 70.5, 91.5, 100.5  # bearing centres, flange face
 SKF_E_Y = [(0.172, 0.19, 2.30), (0.345, 0.22, 1.99), (0.689, 0.26, 1.71), (1.03, 0.28, 1.55),
            (1.38, 0.30, 1.45), (2.07, 0.34, 1.31), (3.45, 0.38, 1.15), (5.17, 0.42, 1.04), (6.89, 0.44, 1.00)]
 
@@ -232,7 +232,7 @@ fits = [
     ("cartridge in housing  D89 G7/h6", 89, 12, 47, -22, 0, A_AL, A_ST),
     ("outer rings, selective D85 OD+3/+10", 85, 3, 10, 0, 0, A_ST, A_ST),
     ("IR on carrier-2       D65 brg/j5", 65, -15, 0, -7, 6, A_ST, A_ST),
-    ("labyrinth D40.6H8 over sun-1 D40h8", 40.6, 600, 639, -39, 0, A_AL, A_ST),
+    ("labyrinth D41.0H8 over sun-1 D40h8", 41.0, 1000, 1039, -39, 0, A_AL, A_ST),
 ]
 for name, d, hlo, hhi, slo, shi, ah, as_ in fits:
     row = []
@@ -268,19 +268,19 @@ def joint(name, n, size, torque, r_bolt, r_in, r_out, mu, torque_load, tilt_load
 
 
 joint("cartridge flange -> housing", 8, "M3", 1.2, 46.5, 44.5, 50, 0.15, 50 - 50 / 4.75, 50 + 0.15 * 9)
-joint("rear plate -> housing lip", 6, "M3", 1.2, 47.0, 44.0, 50, 0.15, 50, 50 + 0.15 * 95.5)
-joint("torso bracket -> rear plate", 6, "M4", 3.0, 38.0, 30.0, 50, 0.15, 50, 50 + 0.15 * 95.5)
+joint("rear plate -> housing flange", 6, "M3", 1.2, 52.0, 47.25, 56, 0.15, 50, 50 + 0.15 * Z_LOAD)
+joint("torso bracket -> rear plate", 6, "M4", 3.0, 38.0, 30.0, 50, 0.15, 50, 50 + 0.15 * Z_LOAD)
 joint("arm -> output flange", 6, "M5", 8.0, 26.0, 20.0, 39, 0.15, 50, 50 + 0.15 * 0)
 joint("carrier-2 halves", 3, "M4", 4.0, 27.0, 19.5, 34.5, 0.15, 50, 0)
 joint("sun-1 -> rotor (pcd 25 worst)", 4, "M3", 0.8, 12.5, 10.0, 20.0, 0.15, 50 / (RATIO * ETA), 0)
 fm_m3 = preload("M3", 1.2)
 tau_al = 331.0  # 7075-t6 shear strength
-for name, le in (("housing M3 x6 engage (cartridge)", 6.0), ("housing lip M3 x2.6 engage (plate)", 2.6)):
+for name, le in (("housing M3 x6 engage (cartridge)", 6.0), ("housing flange M3 x6 engage (plate)", 6.0)):
     a_sh = 0.75 * math.pi * 3.0 * le
     print(f"{name:36s} strip {a_sh * tau_al:5.0f} N vs FM {fm_m3:.0f} N  SF {a_sh * tau_al / fm_m3:.1f}")
 for name, torque_nm, r, n, d, le in (("ring-1 dowels 2x D3 (slot 1.5 deep)", 50 / 4.75 - 50 / 28.5, 39.75, 2, 3.0, 1.5),
                                      ("cartridge dowels 2x D4 (backup)", 50 - 50 / 4.75, 47.0, 2, 4.0, 4.0),
-                                     ("plate dowels 2x D3 (backup)", 50, 47.0, 2, 3.0, 3.0)):
+                                     ("plate dowels 2x D3 (backup)", 50, 52.0, 2, 3.0, 3.0)):
     f = torque_nm * 1000 / r / n
     print(f"{name:36s} {f:5.0f} N each  shear {f / (math.pi * d ** 2 / 4):5.0f} MPa  bearing(Al) {f / (d * le):4.0f} MPa")
 f_post = 50 / 0.027 / 3
@@ -326,9 +326,37 @@ for name, z, m, dp in (("ring-1", 90, 0.8, 1.2), ("ring-2", 72, 1.0, 1.5)):
 
 # ---------------------------------------------------------------- 7 housing + homing
 line("7 housing and homing magnet")
-j_tube = math.pi * (100 ** 4 - 89 ** 4) / 32
-print(f"housing torsion at 50 N*m: {50e3 * 50 / j_tube:.1f} MPa; bending at 51.4 N*m: {51.4e3 * 50 / (j_tube / 2):.1f} MPa")
+slot_loss = 12 * 3.0 / (math.pi * 97.25)  # 12 cooling slots, share of the mean circumference
+j_tube = math.pi * (100 ** 4 - 94.5 ** 4) / 32 * (1 - slot_loss)  # thinnest section: motor bore d94.5
+m_tilt = 50 + 0.15 * Z_LOAD
+print(f"housing motor section (wall 2.75, slots -{slot_loss * 100:.0f} %) torsion at 50 N*m: {50e3 * 50 / j_tube:.1f} MPa; "
+      f"bending at {m_tilt:.1f} N*m: {m_tilt * 1e3 * 50 / (j_tube / 2):.1f} MPa")
 br, rm, lm = 1.43, 1.5, 2.0
 for gap in (1.2, 1.4, 2.0):
     b = br / 2 * ((lm + gap) / math.hypot(rm, lm + gap) - gap / math.hypot(rm, gap))
     print(f"homing magnet D3x2 N52 on-axis field at {gap} mm: {b * 1000:.0f} mT (DRV5033FA BOP max 6.8 mT)")
+
+# ---------------------------------------------------------------- 9 motor fit + encoder
+line("9 motor fit, axial stack and encoder centring")
+MOTOR_D, MOTOR_H, STUB_H, CAP_D = 92.0, 32.5, 3.9, 17.4  # vernier: od, mount face -> hub face, front stub, rear cap
+print(f"motor d{MOTOR_D} in housing bore d94.5: radial {(94.5 - MOTOR_D) / 2:.2f}; rotor bell to bore {(94.5 - MOTOR_D) / 2:.2f}")
+print(f"rear cap d{CAP_D} (rotates) in plate relief d19.5: radial {(19.5 - CAP_D) / 2:.2f}; it is not a pilot")
+print(f"front stub {STUB_H} long in sun-1 bore d3.5 x 5.5: end clearance {5.5 - STUB_H:.1f}, radial {(3.5 - 2.9) / 2:.2f}")
+print("shim  partition  sun tip-C1F  sun disc-C1R  magnet-IC  planet-1 face  M4 engage")
+for s in (0.5, 1.0, 1.5):
+    ds = s - 1.0  # motor + sun-1 offset from nominal
+    cover = 10.0 - max(0.0, abs(ds) - 0.2)  # sun 10.4 face over the 10.0 planet
+    print(f"{s:4.1f}  {1.5 - ds:9.2f}  {1.5 - ds:11.2f}  {1.5 - ds:12.2f}  {1.25 + ds:9.2f}  {cover:13.1f}  {6.0 - s:9.1f}")
+print("shim choice: mount the motor with 1.0, measure plate front face -> rotor hub face; shim = 1.0 + (33.5 - reading)")
+fm_m4 = preload("M4", 2.0)
+for le in (4.5, 5.0, 5.5):
+    a_sh = 0.75 * math.pi * 4.0 * le
+    print(f"stator M4 x{le} engage in motor base (Al, tau 207): strip {a_sh * 207:5.0f} N vs FM {fm_m4:.0f} N @2.0 N*m  SF {a_sh * 207 / fm_m4:.1f}")
+# radial offset of the magnet axis from the ic centre, mm
+budget = {"magnet in holder bore": 0.03, "holder pin in cap hole": 0.05, "cap hole runout vs rotor axis": 0.05,
+          "rotor axis vs stator holes (motor)": 0.10, "stator CSK screws in plate": 0.10,
+          "PCB holes d2.7 on M2.5": 0.10, "PCB boss positions": 0.02, "IC on PCB": 0.10}
+for k, v in budget.items():
+    print(f"  {k:36s} {v:.2f}")
+wc, rss = sum(budget.values()), math.sqrt(sum(v ** 2 for v in budget.values()))
+print(f"encoder centring: worst case {wc:.2f} mm, RSS {rss:.2f} mm vs 0.5 mm allowed (ams AS5047P board manual)")

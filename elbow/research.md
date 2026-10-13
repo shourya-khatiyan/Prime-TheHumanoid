@@ -16,7 +16,7 @@ Status: CAD Rev 1.0 done. The part specification is in [`parts.md`](parts.md), o
 | Encoders | AS5047P motor side (ODESC), AS5047P output side (sensor MCU) |
 | Protection | Backdrivable gearbox, 10 A current limit, cushioned hard stops, software limits |
 
-For comparison the shoulder is Ø100 × 95.5 mm, 2.76 kg, 30 N·m continuous ([`../shoulder/parts.md`](../shoulder/parts.md)). The elbow is about 18% of its mass.
+For comparison the shoulder is Ø100 × 100.5 mm (Ø112 rear flange), 2.85 kg, 30 N·m continuous ([`../shoulder/parts.md`](../shoulder/parts.md)). The elbow is about 17% of its mass.
 
 ## 2. Requirements
 

@@ -1,4 +1,4 @@
-   14.50 | 6061-T6 | 01 Encoder lid 6061-T6 D59.8x2
+   14.17 | 6061-T6 | 01 Encoder lid 6061-T6 D59.8x2
     0.13 | Steel 12.9 fastener | 02.1 Screw M2x4 CSK lid
     0.13 | Steel 12.9 fastener | 02.2 Screw M2x4 CSK lid
     0.13 | Steel 12.9 fastener | 02.3 Screw M2x4 CSK lid
@@ -9,36 +9,37 @@
     0.46 | Steel 12.9 fastener | 05.2 Screw M2.5x5 pan PCB
     0.46 | Steel 12.9 fastener | 05.3 Screw M2.5x5 pan PCB
     0.46 | Steel 12.9 fastener | 05.4 Screw M2.5x5 pan PCB
-    0.49 | 6061-T6 | 06 Magnet holder sleeve 6061 D10/D6
+    0.85 | 6061-T6 | 06 Magnet holder 6061 D10, pin D2.8 into the rotor cap
     0.53 | NdFeB magnet | 07 Encoder magnet D6x2.5 diametric
-  147.59 | 7075-T6 | 08 Rear mount plate 7075-T6 (10 mm)
-    0.90 | Steel 12.9 fastener | 09.1 Screw M3x8 SHCS plate->housing
-    0.90 | Steel 12.9 fastener | 09.2 Screw M3x8 SHCS plate->housing
-    0.90 | Steel 12.9 fastener | 09.3 Screw M3x8 SHCS plate->housing
-    0.90 | Steel 12.9 fastener | 09.4 Screw M3x8 SHCS plate->housing
-    0.90 | Steel 12.9 fastener | 09.5 Screw M3x8 SHCS plate->housing
-    0.90 | Steel 12.9 fastener | 09.6 Screw M3x8 SHCS plate->housing
+  197.24 | 7075-T6 | 08 Rear mount plate 7075-T6 (D112 x 10)
+    1.12 | Steel 12.9 fastener | 09.1 Screw M3x12 SHCS plate->housing flange
+    1.12 | Steel 12.9 fastener | 09.2 Screw M3x12 SHCS plate->housing flange
+    1.12 | Steel 12.9 fastener | 09.3 Screw M3x12 SHCS plate->housing flange
+    1.12 | Steel 12.9 fastener | 09.4 Screw M3x12 SHCS plate->housing flange
+    1.12 | Steel 12.9 fastener | 09.5 Screw M3x12 SHCS plate->housing flange
+    1.12 | Steel 12.9 fastener | 09.6 Screw M3x12 SHCS plate->housing flange
     0.33 | 52100 bearing steel | 10.1 Dowel D3x6 plate->housing
     0.33 | 52100 bearing steel | 10.2 Dowel D3x6 plate->housing
-    1.04 | Steel 12.9 fastener | 11.1 Screw M4x8 CSK stator
-    1.04 | Steel 12.9 fastener | 11.2 Screw M4x8 CSK stator
-    1.04 | Steel 12.9 fastener | 11.3 Screw M4x8 CSK stator
-    1.04 | Steel 12.9 fastener | 11.4 Screw M4x8 CSK stator
-    0.00 | Motor envelope | 12 LA8308 stator + base (envelope, measure)
-    0.00 | Motor envelope | 13 LA8308 rotor bell (envelope, measure)
-    6.13 | 52100 bearing steel | 14 LA8308 shaft D6
-  341.75 | 7075-T6 | 15 Housing one-piece 7075-T6
+    1.24 | Steel 12.9 fastener | 11.1 Screw M4x10 CSK stator
+    1.24 | Steel 12.9 fastener | 11.2 Screw M4x10 CSK stator
+    1.24 | Steel 12.9 fastener | 11.3 Screw M4x10 CSK stator
+    1.24 | Steel 12.9 fastener | 11.4 Screw M4x10 CSK stator
+   12.50 | Spring steel | 48 Motor shim pack 2x0.5 D50/D19.5
+    0.00 | Motor envelope | 12 LA8308 stator + base (envelope, measured)
+    0.00 | Motor envelope | 13 LA8308 rotor bell + front stub + rear cap (envelope, measured)
+    6.02 | 52100 bearing steel | 14 LA8308 shaft D6
+  370.77 | 7075-T6 | 15 Housing one-piece 7075-T6
   190.81 | 42CrMo4 nitrided | 16 Ring-1 90T m0.8 (42CrMo4 nitrided)
     0.44 | 52100 bearing steel | 17.1 Dowel D3x8 ring-1 axial
     0.44 | 52100 bearing steel | 17.2 Dowel D3x8 ring-1 axial
-   41.72 | 16MnCr5 carburized | 18 Sun-1 18T m0.8 flanged pinion (16MnCr5)
+   42.76 | 16MnCr5 carburized | 18 Sun-1 18T m0.8 flanged pinion (16MnCr5)
     0.38 | Steel 12.9 fastener | 19.1 Screw M3x5 CSK sun-1->rotor
     0.38 | Steel 12.9 fastener | 19.2 Screw M3x5 CSK sun-1->rotor
     0.38 | Steel 12.9 fastener | 19.3 Screw M3x5 CSK sun-1->rotor
     0.38 | Steel 12.9 fastener | 19.4 Screw M3x5 CSK sun-1->rotor
     0.99 | 52100 bearing steel | 20 Thrust washer C1 rear D48/42x0.3
    76.03 | EN24T (34CrNiMo6) Q&T | 21 Carrier-1 rear plate + posts (EN24T)
-   94.69 | 16MnCr5 carburized | 22 Carrier-1 front plate + Sun-2 18T m1 (16MnCr5)
+   92.02 | 16MnCr5 carburized | 22 Carrier-1 front plate + Sun-2 18T m1 (16MnCr5)
     0.66 | Steel 12.9 fastener | 23.1 Screw M3x10 CSK carrier-1
     0.66 | Steel 12.9 fastener | 23.2 Screw M3x10 CSK carrier-1
     0.66 | Steel 12.9 fastener | 23.3 Screw M3x10 CSK carrier-1
@@ -111,4 +112,4 @@
     0.29 | Steel 12.9 fastener | 47.6 Screw M2.5x6 CSK cover->cartridge
     0.29 | Steel 12.9 fastener | 47.7 Screw M2.5x6 CSK cover->cartridge
     0.29 | Steel 12.9 fastener | 47.8 Screw M2.5x6 CSK cover->cartridge
- 2421.95 | TOTAL modelled (excl. motor 336 g, electronics)
+ 2513.51 | TOTAL modelled (excl. motor 336 g, electronics)

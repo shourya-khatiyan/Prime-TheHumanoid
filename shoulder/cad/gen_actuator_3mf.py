@@ -211,75 +211,103 @@ def build():
     cart_dowel_ang = [11.25, 191.25]
     hall_ang = 270.0
 
+    # motor as measured with a vernier: mount face -> rotor hub face 32.5, od 92, front shaft stub d2.9 x 3.9,
+    # rear rotating cap d17.4 inside the mount face, phase leads leave the rear face at r 32 (12 wide)
+    motor_r, motor_h = 46.0, 32.5
+    stub_r, stub_h, cap_r = 1.45, 3.9, 8.7
+    lead_r, lead_ang = 32.0, 180.0
+    shim_t = 1.0  # fitted pack, 0.5..1.5; moves only the motor and sun-1
+    z_mount = 10.0 + shim_t
+    z_hub = z_mount + motor_h
+    z_hub0 = 10.0 + 1.0 + motor_h  # hub face at the nominal 1.0 pack; housing and gearbox are drawn against it
+    ds = z_hub - z_hub0  # motor + sun-1 offset from nominal
+    dz = z_hub0 - 38.5  # gearbox shift against rev 1.3
+    flange_r, flange_z1, joint_r = 56.0, 16.0, 52.0  # rear flange d112, plate->housing m3 + dowels on pcd 104
+    z_ic = 5.0  # ic top face
+
     # ---- rear plate, encoder, lid (Z 0-10)
     lid = cyl(29.9, 0, 2) - holes(17, 5.6, 0.5, 2.1, every(4)) - box(24, 31, -2, 2, -1, 3)
+    lid = lid - box(25.5, 31, -7.5, 7.5, -1, 3).rotate((0, 0, lead_ang))  # notch beside the phase lead slot
     for a in every(4, 45):
         lid = lid - csk_hole(*polar(27, a), 0.0, 2.0, 2.0, 1)
     add("01 Encoder lid 6061-T6 D59.8x2", "6061-T6", lid)
     for i, a in enumerate(every(4, 45)):
         add(f"02.{i + 1} Screw M2x4 CSK lid", "Steel 12.9 fastener", csk(*polar(27, a), 0.0, 4.0, 2.0, 1))
-    pcb = (box(-15, 15, -15, 15, 2.5, 4.1).rotate((0, 0, 45))) - holes(17, 2.7, 2, 5, every(4))
+    pcb = (box(-15, 15, -15, 15, 2.5, 4.1).rotate((0, 0, 45))) - holes(17, 2.7, 2, 5, every(4))  # m2.5 fine clearance: +/-0.1 centring
     add("03 Motor encoder PCB 30x30x1.6 (AS5047P)", "Electronics", pcb)
-    add("04 AS5047P IC (TSSOP-14 envelope)", "Electronics", box(-2.5, 2.5, -2.2, 2.2, 4.1, 5.0))
+    add("04 AS5047P IC (TSSOP-14 envelope)", "Electronics", box(-2.5, 2.5, -2.2, 2.2, 4.1, z_ic))
     for i, a in enumerate(every(4)):
         x, y = polar(17, a)
         add(f"05.{i + 1} Screw M2.5x5 pan PCB", "Steel 12.9 fastener", cyl(2.5, 0.75, 2.5, x, y) + cyl(1.25, 2.49, 7.5, x, y))
-    add("06 Magnet holder sleeve 6061 D10/D6", "6061-T6", tube(5, 3, 6.0, 9.6))
-    add("07 Encoder magnet D6x2.5 diametric", "NdFeB magnet", cyl(3, 6.0, 8.5))
-    plate = cyl(50, 0, 10) - cyl(30.05, -1, 2) - cyl(25, 1.9, 6.0) - cyl(7, 5.9, 11)
+    z_mag = z_mount - 4.75  # holder length 4.75: magnet-ic gap 1.25 at the nominal pack, 0.75..1.75 over the shim range
+    holder = cyl(5, z_mag, z_mount) - cyl(3, z_mag - 0.1, z_mag + 2.5) + cyl(1.4, z_mount - 0.01, z_mount + 2.0)
+    add("06 Magnet holder 6061 D10, pin D2.8 into the rotor cap", "6061-T6", holder)
+    add("07 Encoder magnet D6x2.5 diametric", "NdFeB magnet", cyl(3, z_mag, z_mag + 2.5))
+    plate = cyl(flange_r, 0, 10) - cyl(30.05, -1, 2) - cyl(25, 1.9, 6.0) - cyl(7, 5.9, 11)
+    plate = plate - cyl(9.75, 8.5, 10.1)  # relief for the rotating d17.4 cap
     plate = plate + holes(17, 5.0, 4.1, 6.05, every(4)) - holes(17, 2.5, 4.0, 8.0, every(4))  # pcb bosses m2.5
     plate = plate - holes(27, 2.0, 1.9, 6.0, every(4, 45))  # lid m2 tapped
     plate = plate - holes(38, 5.0, -1, 7.0, rear_ang) - holes(38, 4.0, -1, 6.0, [120, 300])  # torso helicoil m4 + dowel
-    plate = plate - holes(47, 3.4, -1, 11, rear_ang) - holes(47, 5.8, -1, 4.6, rear_ang)  # m3 c'bore
-    plate = plate - holes(47, 3.0, 6.9, 10.1, [120, 300])  # plate->housing dowels
-    plate = plate - box(24, 51, -5, 5, 7.0, 10.1) - box(24, 51, -2, 2, -1, 3.0)  # phase + encoder cable grooves
+    plate = plate - holes(joint_r, 3.4, -1, 11, rear_ang) - holes(joint_r, 6.0, -1, 4.0, rear_ang)  # m3 c'bore
+    plate = plate - holes(joint_r, 3.0, 6.9, 10.1, [120, 300])  # plate->housing dowels
+    plate = plate - box(24, 57, -2, 2, -1, 3.0)  # encoder cable groove
+    plate = plate - (box(26, 38, -7, 7, -1, 11) + box(26, 57, -7, 7, -1, 5)).rotate((0, 0, lead_ang))  # phase lead slot + rear groove
     plate = plate - tube(42.5, 26, 7.5, 10.1)  # front lightening pocket
     for a in stator_ang:
         plate = plate - csk_hole(*polar(stator_pcd, a), 6.0, 4.0, 4.0, 1)
-    add("08 Rear mount plate 7075-T6 (10 mm)", "7075-T6", plate)
+    add("08 Rear mount plate 7075-T6 (D112 x 10)", "7075-T6", plate)
     for i, a in enumerate(rear_ang):
-        add(f"09.{i + 1} Screw M3x8 SHCS plate->housing", "Steel 12.9 fastener", shcs(*polar(47, a), 4.6, 8.0, 3.0, 1))
+        add(f"09.{i + 1} Screw M3x12 SHCS plate->housing flange", "Steel 12.9 fastener", shcs(*polar(joint_r, a), 4.0, 12.0, 3.0, 1))
     for i, a in enumerate([120, 300]):
-        add(f"10.{i + 1} Dowel D3x6 plate->housing", "52100 bearing steel", cyl(1.5, 7.0, 13.0, *polar(47, a)))
+        add(f"10.{i + 1} Dowel D3x6 plate->housing", "52100 bearing steel", cyl(1.5, 7.0, 13.0, *polar(joint_r, a)))
     for i, a in enumerate(stator_ang):
-        add(f"11.{i + 1} Screw M4x8 CSK stator", "Steel 12.9 fastener", csk(*polar(stator_pcd, a), 6.0, 8.0, 4.0, 1))
+        add(f"11.{i + 1} Screw M4x10 CSK stator", "Steel 12.9 fastener", csk(*polar(stator_pcd, a), 6.0, 10.0, 4.0, 1))
+    shim = tube(25, 9.75, 10.0, z_mount) - holes(stator_pcd, 4.5, 9.9, z_mount + 0.1, stator_ang)
+    add("48 Motor shim pack 2x0.5 D50/D19.5", "Spring steel", shim)
 
-    # ---- motor envelope (Z 10-38.5)
-    stator = cyl(25, 10, 15) + cyl(43, 15, 36) - cyl(6, 9, 37) - holes(stator_pcd, 4.0, 9.9, 15, stator_ang)
-    add("12 LA8308 stator + base (envelope, measure)", "Motor envelope", stator)
-    bell = tube(46, 44.5, 13.5, 36.5) + cyl(46, 36.5, 38.5) - holes(rotor_pcd, 3.0, 36.4, 38.6, rotor_ang)
-    add("13 LA8308 rotor bell (envelope, measure)", "Motor envelope", bell)
-    add("14 LA8308 shaft D6", "52100 bearing steel", cyl(3, 8.5, 36.5))
+    # ---- motor envelope (mount face z_mount, hub face z_hub)
+    lead = box(lead_r - 4, lead_r + 4, -6, 6, z_mount - 2.5, z_mount).rotate((0, 0, lead_ang))  # exit block, protrusion assumed
+    stator = cyl(motor_r, z_mount, z_mount + 3) + cyl(43, z_mount + 3, z_hub - 3) + lead
+    stator = stator - cyl(cap_r + 0.3, z_mount - 1, z_hub) - holes(stator_pcd, 4.0, z_mount - 0.1, z_mount + 6, stator_ang)
+    add("12 LA8308 stator + base (envelope, measured)", "Motor envelope", stator)
+    bell = tube(motor_r, 44.5, z_mount + 3.5, z_hub - 2) + cyl(motor_r, z_hub - 2, z_hub) - holes(rotor_pcd, 3.0, z_hub - 2.1, z_hub + 0.1, rotor_ang)
+    bell = bell + cyl(stub_r, z_hub - 0.1, z_hub + stub_h) + cyl(cap_r, z_mount, z_mount + 3) - cyl(1.5, z_mount - 1, z_mount + 2.1)
+    add("13 LA8308 rotor bell + front stub + rear cap (envelope, measured)", "Motor envelope", bell)
+    add("14 LA8308 shaft D6", "52100 bearing steel", cyl(3, z_mount + 3, z_hub - 2))
 
-    # ---- housing (Z 10-84)
-    h = cyl(50, 10, 84) - cyl(44, 9, 13) - cyl(47.25, 13, 39.5) - cyl(20.3, 39, 43)
-    h = h - cyl(42.5, 42.5, 59.7) - cyl(44.5, 59.7, 84.1)
-    h = h - pattern(lambda a: box(44, 51, -1.5, 1.5, 15, 33).rotate((0, 0, a)), every(12, 15))
-    h = h - holes(47, 3.0, 9.9, 13.01, rear_ang) - holes(47, 3.0, 9.9, 13.01, [120, 300])  # m3 tapped + dowels
-    h = h - box(43, 51, -5, 5, 9.9, 13.01)  # phase cable notch at 0 deg
-    h = h - pattern(lambda a: box(37.5, 42.6, -1.5, 1.5, 41.0, 42.6).rotate((0, 0, a)), [45, 225])  # ring-1 dowel radial slots
-    h = h - holes(46.5, 3.0, 76.0, 84.1, flange_ang)  # cartridge flange m3 tapped
-    h = h - pattern(lambda a: box(44.4, 49.5, -2.0, 2.0, 79.5, 84.1).rotate((0, 0, a)), cart_dowel_ang)
+    # ---- housing (Z 10-84+dz): open d94.5 rear bore, d112 rear flange
+    zp = z_hub0 + 1.5  # partition rear face: 1.5 axial gap to the rotor hub face
+    h = cyl(50, 10, 84 + dz) + tube(flange_r, 49.9, 10, flange_z1) - cyl(47.25, 9, zp) - cyl(20.5, zp - 1, 43 + dz)
+    h = h - cyl(42.5, 42.5 + dz, 59.7 + dz) - cyl(44.5, 59.7 + dz, 84.1 + dz)
+    h = h - pattern(lambda a: box(44, 51, -1.5, 1.5, 19, 39).rotate((0, 0, a)), every(12, 15))
+    h = h - holes(joint_r, 3.0, 9.9, flange_z1 + 0.1, rear_ang) - holes(joint_r, 3.0, 9.9, 13.01, [120, 300])  # m3 tapped + dowels
+    h = h - pattern(lambda a: box(37.5, 42.6, -1.5, 1.5, 41.0 + dz, 42.6 + dz).rotate((0, 0, a)), [45, 225])  # ring-1 dowel radial slots
+    h = h - holes(46.5, 3.0, 76.0 + dz, 84.1 + dz, flange_ang)  # cartridge flange m3 tapped
+    h = h - pattern(lambda a: box(44.4, 49.5, -2.0, 2.0, 79.5 + dz, 84.1 + dz).rotate((0, 0, a)), cart_dowel_ang)
     add("15 Housing one-piece 7075-T6", "7075-T6", h)
+
+    # gearbox parts below are drawn at their rev 1.3 z and moved forward by dz as one block
+    n_gear = len(p)
 
     # ---- stage 1 (6:1, m0.8)
     ring1 = ring_gear(r1, m1, 42.5, 42.5, 57.85, 180.0 / r1) - holes(39.75, 3.0, 42.4, 49.5, [45, 225])
     add("16 Ring-1 90T m0.8 (42CrMo4 nitrided)", "42CrMo4 nitrided", ring1)
     for i, a in enumerate([45, 225]):
         add(f"17.{i + 1} Dowel D3x8 ring-1 axial", "52100 bearing steel", cyl(1.5, 41.0, 49.0, *polar(39.75, a)))
-    sun1 = cyl(20, 38.5, 41.5) + cyl(6, 41.4, 46.4) + ext_gear(s1, m1, 46.3, 56.7) - cyl(7, 38.4, 40.5)
+    sun1 = cyl(20, 38.5, 41.5) + cyl(6, 41.4, 46.4) + ext_gear(s1, m1, 46.3, 56.7)
+    sun1 = sun1 - cyl(9, 38.4, 39.0) - cyl(1.75, 38.4, 38.5 + stub_h + 1.6)  # hub-disc relief + bore over the shaft stub
     for pcd, angs in ((rotor_pcd, rotor_ang), rotor_alt):
         for a in angs:
             sun1 = sun1 - csk_hole(*polar(pcd, a), 41.5, 3.0, 3.0, -1)
-    add("18 Sun-1 18T m0.8 flanged pinion (16MnCr5)", "16MnCr5 carburized", sun1)
+    add("18 Sun-1 18T m0.8 flanged pinion (16MnCr5)", "16MnCr5 carburized", sun1.translate((0, 0, ds)))
     for i, a in enumerate(rotor_ang):
-        add(f"19.{i + 1} Screw M3x5 CSK sun-1->rotor", "Steel 12.9 fastener", csk(*polar(rotor_pcd, a), 41.5, 5.0, 3.0, -1))
+        add(f"19.{i + 1} Screw M3x5 CSK sun-1->rotor", "Steel 12.9 fastener", csk(*polar(rotor_pcd, a), 41.5 + ds, 5.0, 3.0, -1))
     add("20 Thrust washer C1 rear D48/42x0.3", "52100 bearing steel", tube(24, 21, 42.5, 42.8))
     c1r = cyl(30, 43, 46) + pattern(lambda a: cyl(5, 45.9, 57.0, *polar(22, a)), post_angles)
     c1r = c1r - cyl(9, 42, 47) - holes(a1, 8.0, 42.9, 46.1, planet_angles) - holes(22, 3.0, 49.0, 57.1, post_angles)
     add("21 Carrier-1 rear plate + posts (EN24T)", "EN24T (34CrNiMo6) Q&T", c1r)
     c1f = cyl(30, 57, 60) + cyl(7, 59.9, 71.1) + ext_gear(s2, m2, 71.0, 81.0)
-    c1f = c1f - holes(a1, 8.0, 56.9, 60.1, planet_angles)
+    c1f = c1f - holes(a1, 8.0, 56.9, 60.1, planet_angles) - cyl(9.5, 56.9, 58.2)  # recess: 1.5 axial gap over the sun-1 tips
     for a in post_angles:
         c1f = c1f - csk_hole(*polar(22, a), 60.0, 3.0, 3.0, -1)
     add("22 Carrier-1 front plate + Sun-2 18T m1 (16MnCr5)", "16MnCr5 carburized", c1f)
@@ -343,12 +371,16 @@ def build():
     add("46 Hall homing sensor DRV5033FA SOT-23 (envelope)", "Electronics", box(40.2, 41.4, -1.45, 1.45, 92.6, 94.2).rotate((0, 0, hall_ang)))
     for i, a in enumerate(cover_ang):
         add(f"47.{i + 1} Screw M2.5x6 CSK cover->cartridge", "Steel 12.9 fastener", csk(*polar(46.6, a), 94.5, 6.0, 2.5, -1))
+    p[n_gear:] = [(n, m, s.translate((0, 0, dz))) for n, m, s in p[n_gear:]]
     return p
 
 
 # ---------------------------------------------------------------- checks
 SHOULDER_MESHES = [("18 Sun-1", "24.1 Planet-1"), ("24.1 Planet-1", "16 Ring-1"),
-                   ("22 Carrier-1 front", "36.1 Planet-2"), ("36.1 Planet-2", "33 Bearing cartridge")]
+                   ("22 Carrier-1 front", "36.1 Planet-2"), ("36.1 Planet-2", "33 Bearing cartridge"),
+                   ("13 LA8308 rotor", "15 Housing"), ("18 Sun-1", "15 Housing"), ("18 Sun-1", "21 Carrier-1 rear"),
+                   ("18 Sun-1", "22 Carrier-1 front"), ("13 LA8308 rotor", "08 Rear"),
+                   ("06 Magnet holder", "08 Rear"), ("07 Encoder magnet", "04 AS5047P")]
 
 
 def check(parts, meshes=SHOULDER_MESHES, motor_g=336):
@@ -359,7 +391,7 @@ def check(parts, meshes=SHOULDER_MESHES, motor_g=336):
     for a, b in meshes:
         sa = next(s for n, s in named.items() if n.startswith(a))
         sb = next(s for n, s in named.items() if n.startswith(b))
-        print(f"min gap {a} <-> {b}: {sa.min_gap(sb, 1.0):.3f} mm")
+        print(f"min gap {a} <-> {b}: {sa.min_gap(sb, 3.0):.3f} mm")  # 3.0 = search cap
     boxes = [s.bounding_box() for _, _, s in parts]
     hits = []
     for i, j in combinations(range(len(parts)), 2):

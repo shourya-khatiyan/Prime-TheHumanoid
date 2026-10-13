@@ -45,7 +45,7 @@ MU_PRINT = 0.30  # asa on asa / asa on 6061 static friction used for printed joi
 MU_METAL = 0.15  # steel / aluminium faces (shoulder calc)
 
 # ---------------------------------------------------------------- shoulder interface (shoulder parts.md 42, 43, 45)
-SH_FLANGE_Z = 95.5  # flange face in shoulder z
+SH_FLANGE_Z = 100.5  # flange face in shoulder z
 SH_M5_R, SH_M5_ANG = 26.0, [30.0 + 60.0 * k for k in range(6)]  # 6 x m5, tapped 8 deep in en24t
 SH_M5_TAP = 8.0
 SH_M4_HEAD_R, SH_M4_HEAD_ANG = 27.0, [60.0, 180.0, 300.0]  # carrier-2 screw heads flush with the face
