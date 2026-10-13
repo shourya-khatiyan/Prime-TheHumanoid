@@ -233,6 +233,7 @@ fits = [
     ("outer rings, selective D85 OD+3/+10", 85, 3, 10, 0, 0, A_ST, A_ST),
     ("IR on carrier-2       D65 brg/j5", 65, -15, 0, -7, 6, A_ST, A_ST),
     ("labyrinth D41.0H8 over sun-1 D40h8", 41.0, 1000, 1039, -39, 0, A_AL, A_ST),
+    ("plate plug in housing D94.5 H7/k6", 94.5, 0, 35, 3, 25, A_AL, A_AL),
 ]
 for name, d, hlo, hhi, slo, shi, ah, as_ in fits:
     row = []
@@ -268,21 +269,28 @@ def joint(name, n, size, torque, r_bolt, r_in, r_out, mu, torque_load, tilt_load
 
 
 joint("cartridge flange -> housing", 8, "M3", 1.2, 46.5, 44.5, 50, 0.15, 50 - 50 / 4.75, 50 + 0.15 * 9)
-joint("rear plate -> housing flange", 6, "M3", 1.2, 52.0, 47.25, 56, 0.15, 50, 50 + 0.15 * Z_LOAD)
 joint("torso bracket -> rear plate", 6, "M4", 3.0, 38.0, 30.0, 50, 0.15, 50, 50 + 0.15 * Z_LOAD)
 joint("arm -> output flange", 6, "M5", 8.0, 26.0, 20.0, 39, 0.15, 50, 50 + 0.15 * 0)
 joint("carrier-2 halves", 3, "M4", 4.0, 27.0, 19.5, 34.5, 0.15, 50, 0)
 joint("sun-1 -> rotor (pcd 25 worst)", 4, "M3", 0.8, 12.5, 10.0, 20.0, 0.15, 50 / (RATIO * ETA), 0)
 fm_m3 = preload("M3", 1.2)
 tau_al = 331.0  # 7075-t6 shear strength
-for name, le in (("housing M3 x6 engage (cartridge)", 6.0), ("housing flange M3 x6 engage (plate)", 6.0)):
+for name, le in (("housing M3 x6 engage (cartridge)", 6.0), ("plate plug M3 x5.25 engage (radial)", 5.25)):
     a_sh = 0.75 * math.pi * 3.0 * le
     print(f"{name:36s} strip {a_sh * tau_al:5.0f} N vs FM {fm_m3:.0f} N  SF {a_sh * tau_al / fm_m3:.1f}")
 for name, torque_nm, r, n, d, le in (("ring-1 dowels 2x D3 (slot 1.5 deep)", 50 / 4.75 - 50 / 28.5, 39.75, 2, 3.0, 1.5),
-                                     ("cartridge dowels 2x D4 (backup)", 50 - 50 / 4.75, 47.0, 2, 4.0, 4.0),
-                                     ("plate dowels 2x D3 (backup)", 50, 52.0, 2, 3.0, 3.0)):
+                                     ("cartridge dowels 2x D4 (backup)", 50 - 50 / 4.75, 47.0, 2, 4.0, 4.0)):
     f = torque_nm * 1000 / r / n
     print(f"{name:36s} {f:5.0f} N each  shear {f / (math.pi * d ** 2 / 4):5.0f} MPa  bearing(Al) {f / (d * le):4.0f} MPa")
+# rear plate plug (d94.5 H7/k6, both 7075) held by 8 x m3 csk radial screws; the csk centres sit 0.1 forward of the
+# threads, so tightening draws the housing onto the plate rim and the joint has no play in the lift direction
+n_rad, r_rad, m_rear = 8, 48.5, 50 + 0.15 * Z_LOAD
+f_torque = 50e3 / r_rad / n_rad
+f_lift = 4 * m_rear * 1e3 / (3 * n_rad * r_rad)  # pivot at the far rim edge, linear share
+f_rad = math.hypot(f_torque, f_lift)
+f_shear_cap = math.pi / 4 * 2.387 ** 2 * 0.6 * 1200  # m3 minor area x 12.9 shear
+print(f"plate plug 8x M3 radial: torque {f_torque:.0f} N + tilt {m_rear:.1f} N*m {f_lift:.0f} N -> {f_rad:.0f} N per screw; "
+      f"shear SF {f_shear_cap / f_rad:.1f}, wall bearing (1.25 straight) {f_rad / (3 * 1.25):.0f} MPa vs Rp0.2 503")
 f_post = 50 / 0.027 / 3
 print(f"carrier-2 post shear {f_post:.0f} N each, bending {32 * f_post * 5.5 / (math.pi * 15 ** 3):.0f} MPa")
 f_lip = f_max + 150
@@ -338,10 +346,10 @@ for gap in (1.2, 1.4, 2.0):
 
 # ---------------------------------------------------------------- 9 motor fit + encoder
 line("9 motor fit, axial stack and encoder centring")
-MOTOR_D, MOTOR_H, STUB_H, CAP_D = 92.0, 32.5, 3.9, 17.4  # vernier: od, mount face -> hub face, front stub, rear cap
+MOTOR_D, MOTOR_H, STUB_H, CAP_D = 92.0, 32.5, 8.9, 17.4  # vernier: od, mount face -> hub face, front stub, rear cap
 print(f"motor d{MOTOR_D} in housing bore d94.5: radial {(94.5 - MOTOR_D) / 2:.2f}; rotor bell to bore {(94.5 - MOTOR_D) / 2:.2f}")
 print(f"rear cap d{CAP_D} (rotates) in plate relief d19.5: radial {(19.5 - CAP_D) / 2:.2f}; it is not a pilot")
-print(f"front stub {STUB_H} long in sun-1 bore d3.5 x 5.5: end clearance {5.5 - STUB_H:.1f}, radial {(3.5 - 2.9) / 2:.2f}")
+print(f"front stub {STUB_H} long in sun-1 bore d3.5 x 10.5: end clearance {10.5 - STUB_H:.1f}, radial {(3.5 - 2.9) / 2:.2f}")
 print("shim  partition  sun tip-C1F  sun disc-C1R  magnet-IC  planet-1 face  M4 engage")
 for s in (0.5, 1.0, 1.5):
     ds = s - 1.0  # motor + sun-1 offset from nominal

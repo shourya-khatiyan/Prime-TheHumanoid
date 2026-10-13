@@ -67,20 +67,20 @@ cartridge in housing  D89 G7/h6      -20C   -31..  +26  0C   -10..  +47  20C   +
 outer rings, selective D85 OD+3/+10  -20C    +3..  +10  0C    +3..  +10  20C    +3..  +10  80C    +3..  +10
 IR on carrier-2       D65 brg/j5     -20C   -21..   +7  0C   -21..   +7  20C   -21..   +7  80C   -21..   +7
 labyrinth D41.0H8 over sun-1 D40h8   -20C  +980..+1058  0C  +990..+1068  20C +1000..+1078  80C +1030..+1108
+plate plug in housing D94.5 H7/k6    -20C   -25..  +32  0C   -25..  +32  20C   -25..  +32  80C   -25..  +32
 radial clearance loss: j5 max interference x0.8 + 5 K ring gradient = 21.1 um  -> Normal(8-28) min -13.1  C3(23-43) min +1.9
 
 === 6 bolted joints and dowels ==================================
 cartridge flange -> housing      8xM3 @1.2 N*m: FM  2378 N  slip   133 N*m (load 39, SF  3.4)  separation   426 N*m (load 51, SF  8.3)
-rear plate -> housing flange     6xM3 @1.2 N*m: FM  2378 N  slip   111 N*m (load 50, SF  2.2)  separation   342 N*m (load 65, SF  5.3)
 torso bracket -> rear plate      6xM4 @3.0 N*m: FM  4471 N  slip   153 N*m (load 50, SF  3.1)  separation   456 N*m (load 65, SF  7.0)
 arm -> output flange             6xM5 @8.0 N*m: FM  9920 N  slip   232 N*m (load 50, SF  4.6)  separation   733 N*m (load 50, SF 14.7)
 carrier-2 halves                 3xM4 @4.0 N*m: FM  5961 N  slip    72 N*m (load 50, SF  1.4)  
 sun-1 -> rotor (pcd 25 worst)    4xM3 @0.8 N*m: FM  1585 N  slip    12 N*m (load 2, SF  6.4)  
 housing M3 x6 engage (cartridge)     strip 14038 N vs FM 2378 N  SF 5.9
-housing flange M3 x6 engage (plate)  strip 14038 N vs FM 2378 N  SF 5.9
+plate plug M3 x5.25 engage (radial)  strip 12283 N vs FM 2378 N  SF 5.2
 ring-1 dowels 2x D3 (slot 1.5 deep)    110 N each  shear    16 MPa  bearing(Al)   25 MPa
 cartridge dowels 2x D4 (backup)        420 N each  shear    33 MPa  bearing(Al)   26 MPa
-plate dowels 2x D3 (backup)            481 N each  shear    68 MPa  bearing(Al)   53 MPa
+plate plug 8x M3 radial: torque 129 N + tilt 65.1 N*m 224 N -> 258 N per screw; shear SF 12.5, wall bearing (1.25 straight) 69 MPa vs Rp0.2 503
 carrier-2 post shear 617 N each, bending 10 MPa
 cover lip: 426 N -> line 1.65 N/mm, bending 3 MPa
 
@@ -101,7 +101,7 @@ homing magnet D3x2 N52 on-axis field at 2.0 mm: 97 mT (DRV5033FA BOP max 6.8 mT)
 === 9 motor fit, axial stack and encoder centring ===============
 motor d92.0 in housing bore d94.5: radial 1.25; rotor bell to bore 1.25
 rear cap d17.4 (rotates) in plate relief d19.5: radial 1.05; it is not a pilot
-front stub 3.9 long in sun-1 bore d3.5 x 5.5: end clearance 1.6, radial 0.30
+front stub 8.9 long in sun-1 bore d3.5 x 10.5: end clearance 1.6, radial 0.30
 shim  partition  sun tip-C1F  sun disc-C1R  magnet-IC  planet-1 face  M4 engage
  0.5       2.00         2.00          2.00       0.75            9.7        5.5
  1.0       1.50         1.50          1.50       1.25           10.0        5.0

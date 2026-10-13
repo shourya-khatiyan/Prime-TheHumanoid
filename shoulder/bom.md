@@ -16,19 +16,19 @@ Part IDs (`M..` = make, `P..` = purchase) are used only in this doc. The "Model 
 | Item | Value |
 |---|---|
 | Make parts | 19 unique (40 pieces, including 14 thrust washers and 2 motor shims) |
-| Purchased parts | 27 lines (≈ 85 pieces, not counting spares) |
-| Envelope | Ø100 body × 100.5 long; Ø112 rear flange and plate at the torso end |
-| Actuator mass | ≈ 2.85 kg: ≈ 2.51 kg modelled parts plus the 336 g motor (model volumes × density) |
-| Heaviest parts | Housing 371 g, cartridge 351 g, carrier-2 front 314 g, carrier-2 rear 232 g, rear plate 197 g |
+| Purchased parts | 26 lines (≈ 85 pieces, not counting spares) |
+| Envelope | Plain Ø100 × 100.5 cylinder |
+| Actuator mass | ≈ 2.76 kg: ≈ 2.43 kg modelled parts plus the 336 g motor (model volumes × density) |
+| Heaviest parts | Housing 356 g, cartridge 351 g, carrier-2 front 314 g, carrier-2 rear 232 g, ring-1 191 g |
 | Longest-lead items (order first) | LA8308 motor, 61813/C3 bearings, SSB-0335 wave spring, carburizing and nitriding batches |
-| Must-measure before machining | LA8308 is measured (Ø92.0 × 32.5 mounting face to hub face, front stub Ø2.9 × 3.9, rear cap Ø17.4). Still open: M4 thread depth in the stator base (needs ≥ 6), the rear cap's centre hole (diameter, plain or threaded), and how far the phase-lead exit stands proud of the mounting face |
+| Must-measure before machining | LA8308 is measured (Ø92.0 × 32.5 mounting face to hub face, front stub Ø2.9 × 8.9, rear cap Ø17.4 turning with the rotor, M4 holes > 6 deep, flexible leads in a 13 mm bundle). Still open: diameter and depth of the plain hole in the rear cap |
 
 **Rev 1.4 changes (motor fit after the first build; all in the model and the calc):**
-1. **Open rear housing with a Ø112 flange.** The Rev 1.3 rear lip was Ø88 and the front was closed by the partition, so the Ø92 motor could not enter. The Ø94.5 bore now runs out of the rear face, and 6 × M3 on PCD 104 (6 mm engagement, strip SF 5.9, was 2.6) plus 2 × Ø3 dowels join the flange to a Ø112 plate.
-2. **Measured motor height (32.5, not the catalogue 28.5) and the 3.9 mm front stub.** The gearbox moves forward 5.0 mm, the partition becomes 2.5 thick, sun-1 gets a Ø3.5 × 5.5 stub bore, and carrier-1 front gets a Ø19 × 1.2 tip recess. Every axial gap is 1.5 at the nominal shim, and the labyrinth opens to Ø41.0 (0.5 radial).
+1. **The lip moves from the housing to the rear plate.** The Rev 1.3 rear lip was Ø88 and the front was closed by the partition, so the Ø92 motor could not enter. The housing bore (Ø94.5) is now open at the rear, and the plate becomes a Ø94.5 k6 plug with a Ø100 × 2 seat rim. Eight radial M3 × 8 CSK screws go through the 2.75 mm wall into the plug, with the countersinks 0.1 forward of the threads so tightening draws the housing onto the rim. That gives 258 N per screw at the proof case, shear SF 12.5 (calc §6). The body stays a plain Ø100 cylinder, and the plate dowels are deleted.
+2. **Measured motor height (32.5, not the catalogue 28.5) and the 8.9 mm front stub.** The gearbox moves forward 5.0 mm, the partition becomes 2.5 thick, sun-1 gets a Ø3.5 × 10.5 stub bore, and carrier-1 front gets a Ø19 × 1.2 tip recess. Every axial gap is 1.5 at the nominal shim, and the labyrinth opens to Ø41.0 (0.5 radial).
 3. **Motor shim pack (M19)**, 0.5–1.5, nominal 1.0. It sets the motor and sun-1 axial position without touching the gearbox (calc §9).
 4. **Encoder centring.** The rotating Ø17.4 cap gets a Ø19.5 relief. The magnet holder pins into the cap's centre hole, and the PCB holes tighten to Ø2.7. Budget 0.22 RSS / 0.55 worst case against 0.5 allowed (calc §9).
-5. **Phase leads** exit through a slot at 180° (r 26–38) with a rear groove to the rim.
+5. **Phase leads** (flexible, 13 mm bundle) exit through a 15 mm slot at 180° (r 25–39) and bend into a 5 mm rear groove to the rim.
 
 **Rev 1.3 review changes:**
 1. **Homing hall sensor: DRV5032FB → DRV5033FAQDBZR.**
@@ -51,10 +51,10 @@ Stock sizes below include ≈ 5 mm on the diameter and ≈ 5 mm on the length fo
 |---|---|---|---|---|---|---|---|---|---|---|
 | M01 | 01 | Encoder lid | 1 | 6061-T6 | Ø59.8 × 2 | 3 mm plate, 65 × 65 | CNC mill | Clear anodize | 4 × M2 CSK, cable slot | 14.5 |
 | M02 | 06 | Magnet holder | 1 | 6061-T6 (**must be non-magnetic** [S10]) | Ø10 × 4.75 + pin Ø2.8 × 2 | Ø12 bar | Lathe | None | Magnet pocket Ø6 × 2.5; **pin turned to the measured cap hole, 0–0.02 clearance**; pocket concentric to pin ≤ 0.03 TIR | 0.85 |
-| M03 | 08 | Rear mount plate | 1 | 7075-T651 | Ø112 × 10 | 12 mm plate 117 × 117, or Ø117 bar slice 15 | CNC 3-axis, 2 setups | Clear anodize type II; mask the M3 counterbores | 6 × M4 wire-thread inserts on PCD 76 (torso), 2 × Ø4 torso dowel, 6 × M3 c'bore + 2 × Ø3 dowel on PCD 104, 4 × M4 CSK stator on PCD 40 at 45° (fitted the real motor in Rev 1.3), **Ø19.5 × 1.5 relief for the rotating Ø17.4 cap (not a pilot)**, PCB bosses M2.5, lid M2 tapped, encoder groove at 0°, phase-lead slot at 180° (r 26–38 × 14 through, 5 deep rear groove to the rim) | 197 |
-| M04 | 15 | Housing (one-piece) | 1 | 7075-T651 / T6511 round bar | Ø100 body, Ø112 × 6 rear flange, × 79 | Ø117 × 85 | CNC lathe + 4th-axis or 3-axis mill | Clear anodize type II; **mask all fits and threads** | **Motor bore Ø94.5 open through the rear face**; partition 2.5 thick at Z 45–47.5; ring-1 bore Ø85 **K6**; cartridge bore Ø89 **G7**; labyrinth Ø41.0 **H8**; 12 × cooling slots 3 × 20; flange 6 × M3 tapped through on PCD 104 (6 engagement) + 2 × Ø3 dowel; 8 × M3 front (6 engagement); 2 × ring-1 dowel slots in the partition face, radial, open to the Ø85 bore, width 3.02–3.04 (dowel slides), 1.5 deep | 371 |
+| M03 | 08 | Rear mount plate (plug) | 1 | 7075-T651 | Rim Ø100 × 2 + plug Ø94.5 × 8 | Ø105 bar slice 15 | CNC lathe, then 3-axis + 4th axis for the radial holes | Clear anodize type II; mask the plug Ø | **Plug Ø94.5 k6**; 8 × M3 radial tapped 6 deep at Z 6 (22.5° + 45° steps); 6 × M4 wire-thread inserts on PCD 76 (torso), 2 × Ø4 torso dowel, 4 × M4 CSK stator on PCD 40 at 45° (fitted the real motor in Rev 1.3), **Ø19.5 × 1.5 relief for the rotating Ø17.4 cap (not a pilot)**, PCB bosses M2.5, lid M2 tapped, encoder groove at 0°, phase-lead slot at 180° (r 25–39 × 15 through, 5 deep rear groove to the rim); 2 × M4 jack-screw holes in the rim recommended | 130 |
+| M04 | 15 | Housing (one-piece) | 1 | 7075-T651 / T6511 round bar | Ø100 × 87 | Ø105 × 92 | CNC lathe + 4th-axis or 3-axis mill | Clear anodize type II; **mask all fits and threads** | **Bore Ø94.5 open through the rear face, rear 8 mm H7** (plate plug); 8 × Ø3.2 radial + 90° CSK at Z 6.1 (**0.1 forward of the plug threads**); rear-face notches 4 × 1 at 0° and 15 × 3 at 180°; partition 2.5 thick at Z 45–47.5; ring-1 bore Ø85 **K6**; cartridge bore Ø89 **G7**; labyrinth Ø41.0 **H8**; 12 × cooling slots 3 × 20; 8 × M3 front (6 engagement); 2 × ring-1 dowel slots in the partition face, radial, open to the Ø85 bore, width 3.02–3.04 (dowel slides), 1.5 deep | 356 |
 | M05 | 16 | Ring-1, 90T m0.8 internal | 1 | 42CrMo4 / EN19, Q&T 28–34 HRC | Ø85 h5 × 15.2 | Ø90 × 20 | Turn, then **wire-EDM teeth** | Gas or plasma nitride after EDM; **no grinding** (allow 0.03–0.04 mm nitride growth) | Teeth: Mi over Ø1.2 pins **70.813 +0.015/0**; 2 × Ø3 H7 dowel holes, 7 deep from the rear face, on PCD 79.5 | 191 |
-| M06 | 18 | Sun-1 18T m0.8 flanged pinion | 1 | 16MnCr5 (or 20MnCr5), annealed | Flange Ø40 × 3, teeth Ø16 × 10.4, total 18.2 | Ø45 × 25 | Turn, hob or shape, CSK holes | Carburize CHD **0.12–0.18** @ 550 HV, 58–62 HRC surface, core 30–40 HRC, temper; hard-finish teeth to ISO 1328 grade 6–7 | W3 **6.082 −0.015/0**; 4 × M3 CSK on PCD 31 **and** 4 × M3 CSK on PCD 25 at 45° (fits either published rotor pattern); **Ø3.5 × 5.5 bore for the motor's 3.9 shaft stub**, Ø18 × 0.5 hub relief | 43 |
+| M06 | 18 | Sun-1 18T m0.8 flanged pinion | 1 | 16MnCr5 (or 20MnCr5), annealed | Flange Ø40 × 3, teeth Ø16 × 10.4, total 18.2 | Ø45 × 25 | Turn, hob or shape, CSK holes | Carburize CHD **0.12–0.18** @ 550 HV, 58–62 HRC surface, core 30–40 HRC, temper; hard-finish teeth to ISO 1328 grade 6–7 | W3 **6.082 −0.015/0**; 4 × M3 CSK on PCD 31 **and** 4 × M3 CSK on PCD 25 at 45° (fits either published rotor pattern); **Ø3.5 × 10.5 bore for the motor's 8.9 shaft stub**, Ø18 × 0.5 hub relief | 42 |
 | M07 | 21 | Carrier-1 rear plate + posts | 1 | EN24T (34CrNiMo6 / 4340), Q&T | Ø60 × 14 | Ø65 × 20 | CNC | As supplied (T condition) | 3 × Ø8 **R7** pin holes on PCD 43.2; posts tapped M3 | 76 |
 | M08 | 22 | Carrier-1 front plate + sun-2 18T m1 | 1 | 16MnCr5 | Ø60 plate + sun Ø20 × 10, total 24 | Ø65 × 30 | Turn, hob, drill | Carburize CHD **0.15–0.20**, 58–62 HRC; **mask the plate area** [spec 7.2] | W3 **7.609 −0.015/0**; 3 × Ø8 **R7** holes; 3 × M3 CSK; Ø19 × 1.2 recess in the rear face (1.5 axial clearance over the sun-1 tips) | 92 |
 | M09 | 24.1–3 | Planet-1 36T m0.8 | 3 | 16MnCr5 | Ø30.4 × 10, bore Ø12 | Ø35 bar; hob a stack of 4 blanks (3 + 1 spare) | Turn blanks, hob as a stack, part off | Carburize CHD 0.12–0.18, 58–62 HRC; grind the bore after hardening | Bore **Ø12 N6**, roundness IT5/2, Ra ≤ 0.8 [S5]; W5 **11.008 −0.015/0** | 41.6 each |
@@ -80,14 +80,13 @@ Stock sizes below include ≈ 5 mm on the diameter and ≈ 5 mm on the length fo
 
 | ID | Model # | Part | Qty (+spare) | Exact spec | Approved / alternate | Why this part | Notes |
 |---|---|---|---|---|---|---|---|
-| P01 | 12–14 | BLDC motor | 1 | EaglePower **LA8308 KV90**, measured Ø92.0 × 32.5 (mounting face to hub face; catalogue says 28.5), 336 g | — | Fixed by requirements | Front stub Ø2.9 × 3.9, rotating rear cap Ø17.4, phase leads out of the rear face at r 32, 12 wide. **Still measure:** M4 thread depth (≥ 6), cap centre hole, lead-exit protrusion |
+| P01 | 12–14 | BLDC motor | 1 | EaglePower **LA8308 KV90**, measured Ø92.0 × 32.5 (mounting face to hub face; catalogue says 28.5), 336 g | — | Fixed by requirements | Front stub Ø2.9 × 8.9, rear cap Ø17.4 turns with the rotor (plain centre hole), M4 holes > 6 deep, flexible leads out of the rear face at r 32 (13 mm bundle). **Still measure:** cap hole diameter and depth |
 | P02 | 31 | Rear output bearing | 1 (+1) | **61813-2Z/C3**, 65 × 85 × 10, metal shields | SKF 61813-2Z/C3; NSK/NTN 6813ZZ C3 (confirm C3 on the box) | Thin section, so it fits the Ø100 envelope; shields keep grease in | **C3 required** (Section 0). The spare lets you select the best OD match for the cartridge bore (M11). C 11.9 kN, C0 11.5 kN, 0.13 kg [S2] |
 | P03 | 41 | Front output bearing (also the output seal) | 1 (+1) | **61813-2RS1/C3**, 65 × 85 × 10, contact seals | SKF 61813-2RS1/C3; NSK 6813DDU C3, NTN 6813LLU C3 | The contact seal is the gearbox front seal | C 11.9 kN, C0 9.65 kN (use the lower SKF value), d1 ≈ 71.4, D2 ≈ 80.3, 0.131 kg [S1][S2] |
 | P04 | 25, 37 | Planet needle bearings | 6 (+2) | **HK0810** drawn cup, Fw 8 × D 12 × C 10, open ends | INA HK0810-B; SKF HK 0810 | Highest capacity for the smallest planet bore | INA Cr 3.80 / C0r 3.95 kN; SKF lists C 3.69 kN, so design to 3.69 [S5][S6]. Press into Ø12 N6 with a stepped mandrel on the stamped end |
 | P05 | 29 | Bearing preload wave spring | 1 (+1) | **Smalley SSB-0335**, carbon steel: bore 85, clears 71.38, 231.4 N at 2.77 work height, free 5.59, t 0.76, wall 5.92, 83 N/mm | Lispring **LB-0335** (stated drop-in alternate); stainless option SSB-0335-S17 | Keeps both 61813s preloaded at ≈ 206–252 N across tolerances and −40 to +60 K (calc §4) | [S3][S4]. Acts on the rear (floating) outer ring only |
 | P06 | 17 | Dowel pin, ring-1 to housing | 2 (+2) | ISO 8734 Ø3 × 8, hardened, m6 | Any ISO 8734 / DIN 6325 | Stops ring-1 rotating | Pressed into ring-1, slides in the housing slot (16 MPa shear, calc §6) |
 | P07 | 35 | Dowel pin, cartridge to housing | 2 (+2) | ISO 8734 Ø4 × 8 | Same | Back-up anti-rotation (friction carries the load) | — |
-| P08 | 10 | Dowel pin, plate to housing | 2 (+2) | ISO 8734 Ø3 × 6 | Same | Locates the rear plate | — |
 | P09 | 07 | Motor encoder magnet | 1 (+1) | Ø6 × 2.5 NdFeB, **diametrically** magnetised | Bomatec **AS5000-MD6H-2** (ams kit magnet) [S10] | Size required by the AS5047P | Gap to IC 1.25 at the nominal shim, 0.75–1.75 across the shim range (0.5–3.0 allowed); centred ≤ 0.5 mm [S10], budget 0.22 RSS (calc §9) |
 | P10 | 44 | Homing magnet | 1 (+2) | Ø3 × 2 NdFeB **N52**, axially magnetised | Any N52 disc | Gives 97–201 mT at 1.2–2.0 mm (calc §7) | Glue radially into the flange rim (M13) with the pole facing outward |
 | P11 | 04 | Motor encoder IC | 1 (+1) | **AS5047P-ATSM** (TSSOP-14) | ams-OSRAM / distributor stock | 14-bit absolute angle; needed for FOC | Field 35–70 mT at the die [S11] |
@@ -102,7 +101,7 @@ Stock sizes below include ≈ 5 mm on the diameter and ≈ 5 mm on the length fo
 |---|---|---|---|---|---|---|---|
 | F01 | 02 | M2 × 4 countersunk | ISO 7046 / ISO 14581 (grade 8.8 or A2 is fine) | 4 (+4) | Lid to plate | 0.3 | None |
 | F02 | 05 | M2.5 × 5 pan | ISO 7045 / ISO 14583 | 4 (+4) | PCB to plate bosses | 0.4 | None |
-| F03 | 09 | M3 × 12 socket head cap | ISO 4762 12.9 | 6 (+4) | Rear plate to housing flange, PCD 104 | **1.2** (calc §6: slip SF 2.2, separation SF 5.3) | Loctite 243 |
+| F03 | 09 | M3 × 8 countersunk | ISO 10642 12.9 | 8 (+4) | Housing wall to plate plug, radial, heads flush with Ø100 | **1.2** (calc §6: 258 N shear each at proof, SF 12.5; strip SF 5.2) | Loctite 243 |
 | F04 | 11 | M4 × 10 countersunk | ISO 10642 (10.9 standard) | 4 (+2) | Stator to plate through the shim pack (engagement 6.0 − shim = 4.5–5.5; motor holes ≥ 6 deep) | Per motor maker; ≤ 2.0 into an aluminium base (strip SF ≥ 2.9, calc §9) | Loctite 243 |
 | F05 | 19 | M3 × 5 countersunk | ISO 10642 | 4 (+4) | Sun-1 to rotor face (use the PCD that matches the rotor) | **0.8** (calc §6: slip SF 6.4 on PCD 25; only ≈ 2 mm thread in the rotor) | Loctite 243 |
 | F06 | 23 | M3 × 10 countersunk | ISO 10642 | 3 (+2) | Carrier-1 front plate to posts | 1.2 | Loctite 243 |
@@ -147,8 +146,8 @@ The torques above are calculated for 12.9 screws at μ ≈ 0.12 (VDI 2230 basis 
 
 | Material | Stock to buy | Covers |
 |---|---|---|
-| 7075-T6511 round bar | **Ø117 × 85** | Housing (M04) |
-| 7075-T651 plate | **12 mm**, 117 × 117 and **5 mm**, 110 × 110 | Rear plate (M03), cover (M14) |
+| 7075-T6511 round bar | **Ø105 × 110** (housing 92 + plate 15 + kerf) | Housing (M04), rear plate (M03) |
+| 7075-T651 plate | **5 mm**, 110 × 110 | Cover (M14) |
 | 6061-T6 | 3 mm plate, 70 × 70; Ø12 bar, 30 | Lid (M01), magnet holder (M02) |
 | 42CrMo4 (EN19) Q&T round | **Ø105 × 70** (one bar: cartridge 37 + ring-1 20 + kerf) | M11, M05 |
 | EN24T round | **Ø85 × 80** (C2 front 20 + C2 rear 27 + C1 rear 20 + kerf) | M13, M10, M07 |
@@ -169,6 +168,8 @@ Buy all 16MnCr5 parts from **one heat (one bar lot)**. They then share the carbu
 | 61813 outer rings in cartridge | **Selective**: bore = measured bearing OD **+3 / +10 µm** | calc §5 |
 | 61813 inner rings on carrier-2 | Ø65 **j5** (−21 to +7 µm with the 0/−15 µm bearing bore) | calc §5 |
 | Labyrinth (sun-1 flange in partition) | Ø41.0 H8 / Ø40 h8 (1.00–1.08 mm diametral clearance at 20 °C) | calc §5 |
+| Plate plug in housing | Ø94.5 **H7 / k6** (−25 to +32 µm; both 7075, no change with temperature) | calc §5 |
+| Radial plate screws | Housing CSK centres **0.1 forward** of the plug threads (draws the housing onto the plate rim) | calc §6 |
 | Motor in housing bore | Ø92.0 in Ø94.5 (1.25 radial); rear cap Ø17.4 in plate relief Ø19.5 (1.05 radial) | calc §9 |
 | Magnet holder pin in rotor cap | Turned to the measured hole, 0–0.02 clearance | calc §9 |
 | Ring-1 dowel slot in housing | Width 3.02–3.04 over the Ø3 m6 dowel; ring-1 hole Ø3 H7 | calc §6 |
@@ -215,8 +216,7 @@ Steel gears are needed from P1 because m0.8 and m1 teeth cannot be printed accur
 
 | Item | Status |
 |---|---|
-| LA8308 M4 thread depth, rear cap centre hole, phase-lead exit protrusion | **Measure**: model assumes ≥ 6 deep, a plain Ø3 hole, 2.5 proud |
-| Sun-1 on the first build | Check whether it was drilled for the 3.9 stub; the Rev 1.3 part has only a 2 mm recess |
+| LA8308 rear cap centre hole | Plain hole; **measure** diameter and depth (model assumes Ø3 × ≥ 2), then turn the M02 pin to it |
 | M18 planet washers: DIN 988 ID tolerance on the Ø8 pin | Check one sample before ordering 12 |
 | Cartridge Ø89/Ø85 finishing after nitriding | Agree with the heat-treater: mask, or allow light grinding |
 | Part specification | Written in `shoulder/parts.md` |
