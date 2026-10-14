@@ -1,0 +1,53 @@
+# actuator profile for the vayn shoulder bench actuator (phase 1, rev 0).
+# every limit here is enforced by the backend before a write reaches the odrive.
+# values marked "unproven" must be replaced by measured data from the test runners.
+
+name: VAYN shoulder actuator rev0
+axis: 0
+
+motor:
+  kv: 90
+  pole_pairs: 20
+  # datasheet 0.186 ohm is line-to-line; odrive reports phase-to-neutral
+  phase_resistance_ohm: 0.093
+  resistance_tolerance: 0.6        # accept measured R within +-60 %
+  current_continuous_a: 8          # unproven, set from thermal test
+  current_peak_a: 22
+  calibration_current_a: 5
+  resistance_calib_max_voltage_v: 4.0
+
+# AS5047P wired over SPI (SCK/MISO/MOSI/CS) = absolute mode: 14-bit angle, no index search.
+# if it is ever wired over its A/B/I pins instead, use mode INCREMENTAL, cpr 4000, use_index true.
+encoder:
+  mode: SPI_ABS_AMS
+  cpr: 16384
+  cs_gpio: 4
+  use_index: false
+
+gear:
+  ratio: 20
+  efficiency: 0.87                 # unproven, set from characterization
+
+limits:
+  vel_max_turns_s: 10              # motor side; 10 turn/s = 180 deg/s at the joint
+  pos_min_turns: -10               # motor turns from encoder zero (= -180 deg joint)
+  pos_max_turns: 10
+  bring_up_current_a: 6            # current limit used during commissioning
+
+power:
+  bus_min_v: 15.0
+  bus_max_v: 26.5                  # 6s full charge is 25.2 v
+  overvoltage_trip_v: 28.0
+  undervoltage_trip_v: 14.0
+  brake_resistance_ohm: 2.0
+  max_regen_current_a: 0.0
+  dc_max_negative_current_a: -0.01 # bench psu cannot sink current; regen goes to the brake resistor
+
+thermal:
+  fet_warn_c: 70
+  fet_abort_c: 85
+  motor_warn_c: 80
+  motor_abort_c: 100
+
+watchdog:
+  timeout_s: 0.5

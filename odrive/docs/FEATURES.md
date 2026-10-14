@@ -1,0 +1,43 @@
+# Features
+
+Reference: [MoonLighTingPY/odrive3.6_web_gui](https://github.com/MoonLighTingPY/odrive3.6_web_gui)
+(no license, used only as a feature checklist; nothing copied).
+
+## Parity
+
+| reference | here |
+|---|---|
+| device scan / connect / reconnect | auto connect, native usb then ascii, reconnect by serial after reboot, simulated board |
+| 6-step config wizard | commissioning wizard (8 steps, profile driven) + grouped config editor (13 groups) with staged apply |
+| pull / apply / save / erase / reboot | same, all confirmed and audited; reboot-aware |
+| presets | backups double as presets: save, compare against device, restore, download |
+| dashboard | bento dashboard, 10 panels, 3 layout presets, editable |
+| inspector tree | full device tree (516 entries on 0.5.1), live values, edit, call functions, favourites, plot any 6 |
+| console | odrivetool syntax, tab completion, history, enum names, flag decoding |
+| calibration modal | calibration jobs with R/L plausibility checks and pre_calibrated |
+| error decoding + troubleshooting | 64-bit safe decoding with firmware docs per flag, first-out alarm |
+
+## Fixed defects of the reference
+
+- NaN/inf (`torque_lim = inf`) no longer breaks reads (msgpack)
+- error bits >= 31 decoded (BigInt)
+- reconnects after save/reboot
+- no "calculated" gains in counts units; turn-based procedure instead
+- E-stop-style DISARM ALL, ODrive watchdog fed, setpoints clamped
+- localhost-only, session token and origin check (the reference accepts commands from any website)
+- batched sampling + canvas charts instead of SVG recharts
+
+## New
+
+- actuator profile with enforced limits and joint-space view (20:1, Kt, joint torque estimate)
+- passive health check with saved reports
+- encoder hand-turn test
+- tuning: step response metrics, gain sweep ranking, sine response
+- thermal hold test with exponential fit and auto-abort
+- characterization: breakaway/running friction, effective Kt and efficiency, lost motion
+- recordings (Parquet + CSV) with replay
+- CAN monitor/send with CANSimple decode, USB-side node id / baud setup
+- guarded firmware update to official 0.5.6 with elf->hex conversion and vbus verification
+- alarms with ack/shelve, events, full audit log
+- command palette, keyboard-first operation
+- single exe packaging

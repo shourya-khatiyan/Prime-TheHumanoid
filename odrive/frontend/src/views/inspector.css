@@ -1,0 +1,86 @@
+.insp {
+  height: calc(100vh - var(--bar-h) - 24px - 70px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-top: 6px;
+}
+.insp-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 26px;
+  display: grid;
+  grid-template-columns: 22px minmax(260px, 2fr) 120px minmax(200px, 2fr) 56px 60px;
+  gap: 8px;
+  align-items: center;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--grid-minor);
+  white-space: nowrap;
+}
+.insp-row:hover {
+  background: var(--surface-2);
+}
+.insp-row .cell-path,
+.insp-row .cell-val {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.insp-row .cell-type {
+  font-size: var(--fs-tick);
+}
+.star {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+.star.on {
+  color: var(--accent);
+}
+
+.console {
+  height: calc(100vh - var(--bar-h) - 24px - 110px);
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  padding: 8px;
+  margin-top: 6px;
+}
+.console .in::before {
+  content: 'odrv0> ';
+  color: var(--accent);
+}
+.console-input {
+  display: flex;
+  border: 1px solid var(--border);
+  border-top: 0;
+  position: relative;
+}
+.console-input .prompt {
+  color: var(--accent);
+  padding: 6px 0 6px 8px;
+}
+.console-input input {
+  flex: 1;
+  border: 0;
+  background: var(--bg);
+}
+.suggest {
+  position: absolute;
+  bottom: 100%;
+  left: 60px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  max-height: 240px;
+  overflow-y: auto;
+  min-width: 420px;
+}
+.suggest div {
+  padding: 2px 8px;
+}
+.suggest div.sel {
+  background: var(--surface-2);
+  color: var(--accent);
+}

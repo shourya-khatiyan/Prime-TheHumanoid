@@ -1,0 +1,76 @@
+.plot {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  overflow: hidden;
+}
+.plot-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: var(--fs-tick);
+  pointer-events: none;
+}
+
+/* restyle uplot's legend into one terminal line */
+.plot .u-legend {
+  font-family: var(--font);
+  font-size: var(--fs-tick);
+  color: var(--text-2);
+  text-align: left;
+  margin: 0;
+}
+.plot .u-legend .u-series {
+  padding: 0 8px 0 0;
+}
+.plot .u-legend th {
+  font-weight: 400;
+  color: var(--text-2);
+  border: 0;
+  padding: 0 2px;
+  text-transform: none;
+  font-size: var(--fs-tick);
+}
+.plot .u-legend td {
+  border: 0;
+  padding: 0 2px;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+.plot .u-legend .u-marker {
+  width: 10px;
+  height: 2px;
+  border-radius: 0;
+}
+.plot .u-select {
+  background: rgba(61, 245, 122, 0.08);
+}
+.plot .u-cursor-x,
+.plot .u-cursor-y {
+  border-color: var(--grid-readable) !important;
+}
+
+.plot-legend {
+  display: flex;
+  gap: 14px;
+  padding: 0 8px;
+  height: 20px;
+  align-items: center;
+  font-size: var(--fs-tick);
+  color: var(--text-2);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.plot-legend .li i {
+  display: inline-block;
+  width: 10px;
+  height: 2px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.plot-legend .lv {
+  color: var(--text);
+}

@@ -1,0 +1,19 @@
+.bento .react-grid-item.react-grid-placeholder {
+  background: var(--accent);
+  opacity: 0.08;
+  border-radius: var(--radius);
+}
+.bento.editing .panel-head {
+  cursor: move;
+  background: var(--surface-2);
+}
+.bento .react-resizable-handle {
+  opacity: 0;
+}
+.bento.editing .react-resizable-handle {
+  opacity: 0.6;
+  filter: invert(1) sepia(1) hue-rotate(60deg);
+}
+.bento .react-grid-item {
+  transition: none;
+}
