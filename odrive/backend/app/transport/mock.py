@@ -34,6 +34,7 @@ class MockTransport(Transport):
         self._fed: dict[int, float] = {0: 0.0, 1: 0.0}
         self._integ = [0.0, 0.0]
         self._state = [[0.0, 0.0], [0.0, 0.0]]
+        self._lockin_p0 = [0.0, 0.0]
         self._reset()
 
     def _reset(self) -> None:
@@ -157,10 +158,10 @@ class MockTransport(Transport):
             return
         motor_ok = self.v[f"{a}.motor.is_calibrated"]
         enc_ready = self.v[f"{a}.encoder.is_ready"]
-        if (state in (7, 8) and not motor_ok) or (state == 8 and not enc_ready):
+        if (state in (7, 8, 9) and not motor_ok) or (state == 8 and not enc_ready) or (state == 9 and not self.v[f"{a}.motor.config.direction"]):
             self.v[f"{a}.error"] |= AXIS_ERR["INVALID_STATE"]
             return
-        if state in (3, 4, 7, 8):
+        if state in (3, 4, 7, 8, 9):
             if self.v[f"{a}.error"]:
                 return
             self.v[f"{a}.current_state"] = 4 if state == 3 else state
@@ -168,6 +169,9 @@ class MockTransport(Transport):
             if state == 8:
                 self.v[f"{a}.controller.input_pos"] = self._state[ax][0]
                 self._integ[ax] = 0.0
+                self._fed[ax] = time.monotonic()
+            elif state == 9:
+                self._lockin_p0[ax] = self._state[ax][0]
                 self._fed[ax] = time.monotonic()
 
     def _step(self) -> None:
@@ -236,7 +240,7 @@ class MockTransport(Transport):
         if v[f"{a}.config.enable_watchdog"] and v[f"{a}.config.watchdog_timeout"] > 0:
             if now - self._fed[ax] > v[f"{a}.config.watchdog_timeout"]:
                 v[f"{a}.error"] |= AXIS_ERR["WATCHDOG"]
-        if v[f"{a}.error"] and state == 8:
+        if v[f"{a}.error"] and state in (8, 9):
             v[f"{a}.current_state"] = state = 1
         return self._physics(ax, state, dt)
 
@@ -248,7 +252,18 @@ class MockTransport(Transport):
         # true state lives apart from the published (noisy) estimates
         pos, vel = self._state[ax]
         torque = 0.0
-        if state == 8:
+        if state == 9:
+            pp = max(1, int(v[f"{a}.motor.config.pole_pairs"] or 20))
+            vel = float(v[f"{a}.config.general_lockin.vel"]) / (2 * math.pi * pp)
+            iq_lock = float(v[f"{a}.config.general_lockin.current"])
+            torque = iq_lock * kt
+            pos += vel * dt
+            self._state[ax] = [pos, vel]
+            if v[f"{a}.config.general_lockin.finish_on_distance"]:
+                dist_elec = abs(pos - self._lockin_p0[ax]) * 2 * math.pi * pp
+                if dist_elec >= abs(float(v[f"{a}.config.general_lockin.finish_distance"])):
+                    v[f"{a}.current_state"] = 1
+        elif state == 8:
             mode = v[f"{c}.config.control_mode"]
             vel_lim = v[f"{c}.config.vel_limit"]
             if mode == 1:
@@ -267,17 +282,18 @@ class MockTransport(Transport):
             v[f"{c}.pos_setpoint"] = v[f"{c}.input_pos"]
             v[f"{c}.vel_setpoint"] = vel_cmd
             v[f"{c}.torque_setpoint"] = torque
-        # single inertia with coulomb + viscous friction, in turns
-        inertia, coulomb, visc = 4e-4, 0.015, 0.002
-        fric = coulomb * math.copysign(1, vel) if abs(vel) > 1e-3 else max(-coulomb, min(coulomb, torque))
-        acc = (torque - fric - visc * vel) / inertia / (2 * math.pi)
-        vel += acc * dt
-        if state != 8 and abs(vel) < 0.05:
-            vel = 0.0
-        pos += vel * dt
-        self._state[ax] = [pos, vel]
+        if state != 9:
+            # single inertia with coulomb + viscous friction, in turns
+            inertia, coulomb, visc = 4e-4, 0.015, 0.002
+            fric = coulomb * math.copysign(1, vel) if abs(vel) > 1e-3 else max(-coulomb, min(coulomb, torque))
+            acc = (torque - fric - visc * vel) / inertia / (2 * math.pi)
+            vel += acc * dt
+            if state != 8 and abs(vel) < 0.05:
+                vel = 0.0
+            pos += vel * dt
+            self._state[ax] = [pos, vel]
         iq = torque / kt
-        active_noise = 1.0 if state == 8 else 0.15
+        active_noise = 1.0 if state in (8, 9) else 0.15
         v[f"{a}.encoder.pos_estimate"] = pos + random.gauss(0, 2e-5 * active_noise)
         v[f"{a}.encoder.vel_estimate"] = vel + random.gauss(0, 2e-3 * active_noise)
         cpr = v[f"{a}.encoder.config.cpr"] or 16384

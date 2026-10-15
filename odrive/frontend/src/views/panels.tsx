@@ -1,6 +1,6 @@
 import { Button, Tag } from '../primitives'
 import { LivePlot } from '../components/Plot'
-import { act, P, useAliasLatest, useApp, useLatest } from '../lib/store'
+import { act, P, startJob, useAliasLatest, useApp, useLatest } from '../lib/store'
 import { AXIS_STATES, decodeFlags, enumName, flagDoc } from '../lib/meta'
 import { fmt, hex, num, time } from '../lib/format'
 
@@ -124,6 +124,14 @@ export function AxisCard({ ax }: { ax: number }) {
           <Button small kind={num(state) === 1 ? 'on' : ''} onClick={() => act('write', { path: P(`req_state.${ax}`), value: 1 })}>
             idle
           </Button>
+          <Button
+            small
+            kind={num(state) === 9 ? 'on' : ''}
+            title="Spin motor open-loop (2 turns @ 0.5 t/s, 3 A) without encoder"
+            onClick={() => startJob('open_loop', { axis: ax, current_a: 3.0, vel_turns_s: 0.5, turns: 2.0 }).catch(() => undefined)}
+          >
+            open
+          </Button>
           <Button small kind={num(state) === 8 ? 'primary' : ''} onClick={() => act('write', { path: P(`req_state.${ax}`), value: 8 })}>
             loop
           </Button>
@@ -209,18 +217,19 @@ export function JointCard({ ax }: { ax: number }) {
 
 /** AS5047P SPI absolute encoder radar dial, link quality, and raw counts */
 export function EncoderCard({ ax }: { ax: number }) {
-  const [spi, abs, cnt, cpr, cs] = useAliasLatest(
-    [`spi_err.${ax}`, `pos_abs.${ax}`, `count_in_cpr.${ax}`, `enc_cpr.${ax}`, `enc_cs.${ax}`],
+  const [spi, abs, cnt, mode, cpr, cs] = useAliasLatest(
+    [`spi_err.${ax}`, `pos_abs.${ax}`, `count_in_cpr.${ax}`, `enc_mode.${ax}`, `enc_cpr.${ax}`, `enc_cs.${ax}`],
     10,
   )
   const rate = num(spi)
   const absCount = num(abs)
+  const isSpi = num(mode) >= 256
   const mechDeg = Number.isFinite(absCount) ? (absCount / 16384) * 360 : 0
   const mechRad = (mechDeg * Math.PI) / 180
   const elecRad = mechRad * 20
   const stuckHigh = absCount === 16383
-  const fault = rate > 0.05 || stuckHigh
-  const linkQuality = Number.isFinite(rate) ? Math.max(0, (1 - Math.min(1, rate)) * 100) : 0
+  const fault = !isSpi || rate > 0.05 || stuckHigh
+  const linkQuality = isSpi && Number.isFinite(rate) ? Math.max(0, (1 - Math.min(1, rate)) * 100) : 0
 
   const outerDots = Array.from({ length: 32 }, (_, i) => {
     const a = (i / 32) * Math.PI * 2 - Math.PI * 0.5
@@ -260,10 +269,10 @@ export function EncoderCard({ ax }: { ax: number }) {
                 <span className="unit">°</span>
               </span>
             </div>
-            {fault ? <Tag level="alarm">fail</Tag> : <Tag level="quiet">ok</Tag>}
+            {!isSpi ? <Tag level="warn">mode 0</Tag> : fault ? <Tag level="alarm">fail</Tag> : <Tag level="quiet">ok</Tag>}
           </div>
           <span className="muted num" style={{ fontSize: '8.5px', letterSpacing: '0.08em' }}>
-            CS GPIO{fmt(cs, 0)} · CPR {fmt(cpr, 0)}
+            {isSpi ? `CS GPIO${fmt(cs, 0)} · CPR ${fmt(cpr, 0)}` : 'BYPASSED (INCREMENTAL)'}
           </span>
         </div>
       </div>
@@ -271,7 +280,7 @@ export function EncoderCard({ ax }: { ax: number }) {
       <div className="stat-strip num">
         <div className="cell">
           <span className="k">abs</span>
-          <span className="v">{fmt(abs, 0)}</span>
+          <span className="v">{isSpi ? fmt(abs, 0) : '--'}</span>
         </div>
         <div className="cell">
           <span className="k">cnt</span>
@@ -279,7 +288,7 @@ export function EncoderCard({ ax }: { ax: number }) {
         </div>
         <div className="cell">
           <span className="k">spi</span>
-          <span className={`v ${fault ? 'error-text' : ''}`}>{linkQuality.toFixed(0)}%</span>
+          <span className={`v ${fault ? 'error-text' : ''}`}>{isSpi ? `${linkQuality.toFixed(0)}%` : 'OFF'}</span>
         </div>
       </div>
     </div>

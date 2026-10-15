@@ -151,6 +151,12 @@ def test_step_response_job(cli):
     assert m["rise_s"] is not None and j["result"]["samples"] > 50
 
 
+def test_open_loop_job(cli):
+    j = cli.wait_job(cli.confirmed("job_start", kind="open_loop", params={"axis": 0, "current_a": 3.0, "vel_turns_s": 0.5, "turns": 0.5})["id"])
+    assert j["state"] == "done" and j["result"]["ok"], j
+    assert j["result"]["iq_peak"] > 1.0
+
+
 def test_save_requires_confirm_and_reconnects(cli):
     res = cli.rpc("call", path="save_configuration", args=[])
     assert not res["ok"] and res["code"] == "confirm"

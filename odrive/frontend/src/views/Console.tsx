@@ -10,10 +10,10 @@ const HIST_KEY = 'odrv.console.history.v1'
 
 const QUICK: [string, string][] = [
   ['status', 'status'],
-  ['errors', 'axis0.error'],
+  ['errors', 'errors'],
   ['vbus', 'vbus_voltage'],
   ['state', 'axis0.current_state'],
-  ['encoder', 'axis0.encoder.pos_estimate'],
+  ['encoder', 'axis0.encoder.pos_abs'],
   ['spi', 'axis0.encoder.spi_error_rate'],
   ['R / L', 'axis0.motor.config.phase_resistance'],
   ['idle', 'axis0.requested_state = IDLE'],
@@ -84,6 +84,8 @@ export function Console() {
       'axis0.current_state',
       'axis0.error',
       'axis0.motor.error',
+      'axis0.encoder.config.mode',
+      'axis0.encoder.config.abs_spi_cs_gpio_pin',
       'axis0.encoder.error',
       'axis0.encoder.pos_abs',
       'axis0.encoder.spi_error_rate',
@@ -95,11 +97,14 @@ export function Console() {
     }
     try {
       const r = await act<Record<string, unknown>>('read', { paths: probePaths }, true)
-      const summary = [
-        `device          = SN ${devInfo?.serial ?? '--'} · FW ${devInfo?.fw ?? '--'} · HW ${devInfo?.hw ?? '--'} (${Object.keys(tree).length} endpoints)`,
+      const linesOut = [
+        `device                             = SN ${devInfo?.serial ?? '--'} · FW ${devInfo?.fw ?? '--'} · HW ${devInfo?.hw ?? '--'} (${Object.keys(tree).length} endpoints)`,
         ...probePaths.map((p) => `${p.padEnd(34)} = ${describe(p, r[p])}`),
-      ].join('\n')
-      print({ kind: 'out', text: summary })
+      ]
+      if (r['axis0.encoder.config.mode'] === 0) {
+        linesOut.push('▲ NOTE: encoder mode is 0 (INCREMENTAL bypass); SPI errors are not polled until mode = 257 (SPI_ABS_AMS).')
+      }
+      print({ kind: 'out', text: linesOut.join('\n') })
     } catch (e) {
       print({ kind: 'err', text: String((e as Error).message) })
     }
@@ -138,6 +143,22 @@ export function Console() {
       }
       if (cmd === 'status') {
         await dumpStatus()
+        return
+      }
+      if (cmd === 'errors') {
+        const errPaths = [
+          'error',
+          'axis0.error',
+          'axis0.motor.error',
+          'axis0.encoder.error',
+          'axis0.controller.error',
+          'axis0.encoder.config.mode',
+          'axis0.encoder.spi_error_rate',
+          'axis1.error',
+          'axis1.encoder.error',
+        ].filter((p) => tree[p])
+        const r = await act<Record<string, unknown>>('read', { paths: errPaths }, true)
+        print({ kind: 'out', text: errPaths.map((p) => `${p.padEnd(30)} = ${describe(p, r[p])}`).join('\n') })
         return
       }
       if (cmd === 'clear') {

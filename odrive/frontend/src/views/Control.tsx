@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, NumInput, Panel, PropInput, Tag, Value } from '../primitives'
-import { act, P, startJob, useAliasLatest, useApp, useLatest } from '../lib/store'
+import { act, P, startJob, useAliasLatest, useApp, useJobRunner, useLatest } from '../lib/store'
 import { AXIS_STATES, enumDef } from '../lib/meta'
 import { fmt, num } from '../lib/format'
 import { CurrentPlot, MotionPlot } from './panels'
@@ -142,6 +142,114 @@ function Generator({ ax, kind, active }: { ax: number; kind: 'pos' | 'vel' | 'to
   )
 }
 
+/** sensorless open-loop spin (LOCKIN_SPIN, state 9) that works without an encoder */
+function OpenLoopPanel({ ax }: { ax: number }) {
+  const profile = useApp((s) => s.profile)!
+  const runner = useJobRunner(`control.openloop.${ax}`)
+  const [encMode, spiErr, state, iq] = useAliasLatest([`enc_mode.${ax}`, `spi_err.${ax}`, `state.${ax}`, `iq.${ax}`], 8)
+  const [vel, setVel] = useState(0.5)
+  const [cur, setCur] = useState(3.0)
+  const [turns, setTurns] = useState(2.0)
+  const [dur, setDur] = useState(4.0)
+  const maxCur = profile.motor.current_continuous_a ?? 8
+  const maxVel = profile.limits.vel_max_turns_s ?? 10
+  const bypassed = num(encMode) === 0
+  const spiBad = num(encMode) >= 256 && num(spiErr) > 0.01
+  const spinning = num(state) === 9 || runner.busy
+
+  const restoreSpi = async () => {
+    await act('write', { path: P(`enc_mode.${ax}`), value: 257 })
+    await act('call', { path: 'save_configuration', args: [] })
+    await act('call', { path: 'reboot', args: [] }).catch(() => undefined)
+  }
+
+  return (
+    <div className="col">
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <span className="muted" style={{ fontSize: 'var(--fs-micro)' }}>
+          DRIVES ROTATING CURRENT VECTOR DIRECTLY (NO ENCODER REQUIRED)
+        </span>
+        {bypassed ? (
+          <Tag level="info">enc bypassed (mode 0)</Tag>
+        ) : spiBad ? (
+          <Tag level="warn">spi fault (auto-bypass on start)</Tag>
+        ) : (
+          <Tag level="quiet">spi mode 257</Tag>
+        )}
+      </div>
+
+      <div className="field">
+        <label>speed (+fwd / -rev)</label>
+        <div className="row">
+          <NumInput value={vel} onCommit={(v) => setVel(Math.max(-maxVel, Math.min(maxVel, v)))} width={76} disabled={spinning} />
+          {[-1, -0.5, 0.5, 1].map((v) => (
+            <Button key={v} small kind={vel === v ? 'on' : ''} disabled={spinning} onClick={() => setVel(v)}>
+              {v > 0 ? `+${v}` : v}
+            </Button>
+          ))}
+        </div>
+        <span className="unit">turn/s</span>
+      </div>
+
+      <div className="field">
+        <label>phase current</label>
+        <div className="row">
+          <NumInput value={cur} onCommit={(v) => setCur(Math.max(0.5, Math.min(maxCur, v)))} width={76} disabled={spinning} />
+          {[3, 6, 9, 12].map((c) => (
+            <Button key={c} small kind={cur === c ? 'on' : ''} disabled={spinning || c > maxCur} onClick={() => setCur(c)}>
+              {c}A
+            </Button>
+          ))}
+        </div>
+        <span className="unit">A (max {maxCur})</span>
+      </div>
+
+      <div className="field">
+        <label>target distance (0 = timed)</label>
+        <div className="row">
+          <NumInput value={turns} onCommit={(v) => setTurns(Math.max(0, Math.min(50, v)))} width={76} disabled={spinning} />
+          {[1, 2, 5, 0].map((t) => (
+            <Button key={t} small kind={turns === t ? 'on' : ''} disabled={spinning} onClick={() => setTurns(t)}>
+              {t === 0 ? 'timed' : `${t} trn`}
+            </Button>
+          ))}
+          {turns === 0 && <NumInput value={dur} onCommit={(v) => setDur(Math.max(0.5, Math.min(30, v)))} width={56} disabled={spinning} />}
+        </div>
+        <span className="unit">{turns === 0 ? 's' : 'turns'}</span>
+      </div>
+
+      <div className="row" style={{ marginTop: 4 }}>
+        <Button
+          kind="primary"
+          disabled={spinning}
+          onClick={() => runner.run('open_loop', { axis: ax, current_a: cur, vel_turns_s: vel, turns, duration_s: dur })}
+        >
+          {spinning ? 'spinning...' : 'spin open loop'}
+        </Button>
+        <Button kind="danger" onClick={() => act('disarm', { reason: 'open-loop stop' })}>
+          stop (idle)
+        </Button>
+        {bypassed && (
+          <Button small onClick={() => restoreSpi().catch(() => undefined)} title="Switch axis encoder back to SPI_ABS_AMS (257), save and reboot">
+            restore spi encoder
+          </Button>
+        )}
+      </div>
+
+      <div className="row" style={{ marginTop: 4 }}>
+        <Value k="live Iq" v={fmt(iq, 2)} u="A" />
+        {runner.result && (
+          <>
+            <Value k="last avg Iq" v={fmt(runner.result.iq_avg, 2)} u="A" />
+            <Value k="peak Iq" v={fmt(runner.result.iq_peak, 2)} u="A" />
+            <Tag level={runner.result.ok ? 'quiet' : 'alarm'}>{runner.result.ok ? 'pass' : 'fault'}</Tag>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function Control() {
   const ax = useApp((s) => s.axis)
   const meta = useApp((s) => s.meta)
@@ -203,12 +311,15 @@ export function Control() {
             {!active && <span className="muted">setpoints unlock once this GUI puts the axis into closed loop</span>}
           </div>
         </Panel>
-        <Panel title={`setpoint . ${kind}`}>
+        <Panel title={`setpoint . ${kind} (closed loop)`}>
           <div className="col">
             <Setpoint ax={ax} kind={kind} active={active} />
             <Jog ax={ax} kind={kind} active={active} />
             <Generator key={kind} ax={ax} kind={kind} active={active} />
           </div>
+        </Panel>
+        <Panel index="OL" title="open-loop spin (no encoder)" status={num(state) === 9 ? 'live' : undefined}>
+          <OpenLoopPanel ax={ax} />
         </Panel>
         <Panel title="motion">
           <div className="h-plot">
