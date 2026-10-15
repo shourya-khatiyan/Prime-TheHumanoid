@@ -58,8 +58,8 @@ export function App() {
           </button>
         ))}
         <div className="sep" />
-        <div className="note">
-          the gui is a commissioning and test tool. it is not a safety device: keep a hardware e-stop on the dc bus.
+        <div className="note" title="Keep a physical DC bus emergency stop switch wired at all times">
+          HW E-STOP REQUIRED
         </div>
       </nav>
       <main className="main">

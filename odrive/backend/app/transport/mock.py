@@ -97,6 +97,12 @@ class MockTransport(Transport):
             raise KeyError(path)
         return self.v[path]
 
+    def read_many(self, paths: list[str]) -> list[Any]:
+        """Step the physics once for the whole batch."""
+        self._alive()
+        self._step()
+        return [self.v[p] for p in paths]
+
     def write(self, path: str, value: Any) -> None:
         """Store a value; requested_state starts the simulated state machine."""
         self._alive()
@@ -166,17 +172,22 @@ class MockTransport(Transport):
 
     def _step(self) -> None:
         now = time.monotonic()
-        dt = min(now - self._t, 0.05)
+        total_dt = min(now - self._t, 0.05)
         self._t = now
-        if dt <= 0:
+        if total_dt <= 0:
             return
-        self.v["axis0.loop_counter"] = (self.v["axis0.loop_counter"] + int(8000 * dt)) & 0xFFFFFFFF
+        self.v["axis0.loop_counter"] = (self.v["axis0.loop_counter"] + int(8000 * total_dt)) & 0xFFFFFFFF
         self.v["axis1.loop_counter"] = self.v["axis0.loop_counter"]
+        # sub-step the servo loop at <=1 ms so Euler integration stays stable at any sample rate
+        steps = max(1, int(math.ceil(total_dt / 0.001)))
+        sub_dt = total_dt / steps
         ibus = 0.0
-        for ax in (0, 1):
-            ibus += self._step_axis(ax, now, dt)
+        for _ in range(steps):
+            ibus = 0.0
+            for ax in (0, 1):
+                ibus += self._step_axis(ax, now, sub_dt)
         self.v["ibus"] = ibus
-        self.v["vbus_voltage"] = 20.2 - 0.05 * ibus + random.gauss(0, 0.01)
+        self.v["vbus_voltage"] = 20.2 - 0.05 * ibus + random.gauss(0, 0.004)
 
     def _step_axis(self, ax: int, now: float, dt: float) -> float:
         a = f"axis{ax}"
@@ -266,8 +277,9 @@ class MockTransport(Transport):
         pos += vel * dt
         self._state[ax] = [pos, vel]
         iq = torque / kt
-        v[f"{a}.encoder.pos_estimate"] = pos + random.gauss(0, 2e-5)
-        v[f"{a}.encoder.vel_estimate"] = vel + random.gauss(0, 2e-3)
+        active_noise = 1.0 if state == 8 else 0.15
+        v[f"{a}.encoder.pos_estimate"] = pos + random.gauss(0, 2e-5 * active_noise)
+        v[f"{a}.encoder.vel_estimate"] = vel + random.gauss(0, 2e-3 * active_noise)
         cpr = v[f"{a}.encoder.config.cpr"] or 16384
         v[f"{a}.encoder.shadow_count"] = int(pos * cpr)
         v[f"{a}.encoder.count_in_cpr"] = int(pos * cpr) % cpr
@@ -275,7 +287,7 @@ class MockTransport(Transport):
             # a real AS5047P flickers by about one count at standstill
             v[f"{a}.encoder.pos_abs"] = int(pos * 16384 + 8000 + random.gauss(0, 0.8)) % 16384
         v[f"{a}.motor.current_control.Iq_setpoint"] = iq
-        v[f"{a}.motor.current_control.Iq_measured"] = iq + random.gauss(0, 0.03)
+        v[f"{a}.motor.current_control.Iq_measured"] = iq + random.gauss(0, 0.025 * active_noise)
         v[f"{a}.motor.current_meas_phB"] = random.gauss(0, 0.02)
         v[f"{a}.motor.current_meas_phC"] = random.gauss(0, 0.02)
         temp = v[f"{a}.fet_thermistor.temperature"]

@@ -29,7 +29,8 @@ log = logging.getLogger("server")
 
 PORT = int(os.environ.get("ODRV_PORT", "8765"))
 MODE = os.environ.get("ODRV_MODE", "auto")
-TOKEN = secrets.token_urlsafe(24)
+ensure_dirs()
+TOKEN = TOKEN_FILE.read_text(encoding="utf-8").strip() if TOKEN_FILE.exists() and TOKEN_FILE.read_text(encoding="utf-8").strip() else secrets.token_urlsafe(24)
 ALLOWED_ORIGINS = {f"http://{h}:{p}" for h in ("127.0.0.1", "localhost") for p in (PORT, 5173)}
 SKIP_CONFIG = (".requested_state", ".input_pos", ".input_vel", ".input_torque", "test_property", ".error")
 

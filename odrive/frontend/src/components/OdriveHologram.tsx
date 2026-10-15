@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '../primitives'
 import { useAliasLatest, useApp } from '../lib/store'
-import { AXIS_STATES } from '../lib/meta'
 import { fmt, num } from '../lib/format'
 
 type SubId = 'vbus' | 'mcu' | 'brake' | 'm0_stage' | 'spi' | 'motor' | 'pcb'
@@ -54,7 +53,6 @@ function buildStaticMesh(): { lines: Line3D[]; dots: Dot3D[] } {
   // 1. 4-layer ODESC 3.6 PCB substrate (-74..+34 X, -2.4..0 Y, -25..+25 Z)
   addBox(lines, -20, -1.2, 0, 54, 1.2, 25, 'pcb', 1.35)
 
-  // PCB point-cloud ground matrix + 4 corner M3 mounting holes
   for (let ix = -68; ix <= 28; ix += 6) {
     for (let iz = -21; iz <= 21; iz += 5.25) {
       dots.push({ p: [ix, 0.1, iz], group: 'pcb', size: 1.2 })
@@ -96,7 +94,7 @@ function buildStaticMesh(): { lines: Line3D[]; dots: Dot3D[] } {
     addBox(lines, px, 2.6, 22.5, 3.2, 2.6, 2.4, 'm0_stage', 1.3)
   }
 
-  // 6. M1 Power Stage (-Z side: 6x D2PAK MOSFETs + DRV8301 gate driver)
+  // 6. M1 Power Stage (-Z side)
   for (let i = 0; i < 6; i++) {
     const fx = -46 + i * 10.5
     addBox(lines, fx, 1.8, -15, 3.6, 1.8, 4, 'pcb', 0.8)
@@ -113,7 +111,7 @@ function buildStaticMesh(): { lines: Line3D[]; dots: Dot3D[] } {
   }
   addBox(lines, 32, 2.2, -9.5, 3.8, 2.2, 4.2, 'mcu', 1.25)
 
-  // 8. J4 GPIO / SPI / CAN header (+X, +Z corner) + SPI harness to AS5047P encoder
+  // 8. J4 GPIO / SPI / CAN header + SPI harness to AS5047P encoder
   addBox(lines, 26, 3, 17.5, 5, 3, 3, 'spi', 1.35)
   for (let pin = 0; pin < 6; pin++) {
     const px = 22 + pin * 1.6
@@ -133,7 +131,6 @@ function buildStaticMesh(): { lines: Line3D[]; dots: Dot3D[] } {
 
 const STATIC_MESH = buildStaticMesh()
 
-// 3D anchor coordinates on the model for the 6 spatial HUD callouts
 const ANCHORS: Record<Exclude<SubId, 'pcb'>, Vec3> = {
   vbus: [-40, 14, 0],
   mcu: [22, 3, -1],
@@ -146,8 +143,6 @@ const ANCHORS: Record<Exclude<SubId, 'pcb'>, Vec3> = {
 /**
  * Interactive 3D CAD / Point-Cloud Hologram of the ODESC 3.6 56V controller,
  * coupled 90KV BLDC actuator (20:1), and AS5047P SPI absolute encoder.
- * Renders live rotor/encoder rotation, 3-phase current flow, thermal heat state,
- * fault highlights, and 6 spatial HUD callouts with 3D leader lines.
  */
 export function OdriveHologram({ ax }: { ax: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -177,7 +172,7 @@ export function OdriveHologram({ ax }: { ax: number }) {
         `enc_cs.${ax}`,
         `enc_cpr.${ax}`,
       ],
-      20,
+      15,
     )
 
   const [cam, setCam] = useState<CamPreset>('orbit')
@@ -277,23 +272,22 @@ export function OdriveHologram({ ax }: { ax: number }) {
 
       const rot = rotRef.current
       if (autoSpin && !rot.dragging) {
-        rot.yaw += dt * 0.25
+        rot.yaw += dt * 0.22
       }
       const lv = liveRef.current
-      phaseFlow = (phaseFlow + dt * (1.1 + Math.min(8, Math.abs(lv.iq) * 0.8))) % 1
+      phaseFlow = (phaseFlow + dt * (0.9 + Math.min(8, Math.abs(lv.iq) * 0.8))) % 1
 
       const cy = Math.cos(rot.yaw)
       const sy = Math.sin(rot.yaw)
       const cp = Math.cos(rot.pitch)
       const sp = Math.sin(rot.pitch)
 
-      // fit the ±90 world-unit assembly inside the center clear zone between left/right callouts
-      const padSide = leftRefs.current[0]?.clientWidth ?? 126
-      const clearW = Math.max(180, w - padSide * 2 - 28)
-      const clearH = Math.max(160, h - 84)
-      const unitPx = Math.min((clearW * 0.48) / 86, (clearH * 0.48) / 48)
+      const padSide = leftRefs.current[0]?.clientWidth ?? 102
+      const clearW = Math.max(180, w - padSide * 2 - 20)
+      const clearH = Math.max(160, h - 56)
+      const unitPx = Math.min((clearW * 0.5) / 86, (clearH * 0.5) / 46)
       const cxScreen = w * 0.5
-      const cyScreen = h * 0.52
+      const cyScreen = h * 0.49
 
       const project = (p: Vec3): { x: number; y: number; z: number; s: number } => {
         const x0 = p[0] - 4
@@ -324,7 +318,7 @@ export function OdriveHologram({ ax }: { ax: number }) {
         return `rgba(61, 245, 122, ${a})`
       }
 
-      // 1. Draw concentric dotted hologram base radar rings
+      // 1. Concentric dotted hologram base radar rings
       for (const ringR of [86, 62]) {
         const segs = ringR === 86 ? 64 : 40
         for (let i = 0; i < segs; i++) {
@@ -332,12 +326,12 @@ export function OdriveHologram({ ax }: { ax: number }) {
           const pt = project([Math.cos(ang) * ringR + 4, -10, Math.sin(ang) * ringR * 0.62])
           const major = i % 8 === 0
           ctx.fillStyle = major ? 'rgba(61, 245, 122, 0.65)' : 'rgba(61, 245, 122, 0.22)'
-          const sz = major ? 2.4 : 1.3
+          const sz = major ? 2.2 : 1.2
           ctx.fillRect(pt.x - sz * 0.5, pt.y - sz * 0.5, sz, sz)
         }
       }
 
-      // 2. Draw PCB point-cloud matrix
+      // 2. PCB point-cloud matrix
       for (const d of STATIC_MESH.dots) {
         const pt = project(d.p)
         ctx.fillStyle = colorFor(d.group, 0.52)
@@ -345,7 +339,7 @@ export function OdriveHologram({ ax }: { ax: number }) {
         ctx.fillRect(pt.x - sz * 0.5, pt.y - sz * 0.5, sz, sz)
       }
 
-      // 3. Build dynamic rotating 90KV BLDC rotor + AS5047P encoder disc at X=+50..+82
+      // 3. Dynamic rotating 90KV BLDC rotor + AS5047P encoder disc
       const dynLines: Line3D[] = []
       const mechAngle = lv.pos * Math.PI * 2
       const encAngle = (lv.posAbs / 16384) * Math.PI * 2
@@ -354,7 +348,6 @@ export function OdriveHologram({ ax }: { ax: number }) {
       const mR = 18
       const mSegs = 20
 
-      // BLDC rotor bell cylinder (along X axis from X=50 to X=72)
       for (let i = 0; i < mSegs; i++) {
         const a0 = mechAngle + (i / mSegs) * Math.PI * 2
         const a1 = mechAngle + ((i + 1) / mSegs) * Math.PI * 2
@@ -372,7 +365,6 @@ export function OdriveHologram({ ax }: { ax: number }) {
         }
       }
 
-      // Rear AS5047P SPI magnetic encoder disc at X=82
       const eSegs = 16
       const eR = 10.5
       for (let i = 0; i < eSegs; i++) {
@@ -422,21 +414,6 @@ export function OdriveHologram({ ax }: { ax: number }) {
         ctx.fillRect(pt.x - 2, pt.y - 2, 4, 4)
       }
 
-      // 5b. Project floating 3D silkscreen component tags directly onto the hologram
-      ctx.font = '500 9px "JetBrains Mono", monospace'
-      const labels3D: { p: Vec3; text: string; group: SubId }[] = [
-        { p: [-24, 18, 0], text: '6x 56V CAP', group: 'vbus' },
-        { p: [22, 6, -1], text: 'STM32F405', group: 'mcu' },
-        { p: [-20, 6.5, 15], text: 'M0 FET', group: 'm0_stage' },
-        { p: [61, 26, 6], text: '90KV BLDC', group: 'motor' },
-        { p: [82, 18, 6], text: 'AS5047P', group: 'spi' },
-      ]
-      for (const lb of labels3D) {
-        const pt = project(lb.p)
-        ctx.fillStyle = colorFor(lb.group, 0.82)
-        ctx.fillText(lb.text, pt.x - 20, pt.y)
-      }
-
       // 6. Draw 3D leader lines from each subsystem anchor to its left/right HUD callout box
       const stageRect = stage.getBoundingClientRect()
       const leftKeys: Exclude<SubId, 'pcb'>[] = ['vbus', 'mcu', 'brake']
@@ -448,7 +425,7 @@ export function OdriveHologram({ ax }: { ax: number }) {
         const boxX = side === 'left' ? r.right - stageRect.left : r.left - stageRect.left
         const boxY = r.top + r.height * 0.5 - stageRect.top
         const anc = project(ANCHORS[sub])
-        const elbowX = side === 'left' ? boxX + 12 : boxX - 12
+        const elbowX = side === 'left' ? boxX + 10 : boxX - 10
 
         const isFault = (sub === 'spi' && lv.encFault) || (sub === 'vbus' && lv.busFault) || (sub === 'm0_stage' && lv.motFault)
         const isSel = lv.selected === sub
@@ -456,22 +433,18 @@ export function OdriveHologram({ ax }: { ax: number }) {
           ? 'rgba(255, 90, 79, 0.85)'
           : isSel
             ? 'rgba(61, 245, 122, 0.95)'
-            : 'rgba(94, 158, 118, 0.45)'
+            : 'rgba(94, 158, 118, 0.4)'
 
         ctx.beginPath()
         ctx.strokeStyle = stroke
-        ctx.lineWidth = isSel || isFault ? 1.4 : 1
+        ctx.lineWidth = isSel || isFault ? 1.3 : 0.9
         ctx.moveTo(boxX, boxY)
         ctx.lineTo(elbowX, boxY)
         ctx.lineTo(anc.x, anc.y)
         ctx.stroke()
 
         ctx.fillStyle = isFault ? '#ff5a4f' : '#3df57a'
-        ctx.fillRect(anc.x - 2.5, anc.y - 2.5, 5, 5)
-        if (isFault || isSel) {
-          ctx.strokeStyle = isFault ? '#ff5a4f' : '#3df57a'
-          ctx.strokeRect(anc.x - 6, anc.y - 6, 12, 12)
-        }
+        ctx.fillRect(anc.x - 2, anc.y - 2, 4, 4)
       }
 
       leftKeys.forEach((k, i) => drawLeader(k, leftRefs.current[i] ?? null, 'left'))
@@ -484,56 +457,50 @@ export function OdriveHologram({ ax }: { ax: number }) {
 
   const dev = status?.device
 
-  const leftNodes: { id: Exclude<SubId, 'pcb'>; idx: string; label: string; val: string; sub: string; state?: 'warn' | 'alarm' }[] = [
+  const leftNodes: { id: Exclude<SubId, 'pcb'>; label: string; val: string; tip: string; state?: 'warn' | 'alarm' }[] = [
     {
       id: 'vbus',
-      idx: 'L1',
       label: 'DC BUS',
-      val: `${fmt(vbus, 2)}V · ${fmt(ibus, 2)}A`,
-      sub: `${fmt(busPwr, 1)}W · ${profile?.power.bus_min_v ?? 15}–${profile?.power.bus_max_v ?? 26.5}V`,
+      val: `${fmt(vbus, 2)} V`,
+      tip: `${fmt(ibus, 2)} A · ${fmt(busPwr, 1)} W`,
       state: busBad ? 'alarm' : undefined,
     },
     {
       id: 'mcu',
-      idx: 'L2',
-      label: 'STM32F405',
-      val: dev?.connected ? `${(dev.transport ?? 'usb').toUpperCase()} · ${dev.rate_achieved.toFixed(0)}HZ` : 'OFFLINE',
-      sub: `FW ${dev?.info?.fw ?? '--'} · ${dev?.cols ?? 0} CH`,
+      label: 'STM32',
+      val: dev?.connected ? `${dev.rate_achieved.toFixed(0)} Hz` : 'OFFLINE',
+      tip: `FW ${dev?.info?.fw ?? '--'} · ${dev?.cols ?? 0} ch`,
       state: !dev?.connected ? 'warn' : undefined,
     },
     {
       id: 'brake',
-      idx: 'L3',
-      label: 'AUX BRAKE',
-      val: brakeArmed ? 'ARMED · 2.0 Ω' : 'DISARMED',
-      sub: `REGEN ${profile?.power.dc_max_negative_current_a ?? -0.01} A`,
+      label: 'BRAKE',
+      val: brakeArmed ? '2.0 Ω OK' : 'OFF',
+      tip: `Max regen ${profile?.power.dc_max_negative_current_a ?? -0.01} A`,
       state: brakeArmed === false ? 'warn' : undefined,
     },
   ]
 
-  const rightNodes: { id: Exclude<SubId, 'pcb'>; idx: string; label: string; val: string; sub: string; state?: 'warn' | 'alarm' }[] = [
+  const rightNodes: { id: Exclude<SubId, 'pcb'>; label: string; val: string; tip: string; state?: 'warn' | 'alarm' }[] = [
     {
       id: 'm0_stage',
-      idx: 'R1',
-      label: `M${ax} FET STAGE`,
-      val: `${(AXIS_STATES[num(state)] ?? 'IDLE').slice(0, 11)} · ${fmt(fet0, 1)}°C`,
-      sub: `IQ ${fmt(iq, 2)}A / SET ${fmt(iqSet, 2)}A`,
+      label: `M${ax} FET`,
+      val: `${fmt(fet0, 1)} °C`,
+      tip: `Iq ${fmt(iq, 2)} A / Set ${fmt(iqSet, 2)} A`,
       state: motBad ? 'alarm' : num(fet0) > 65 ? 'warn' : undefined,
     },
     {
       id: 'spi',
-      idx: 'R2',
-      label: 'AS5047P SPI',
-      val: `ABS ${fmt(posAbs, 0)} · ${((1 - Math.min(1, num(spiErr))) * 100).toFixed(0)}%`,
-      sub: `CS GPIO${fmt(encCs, 0)} · CPR ${fmt(encCpr, 0)}`,
+      label: 'AS5047P',
+      val: `${fmt(posAbs, 0)}`,
+      tip: `CS GPIO${fmt(encCs, 0)} · CPR ${fmt(encCpr, 0)}`,
       state: encBad ? 'alarm' : undefined,
     },
     {
       id: 'motor',
-      idx: 'R3',
-      label: `90KV (${ratio}:1)`,
-      val: `${fmt(jointDeg, 1)}° · ${fmt(jointTorque, 2)}Nm`,
-      sub: `${fmt(pos, 3)} TRN · ${fmt(vel, 2)} T/S`,
+      label: 'JOINT',
+      val: `${fmt(jointDeg, 1)}°`,
+      tip: `${fmt(jointTorque, 2)} Nm · ${fmt(vel, 2)} t/s`,
     },
   ]
 
@@ -544,11 +511,6 @@ export function OdriveHologram({ ax }: { ax: number }) {
       <div className="holo-bracket bl" />
       <div className="holo-bracket br" />
 
-      <div className="holo-hud-top num" style={{ gap: 12 }}>
-        <span>ODESC 3.6 · 90KV · AS5047P</span>
-        <span>SN {dev?.info?.serial ?? '378635693034'}</span>
-      </div>
-
       <div className="holo-callouts left">
         {leftNodes.map((n, i) => (
           <div
@@ -556,15 +518,15 @@ export function OdriveHologram({ ax }: { ax: number }) {
             ref={(el) => {
               leftRefs.current[i] = el
             }}
+            title={n.tip}
             className={`holo-node num ${n.state ?? ''} ${selected === n.id ? 'active' : ''}`}
             onClick={() => setSelected(selected === n.id ? null : n.id)}
           >
             <div className="n-head">
-              <span>{n.idx} · {n.label}</span>
+              <span>{n.label}</span>
               <span>{n.state === 'alarm' ? '■' : n.state === 'warn' ? '▲' : '●'}</span>
             </div>
             <div className="n-val">{n.val}</div>
-            <div className="n-sub">{n.sub}</div>
           </div>
         ))}
       </div>
@@ -576,15 +538,15 @@ export function OdriveHologram({ ax }: { ax: number }) {
             ref={(el) => {
               rightRefs.current[i] = el
             }}
+            title={n.tip}
             className={`holo-node num ${n.state ?? ''} ${selected === n.id ? 'active' : ''}`}
             onClick={() => setSelected(selected === n.id ? null : n.id)}
           >
             <div className="n-head">
-              <span>{n.idx} · {n.label}</span>
+              <span>{n.label}</span>
               <span>{n.state === 'alarm' ? '■' : n.state === 'warn' ? '▲' : '●'}</span>
             </div>
             <div className="n-val">{n.val}</div>
-            <div className="n-sub">{n.sub}</div>
           </div>
         ))}
       </div>
@@ -613,8 +575,7 @@ export function OdriveHologram({ ax }: { ax: number }) {
       />
 
       <div className="holo-hud-bottom num">
-        <span>DRAG TO ORBIT · CLICK CALLOUT TO ISOLATE</span>
-        <div className="holo-controls">
+        <div className="holo-controls" style={{ marginLeft: 'auto' }}>
           {(['orbit', 'top', 'side', 'motor'] as CamPreset[]).map((p) => (
             <Button key={p} small kind={cam === p ? 'on' : ''} onClick={() => applyPreset(p)}>
               {p}

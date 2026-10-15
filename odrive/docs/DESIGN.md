@@ -30,6 +30,7 @@ hues, each with its own dash pattern.
 - numbered instrument headers (`01`..`11`), discrete 24-segment load/thermal meters, and 3-column/4-column footer metric strips separated by 1 px hairlines
 - central interactive 3D CAD/Point-Cloud Hologram (`OdriveHologram`) of the ODESC 3.6 56V PCB, 6x 56V bus capacitors, M0/M1 MOSFET stages, STM32F405 MCU, coupled 90KV BLDC actuator (20:1), and AS5047P SPI encoder with 6 spatial HUD callouts and 3D leader lines
 - concentric dotted polar radar dial (`EncoderCard`) showing mechanical shaft angle (`0..360 deg`) and electrical phase vector
+- live charts enforce a minimum Y-axis span per unit (`MIN_SPAN`: `turn` 0.2, `turn/s` 0.5, `A` 1.0, `V` 1.0, `C` 4.0) and a fixed `[-windowS, 0]` rolling time axis so steady sensor noise never auto-zooms to 100% height; global `pause` button or double-clicking any chart freezes traces for inspection
 - missing data shows `NO DATA` / `--`, never placeholder values
 - bento grid: 12 columns, `ResizeObserver`-driven width, ordered by operational use case (`bench`, `tuning`, `thermal`), locked in operate mode, editable in `edit grid` mode
 - status bar and DISARM ALL are pinned and cannot be moved

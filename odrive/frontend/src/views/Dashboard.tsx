@@ -12,7 +12,6 @@ const STORE = 'odrv.layouts.v3'
 
 type PanelId = 'hologram' | 'axis' | 'joint' | 'encoder' | 'powercard' | 'motion' | 'current' | 'errors' | 'power' | 'thermal' | 'events'
 
-// layouts ordered by operational workflow: central hologram twin flanked by state/sensor cards, waveforms below
 const PRESETS: Record<string, Layout[]> = {
   bench: [
     { i: 'axis', x: 0, y: 0, w: 3, h: 7 },
@@ -47,18 +46,18 @@ const PRESETS: Record<string, Layout[]> = {
   ],
 }
 
-const META: Record<PanelId, { idx: string; title: string; sub?: string }> = {
-  axis: { idx: '01', title: 'AXIS STATUS', sub: 'STATE / LOAD' },
-  joint: { idx: '02', title: 'JOINT SPACE', sub: '20:1 OUTPUT' },
-  hologram: { idx: '03', title: 'ODESC 3.6 HOLOGRAM TWIN', sub: 'LIVE 3D TELEMETRY' },
-  encoder: { idx: '04', title: 'ENCODER RADAR', sub: 'AS5047P SPI' },
-  powercard: { idx: '05', title: 'POWER & THERMAL', sub: 'DC BUS / FET' },
-  motion: { idx: '06', title: 'MOTION LOOP', sub: 'POS / VEL' },
-  current: { idx: '07', title: 'FOC CURRENT LOOP', sub: 'IQ SET / MEAS' },
-  errors: { idx: '08', title: 'FAULT MATRIX', sub: 'FIRST-OUT' },
-  power: { idx: '09', title: 'DC BUS TRACE', sub: 'VBUS / IBUS' },
-  thermal: { idx: '10', title: 'THERMAL TRACE', sub: 'FET / MOTOR' },
-  events: { idx: '11', title: 'EVENT STREAM', sub: 'AUDIT' },
+const META: Record<PanelId, { idx: string; title: string }> = {
+  axis: { idx: '01', title: 'AXIS' },
+  joint: { idx: '02', title: 'JOINT' },
+  hologram: { idx: '03', title: 'ODESC 3.6 HOLOGRAM' },
+  encoder: { idx: '04', title: 'ENCODER' },
+  powercard: { idx: '05', title: 'POWER' },
+  motion: { idx: '06', title: 'MOTION' },
+  current: { idx: '07', title: 'CURRENT' },
+  errors: { idx: '08', title: 'FAULTS' },
+  power: { idx: '09', title: 'DC BUS' },
+  thermal: { idx: '10', title: 'THERMAL' },
+  events: { idx: '11', title: 'EVENTS' },
 }
 
 /** load user-customized dashboard layouts from localStorage with preset fallbacks */
@@ -79,6 +78,7 @@ export function Dashboard() {
   const [layouts, setLayouts] = useState(loadLayouts)
   const [preset, setPreset] = useState<string>(() => localStorage.getItem(STORE + '.active') ?? 'bench')
   const [edit, setEdit] = useState(false)
+  const [paused, setPaused] = useState(false)
   const [windowS, setWindowS] = useState(10)
   const layout = layouts[preset] ?? PRESETS.bench
 
@@ -97,13 +97,13 @@ export function Dashboard() {
       case 'hologram':
         return <OdriveHologram ax={ax} />
       case 'motion':
-        return <MotionPlot ax={ax} windowS={windowS} />
+        return <MotionPlot ax={ax} windowS={windowS} paused={paused} />
       case 'current':
-        return <CurrentPlot ax={ax} windowS={windowS} />
+        return <CurrentPlot ax={ax} windowS={windowS} paused={paused} />
       case 'power':
-        return <PowerPlot windowS={windowS} />
+        return <PowerPlot windowS={windowS} paused={paused} />
       case 'thermal':
-        return <ThermalPlot ax={ax} windowS={Math.max(windowS, 60)} />
+        return <ThermalPlot ax={ax} windowS={Math.max(windowS, 60)} paused={paused} />
       case 'axis':
         return <AxisCard ax={ax} />
       case 'joint':
@@ -133,8 +133,7 @@ export function Dashboard() {
   return (
     <div ref={wrapRef}>
       <div className="view-head">
-        <h1>TELEMETRY DASHBOARD</h1>
-        <span className="sub">UNIT // ODESC-3.6-56V · AXIS {ax}</span>
+        <h1>DASHBOARD</h1>
         <div className="row" style={{ marginLeft: 'auto' }}>
           {Object.keys(PRESETS).map((p) => (
             <Button
@@ -152,7 +151,7 @@ export function Dashboard() {
           <span className="muted">|</span>
           {[0, 1].map((a) => (
             <Button key={a} small kind={a === ax ? 'on' : ''} onClick={() => useApp.setState({ axis: a })}>
-              axis{a}
+              ax{a}
             </Button>
           ))}
           <span className="muted">|</span>
@@ -161,9 +160,12 @@ export function Dashboard() {
               {w}s
             </Button>
           ))}
+          <Button small kind={paused ? 'danger' : ''} onClick={() => setPaused(!paused)}>
+            {paused ? 'paused' : 'pause'}
+          </Button>
           <span className="muted">|</span>
           <Button small kind={edit ? 'primary' : ''} onClick={() => setEdit(!edit)}>
-            {edit ? 'lock grid' : 'edit grid'}
+            {edit ? 'lock' : 'edit'}
           </Button>
           {edit && (
             <Button small onClick={() => save(PRESETS[preset])}>
@@ -193,7 +195,6 @@ export function Dashboard() {
               <Panel
                 index={m.idx}
                 title={m.title}
-                subtitle={m.sub}
                 status={isAlarm ? 'alarm' : 'live'}
                 alarm={isAlarm}
                 flush={['hologram', 'motion', 'current', 'power', 'thermal'].includes(id)}
