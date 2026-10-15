@@ -151,11 +151,14 @@ async def health(ctx: JobCtx, params: dict) -> dict:
         elif all(x == 0 for x in raw):
             c.add("enc_stuck", "Encoder data line", FAIL, "stuck at 0", "changing values", "MISO shorted to GND or encoder unpowered")
         else:
-            jit = statistics.pstdev(raw) if len(set(raw)) > 1 else 0.0
-            if max(raw) - min(raw) > 8000:
-                jit = float("nan")
+            # unwrap 14-bit circular wraparound before computing standstill jitter
+            ref = raw[0]
+            unwrapped = [ref + ((x - ref + 8192) % 16384 - 8192) for x in raw]
+            jit = statistics.pstdev(unwrapped) if len(set(unwrapped)) > 1 else 0.0
+            span = max(unwrapped) - min(unwrapped)
             c.add("enc_jitter", "Encoder noise at standstill", PASS if jit < 3 else WARN if jit < 10 else FAIL,
-                  f"{jit:.2f} counts rms", "< 3 counts", "check magnet gap/centering and cable routing" if not jit < 3 else "")
+                  f"{jit:.1f} counts rms (span {span})", "< 3 counts",
+                  "SPI bit corruption / MISO signal integrity or missing 3.3V/GND on AS5047P" if jit >= 10 else "check magnet gap/centering and cable routing" if jit >= 3 else "")
     ctx.progress(0.75)
 
     # motor calibration results

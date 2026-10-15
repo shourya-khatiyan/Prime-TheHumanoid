@@ -56,7 +56,7 @@ class FibreUsbTransport(Transport):
         fibre = _odrive_lib()
         self._term = fibre.utils.Event()
         try:
-            dev = fibre.find_any(path="usb", serial_number=serial, timeout=timeout, channel_termination_token=self._term)
+            dev = fibre.find_any(path="usb", serial_number=None, timeout=timeout, channel_termination_token=self._term)
         except Exception as ex:
             raise TransportError(f"usb discovery failed: {ex}") from ex
         if dev is None:
@@ -86,9 +86,19 @@ class FibreUsbTransport(Transport):
                 self._handles[path] = attr
 
     def close(self) -> None:
-        """Terminate the fibre channel threads."""
+        """Terminate the fibre channel threads and release the WinUSB handle."""
+        dev = self.root
         if self._term is not None:
             self._term.set()
+        try:
+            ch = object.__getattribute__(dev, "_channel") if dev is not None else None
+            usb_dev = getattr(getattr(ch, "_interface", None), "dev", None)
+            if usb_dev is not None:
+                import usb.util
+
+                usb.util.dispose_resources(usb_dev)
+        except Exception:
+            pass
         self.root = None
         self._handles = {}
 

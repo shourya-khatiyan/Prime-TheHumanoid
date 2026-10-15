@@ -175,10 +175,13 @@ class JobCtx:
         st = None
         left = leave is None
         while time.monotonic() - t0 < timeout:
-            st = (await self.get(f"state.{ax}"))[0]
+            st, err = await self.get(f"state.{ax}", f"error.{ax}")
             if not left and st != leave:
                 left = True
             if left and (reach is None or st == reach):
+                return st
+            # if the axis already faulted and returned to IDLE before we polled, stop waiting
+            if not left and st == 1 and (err or time.monotonic() - t0 > 2.5):
                 return st
             await self.sleep(0.1)
         raise TimeoutError(f"axis{ax} stayed in state {st} for {timeout:.0f}s")

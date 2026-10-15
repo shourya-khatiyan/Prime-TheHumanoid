@@ -199,11 +199,10 @@ class DeviceWorker(threading.Thread):
             # paused: another tool (e.g. the firmware flasher) owns the usb device
             return []
         if self.mode == "auto":
-            last = self.transport.name if self.transport else None
             order = ["usb", "ascii"]
             if self._mock is not None:
                 order.append("mock")
-            return [last] + [k for k in order if k != last] if last in order else order
+            return order
         return [self.mode]
 
     def _try_connect(self) -> bool:
@@ -258,15 +257,30 @@ class DeviceWorker(threading.Thread):
     def _build_base_paths(self) -> None:
         """Always-sampled paths that the safety monitor and status bar rely on."""
         keys = ["clock", "vbus", "ibus", "sys_error", "brake_armed"]
-        full = ["state", "error", "motor_error", "enc_error", "ctrl_error", "fet_temp", "iq", "iq_set", "pos", "vel", "spi_err", "motor_temp"]
+        full = ["state", "error", "motor_error", "enc_error", "ctrl_error", "fet_temp", "iq", "iq_set", "pos", "vel", "spi_err", "motor_temp", "armed"]
         # the unused axis only needs what the safety monitor and status bar show
-        light = ["state", "error", "motor_error", "enc_error", "ctrl_error", "fet_temp", "iq"]
+        light = ["state", "error", "motor_error", "enc_error", "ctrl_error", "fet_temp", "iq", "armed"]
         base = [self.alias[k] for k in keys if k in self.alias]
         for ax in (0, 1):
             per_axis = full if ax == self.primary_axis else light
             base += [self.alias[f"{k}.{ax}"] for k in per_axis if f"{k}.{ax}" in self.alias]
         self.base_paths = base
         self._rebuild_cols()
+
+    def _mask_idle_currents(self, cols: list[str], values: list[Any]) -> list[Any]:
+        """fw 0.5.1 stops updating Iq_setpoint / Iq_measured when disarmed; zero them in IDLE so plots don't flatline at the last command."""
+        by_path = dict(zip(cols, values))
+        out = list(values)
+        idx = {c: i for i, c in enumerate(cols)}
+        for ax in (0, 1):
+            st = by_path.get(self.alias.get(f"state.{ax}", ""))
+            armed = by_path.get(self.alias.get(f"armed.{ax}", ""))
+            if st == 1 and not armed:
+                for k in ("iq", "iq_set", "id"):
+                    p = self.alias.get(f"{k}.{ax}")
+                    if p and p in idx:
+                        out[idx[p]] = 0.0
+        return out
 
     def _rebuild_cols(self) -> None:
         valid = [p for p in self.sub_paths if self.tree.get(p, {}).get("kind") == "prop" and p not in self.base_paths]
@@ -280,7 +294,7 @@ class DeviceWorker(threading.Thread):
         if not cols or self.transport is None:
             return
         t_host = time.time()
-        values = self.transport.read_many(cols)
+        values = self._mask_idle_currents(cols, self.transport.read_many(cols))
         self.latest.update(zip(cols, values))
         self.rows.append((self.cols_version, t_host, values))
         now = time.monotonic()
