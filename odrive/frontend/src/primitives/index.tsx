@@ -2,13 +2,28 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { enumDef, type Metadata } from '../lib/meta'
 import './primitives.css'
 
-/** flat panel with a header row (title, optional tools) and a scrollable body */
-export function Panel(props: { title: string; tools?: ReactNode; children?: ReactNode; flush?: boolean; alarm?: boolean; className?: string }) {
+/** flat panel with a numbered header row (index, title, optional tools) and a scrollable body */
+export function Panel(props: {
+  index?: string
+  title: string
+  subtitle?: string
+  status?: 'ok' | 'warn' | 'alarm' | 'live'
+  tools?: ReactNode
+  children?: ReactNode
+  flush?: boolean
+  alarm?: boolean
+  className?: string
+}) {
   return (
     <section className={`panel ${props.alarm ? 'alarm' : ''} ${props.className ?? ''}`}>
       <header className="panel-head">
+        {props.index && <span className="panel-idx num">{props.index}</span>}
         <span className="panel-title">{props.title}</span>
-        {props.tools && <div className="panel-tools">{props.tools}</div>}
+        {props.subtitle && <span className="panel-sub">{props.subtitle}</span>}
+        <div className="panel-tools">
+          {props.tools}
+          {props.status && <span className={`panel-dot ${props.status}`} title={props.status} />}
+        </div>
       </header>
       <div className={`panel-body ${props.flush ? 'flush' : ''}`}>{props.children}</div>
     </section>

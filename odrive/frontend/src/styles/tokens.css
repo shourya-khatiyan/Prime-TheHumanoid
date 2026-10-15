@@ -1,20 +1,22 @@
 /* design tokens: see docs/DESIGN.md. green is the "grayscale"; amber/red are reserved for abnormal states. */
 :root {
-  --bg: #0a0f0c;
-  --surface: #0f1712;
-  --surface-2: #152019;
-  --border: #24352b;
-  --border-strong: #335040;
-  --grid-minor: #131d17;
-  --grid-major: #1c2a21;
-  --grid-readable: #456b53;
+  --bg: #070b09;
+  --surface: #0b110e;
+  --surface-2: #111a15;
+  --surface-3: #16221b;
+  --border: #1d2d23;
+  --border-strong: #2c4536;
+  --grid-minor: #101914;
+  --grid-major: #17241d;
+  --grid-readable: #3e634c;
 
-  --text: #c6f2d0;
-  --text-2: #8fc79e;
-  --muted: #5e8a6b;
-  --disabled: #3e5446;
+  --text: #d4f7dc;
+  --text-2: #8ec69d;
+  --muted: #588265;
+  --disabled: #354a3c;
 
   --accent: #3df57a;
+  --accent-dim: rgba(61, 245, 122, 0.14);
   --accent-ink: #04140a;
 
   --warn: #ffb000;
@@ -33,14 +35,16 @@
   --s6: #fddbfe;
 
   --font: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --fs-micro: 10px;
   --fs-tick: 11px;
-  --fs-data: 13px;
-  --fs-critical: 15px;
-  --fs-big: 22px;
+  --fs-data: 12.5px;
+  --fs-critical: 14px;
+  --fs-big: 24px;
+  --fs-hero: 30px;
 
-  --gap: 6px;
-  --pad: 8px;
+  --gap: 10px;
+  --pad: 12px;
   --radius: 2px;
-  --bar-h: 38px;
-  --nav-w: 172px;
+  --bar-h: 42px;
+  --nav-w: 184px;
 }

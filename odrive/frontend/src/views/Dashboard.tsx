@@ -1,63 +1,67 @@
-import { useMemo, useState, type ReactNode } from 'react'
-import GridLayout, { WidthProvider, type Layout } from 'react-grid-layout'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import GridLayout, { type Layout } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import { Button, Panel } from '../primitives'
 import { useApp } from '../lib/store'
+import { OdriveHologram } from '../components/OdriveHologram'
 import { AxisCard, CurrentPlot, EncoderCard, ErrorsPanel, EventsPanel, JointCard, MotionPlot, PowerCard, PowerPlot, ThermalPlot } from './panels'
 import './dashboard.css'
 
-const Grid = WidthProvider(GridLayout)
-const STORE = 'odrv.layouts.v1'
+const STORE = 'odrv.layouts.v3'
 
-type PanelId = 'motion' | 'current' | 'power' | 'thermal' | 'axis' | 'joint' | 'errors' | 'encoder' | 'powercard' | 'events'
+type PanelId = 'hologram' | 'axis' | 'joint' | 'encoder' | 'powercard' | 'motion' | 'current' | 'errors' | 'power' | 'thermal' | 'events'
 
-// panel size follows how much the data matters for decisions: one anchor, the rest smaller
+// layouts ordered by operational workflow: central hologram twin flanked by state/sensor cards, waveforms below
 const PRESETS: Record<string, Layout[]> = {
   bench: [
-    { i: 'motion', x: 0, y: 0, w: 8, h: 9 },
-    { i: 'axis', x: 8, y: 0, w: 4, h: 9 },
-    { i: 'current', x: 0, y: 9, w: 5, h: 7 },
-    { i: 'errors', x: 5, y: 9, w: 3, h: 7 },
-    { i: 'encoder', x: 8, y: 9, w: 4, h: 7 },
-    { i: 'joint', x: 0, y: 16, w: 5, h: 5 },
-    { i: 'powercard', x: 5, y: 16, w: 3, h: 5 },
-    { i: 'power', x: 8, y: 16, w: 4, h: 5 },
-    { i: 'thermal', x: 0, y: 21, w: 6, h: 6 },
-    { i: 'events', x: 6, y: 21, w: 6, h: 6 },
+    { i: 'axis', x: 0, y: 0, w: 3, h: 7 },
+    { i: 'joint', x: 0, y: 7, w: 3, h: 6 },
+    { i: 'hologram', x: 3, y: 0, w: 6, h: 13 },
+    { i: 'encoder', x: 9, y: 0, w: 3, h: 7 },
+    { i: 'powercard', x: 9, y: 7, w: 3, h: 6 },
+    { i: 'motion', x: 0, y: 13, w: 6, h: 7 },
+    { i: 'current', x: 6, y: 13, w: 6, h: 7 },
+    { i: 'errors', x: 0, y: 20, w: 4, h: 6 },
+    { i: 'power', x: 4, y: 20, w: 4, h: 6 },
+    { i: 'thermal', x: 8, y: 20, w: 4, h: 6 },
   ],
   tuning: [
-    { i: 'motion', x: 0, y: 0, w: 9, h: 11 },
-    { i: 'axis', x: 9, y: 0, w: 3, h: 11 },
-    { i: 'current', x: 0, y: 11, w: 9, h: 8 },
-    { i: 'errors', x: 9, y: 11, w: 3, h: 8 },
-    { i: 'joint', x: 0, y: 19, w: 6, h: 5 },
-    { i: 'encoder', x: 6, y: 19, w: 6, h: 5 },
+    { i: 'motion', x: 0, y: 0, w: 7, h: 8 },
+    { i: 'hologram', x: 7, y: 0, w: 5, h: 11 },
+    { i: 'current', x: 0, y: 8, w: 7, h: 8 },
+    { i: 'axis', x: 7, y: 11, w: 5, h: 5 },
+    { i: 'joint', x: 0, y: 16, w: 4, h: 6 },
+    { i: 'encoder', x: 4, y: 16, w: 4, h: 6 },
+    { i: 'errors', x: 8, y: 16, w: 4, h: 6 },
   ],
   thermal: [
-    { i: 'thermal', x: 0, y: 0, w: 8, h: 11 },
-    { i: 'powercard', x: 8, y: 0, w: 4, h: 5 },
-    { i: 'axis', x: 8, y: 5, w: 4, h: 6 },
-    { i: 'current', x: 0, y: 11, w: 6, h: 7 },
-    { i: 'power', x: 6, y: 11, w: 6, h: 7 },
-    { i: 'errors', x: 0, y: 18, w: 6, h: 5 },
-    { i: 'events', x: 6, y: 18, w: 6, h: 5 },
+    { i: 'thermal', x: 0, y: 0, w: 7, h: 10 },
+    { i: 'hologram', x: 7, y: 0, w: 5, h: 10 },
+    { i: 'powercard', x: 0, y: 10, w: 4, h: 6 },
+    { i: 'power', x: 4, y: 10, w: 4, h: 6 },
+    { i: 'current', x: 8, y: 10, w: 4, h: 6 },
+    { i: 'axis', x: 0, y: 16, w: 4, h: 6 },
+    { i: 'errors', x: 4, y: 16, w: 4, h: 6 },
+    { i: 'events', x: 8, y: 16, w: 4, h: 6 },
   ],
 }
 
-const TITLES: Record<PanelId, string> = {
-  motion: 'motion . pos / vel',
-  current: 'current . Iq setpoint vs measured',
-  power: 'dc bus',
-  thermal: 'temperature',
-  axis: 'axis',
-  joint: 'joint space (via gear ratio)',
-  errors: 'errors . first-out',
-  encoder: 'encoder . AS5047P',
-  powercard: 'power',
-  events: 'events',
+const META: Record<PanelId, { idx: string; title: string; sub?: string }> = {
+  axis: { idx: '01', title: 'AXIS STATUS', sub: 'STATE / LOAD' },
+  joint: { idx: '02', title: 'JOINT SPACE', sub: '20:1 OUTPUT' },
+  hologram: { idx: '03', title: 'ODESC 3.6 HOLOGRAM TWIN', sub: 'LIVE 3D TELEMETRY' },
+  encoder: { idx: '04', title: 'ENCODER RADAR', sub: 'AS5047P SPI' },
+  powercard: { idx: '05', title: 'POWER & THERMAL', sub: 'DC BUS / FET' },
+  motion: { idx: '06', title: 'MOTION LOOP', sub: 'POS / VEL' },
+  current: { idx: '07', title: 'FOC CURRENT LOOP', sub: 'IQ SET / MEAS' },
+  errors: { idx: '08', title: 'FAULT MATRIX', sub: 'FIRST-OUT' },
+  power: { idx: '09', title: 'DC BUS TRACE', sub: 'VBUS / IBUS' },
+  thermal: { idx: '10', title: 'THERMAL TRACE', sub: 'FET / MOTOR' },
+  events: { idx: '11', title: 'EVENT STREAM', sub: 'AUDIT' },
 }
 
+/** load user-customized dashboard layouts from localStorage with preset fallbacks */
 function loadLayouts(): Record<string, Layout[]> {
   try {
     return { ...PRESETS, ...JSON.parse(localStorage.getItem(STORE) ?? '{}') }
@@ -68,6 +72,8 @@ function loadLayouts(): Record<string, Layout[]> {
 
 /** bento dashboard: locked in operate mode, draggable/resizable in edit mode, layouts saved per task */
 export function Dashboard() {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [gridW, setGridW] = useState(1200)
   const ax = useApp((s) => s.axis)
   const alarms = useApp((s) => s.status?.safety.alarms.length ?? 0)
   const [layouts, setLayouts] = useState(loadLayouts)
@@ -76,8 +82,20 @@ export function Dashboard() {
   const [windowS, setWindowS] = useState(10)
   const layout = layouts[preset] ?? PRESETS.bench
 
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const update = () => setGridW(Math.max(640, el.clientWidth))
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const body = (id: PanelId): ReactNode => {
     switch (id) {
+      case 'hologram':
+        return <OdriveHologram ax={ax} />
       case 'motion':
         return <MotionPlot ax={ax} windowS={windowS} />
       case 'current':
@@ -113,10 +131,10 @@ export function Dashboard() {
   const items = useMemo(() => layout.map((l) => l.i as PanelId), [layout])
 
   return (
-    <div>
+    <div ref={wrapRef}>
       <div className="view-head">
-        <h1>dashboard</h1>
-        <span className="sub">axis{ax}</span>
+        <h1>TELEMETRY DASHBOARD</h1>
+        <span className="sub">UNIT // ODESC-3.6-56V · AXIS {ax}</span>
         <div className="row" style={{ marginLeft: 'auto' }}>
           {Object.keys(PRESETS).map((p) => (
             <Button
@@ -145,7 +163,7 @@ export function Dashboard() {
           ))}
           <span className="muted">|</span>
           <Button small kind={edit ? 'primary' : ''} onClick={() => setEdit(!edit)}>
-            {edit ? 'done editing' : 'edit layout'}
+            {edit ? 'lock grid' : 'edit grid'}
           </Button>
           {edit && (
             <Button small onClick={() => save(PRESETS[preset])}>
@@ -154,26 +172,38 @@ export function Dashboard() {
           )}
         </div>
       </div>
-      <Grid
+      <GridLayout
         className={`bento ${edit ? 'editing' : ''}`}
         layout={layout}
+        width={gridW}
         cols={12}
-        rowHeight={30}
-        margin={[6, 6]}
+        rowHeight={22}
+        margin={[8, 8]}
         containerPadding={[0, 0]}
         isDraggable={edit}
         isResizable={edit}
         draggableHandle=".panel-head"
         onLayoutChange={(l) => edit && save(l)}
       >
-        {items.map((id) => (
-          <div key={id}>
-            <Panel title={TITLES[id]} alarm={id === 'errors' && alarms > 0} flush={['motion', 'current', 'power', 'thermal'].includes(id)}>
-              {body(id)}
-            </Panel>
-          </div>
-        ))}
-      </Grid>
+        {items.map((id) => {
+          const m = META[id]
+          const isAlarm = id === 'errors' && alarms > 0
+          return (
+            <div key={id}>
+              <Panel
+                index={m.idx}
+                title={m.title}
+                subtitle={m.sub}
+                status={isAlarm ? 'alarm' : 'live'}
+                alarm={isAlarm}
+                flush={['hologram', 'motion', 'current', 'power', 'thermal'].includes(id)}
+              >
+                {body(id)}
+              </Panel>
+            </div>
+          )
+        })}
+      </GridLayout>
     </div>
   )
 }

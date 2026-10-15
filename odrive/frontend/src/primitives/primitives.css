@@ -1,6 +1,8 @@
-/* panel: 1px hairline, flat surface, header row with title / unit / state */
+/* panel: 1px hairline, matte dark surface, numbered technical header row */
 .panel {
-  background: var(--surface);
+  background:
+    radial-gradient(rgba(61, 245, 122, 0.04) 1px, transparent 1px) 0 0 / 16px 16px,
+    var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   display: flex;
@@ -8,25 +10,40 @@
   min-width: 0;
   min-height: 0;
   height: 100%;
+  position: relative;
 }
 .panel-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px var(--pad);
+  padding: 8px 14px;
   border-bottom: 1px solid var(--border);
-  min-height: 26px;
+  min-height: 34px;
   flex: 0 0 auto;
+  background: rgba(7, 11, 9, 0.45);
+}
+.panel-idx {
+  color: var(--muted);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.12em;
 }
 .panel-title {
   color: var(--text-2);
-  font-size: var(--fs-tick);
-  text-transform: lowercase;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.panel-title::before {
-  content: '// ';
+.panel-sub {
   color: var(--muted);
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 .panel-tools {
   margin-left: auto;
@@ -34,11 +51,29 @@
   gap: 6px;
   align-items: center;
 }
+.panel-dot {
+  width: 6px;
+  height: 6px;
+  display: inline-block;
+  background: var(--muted);
+}
+.panel-dot.ok,
+.panel-dot.live {
+  background: var(--accent);
+}
+.panel-dot.warn {
+  background: var(--warn);
+}
+.panel-dot.alarm {
+  background: var(--error);
+}
 .panel-body {
   padding: var(--pad);
   overflow: auto;
   flex: 1 1 auto;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .panel-body.flush {
   padding: 0;
@@ -56,14 +91,19 @@
   background: var(--surface-2);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  padding: 3px 10px;
+  padding: 4px 10px;
   min-height: 26px;
   cursor: pointer;
-  text-transform: lowercase;
+  text-transform: uppercase;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.09em;
+  font-weight: 500;
   white-space: nowrap;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 .btn:hover:not(:disabled) {
   border-color: var(--accent);
+  color: var(--text);
 }
 .btn:disabled {
   color: var(--disabled);
@@ -78,20 +118,21 @@
   background: var(--accent);
   color: var(--accent-ink);
   border-color: var(--accent);
+  font-weight: 600;
 }
 .btn.danger {
   border-color: var(--warn);
   color: var(--warn);
 }
 .btn.small {
-  padding: 1px 6px;
+  padding: 2px 7px;
   min-height: 22px;
-  font-size: var(--fs-tick);
+  font-size: var(--fs-micro);
 }
 .btn .key {
   color: var(--muted);
   margin-left: 6px;
-  font-size: var(--fs-tick);
+  font-size: var(--fs-micro);
 }
 
 /* hold-to-confirm: fills left to right while held */
@@ -146,30 +187,41 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  gap: 2px;
 }
 .val .k {
   color: var(--muted);
-  font-size: var(--fs-tick);
-  text-transform: lowercase;
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 .val .v {
   font-size: var(--fs-critical);
+  font-weight: 500;
+  color: var(--text);
 }
 .val .v.big {
   font-size: var(--fs-big);
-  line-height: 1.1;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
 }
 .val .u {
   color: var(--muted);
-  font-size: var(--fs-tick);
+  font-size: var(--fs-micro);
+  font-weight: 400;
+  letter-spacing: 0.04em;
   margin-left: 4px;
 }
 
 /* abnormal-state tags: only place amber/red fills are used */
 .tag {
-  padding: 0 6px;
+  padding: 2px 6px;
   border-radius: var(--radius);
-  font-size: var(--fs-tick);
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
   white-space: nowrap;
 }
 .tag.alarm {
@@ -200,10 +252,12 @@
   background: transparent;
   border: 0;
   border-bottom: 2px solid transparent;
-  padding: 5px 12px;
+  padding: 6px 12px;
   color: var(--text-2);
   cursor: pointer;
-  text-transform: lowercase;
+  text-transform: uppercase;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
 }
 .tabs button.active {
   color: var(--text);
@@ -237,10 +291,14 @@
 .kv {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 2px 12px;
+  gap: 4px 12px;
+  font-size: var(--fs-tick);
 }
 .kv > :nth-child(odd) {
   color: var(--muted);
+  text-transform: uppercase;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
 }
 
 .bar {
@@ -251,5 +309,5 @@
 .bar > div {
   position: absolute;
   inset: 0 auto 0 0;
-  background: var(--text-2);
+  background: var(--accent);
 }

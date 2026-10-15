@@ -25,12 +25,13 @@ hues, each with its own dash pattern.
 
 - normal states are plain text (`CLOSED_LOOP`); only faults get a fill and a glyph (■ alarm, ▲ warn)
 - only unacknowledged alarms blink; nothing else animates (reduced-motion respected)
-- JetBrains Mono, ligatures off, `tabular-nums slashed-zero` on every live number
-- sizes: 15 px critical, 13 px data, 11 px ticks; every value has a unit
-- radius <= 2 px, no shadows, no gradients, no glass/glow/scanlines, no emoji, no icon per label
+- JetBrains Mono (weights 200..700), ligatures off, `tabular-nums slashed-zero` on every live number
+- sizes: 30 px light hero numerals, 14 px critical, 12.5 px data, 11 px ticks, 10 px uppercase micro-labels (`0.12em` tracking); every value has a unit
+- numbered instrument headers (`01`..`11`), discrete 24-segment load/thermal meters, and 3-column/4-column footer metric strips separated by 1 px hairlines
+- central interactive 3D CAD/Point-Cloud Hologram (`OdriveHologram`) of the ODESC 3.6 56V PCB, 6x 56V bus capacitors, M0/M1 MOSFET stages, STM32F405 MCU, coupled 90KV BLDC actuator (20:1), and AS5047P SPI encoder with 6 spatial HUD callouts and 3D leader lines
+- concentric dotted polar radar dial (`EncoderCard`) showing mechanical shaft angle (`0..360 deg`) and electrical phase vector
 - missing data shows `NO DATA` / `--`, never placeholder values
-- bento grid: 12 columns, panel size follows decision importance, locked in operate mode,
-  editable layouts saved per task (bench / tuning / thermal)
+- bento grid: 12 columns, `ResizeObserver`-driven width, ordered by operational use case (`bench`, `tuning`, `thermal`), locked in operate mode, editable in `edit grid` mode
 - status bar and DISARM ALL are pinned and cannot be moved
 - keyboard: `Esc` disarm, `:` or Ctrl+K palette, Alt+1..9/0/F/A views (bare keys never switch
   views, so stray typing cannot change the screen mid-test)

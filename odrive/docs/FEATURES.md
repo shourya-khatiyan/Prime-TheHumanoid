@@ -29,6 +29,8 @@ Reference: [MoonLighTingPY/odrive3.6_web_gui](https://github.com/MoonLighTingPY/
 
 ## New
 
+- interactive 3D CAD/point-cloud hologram twin (`OdriveHologram`) of the ODESC 3.6 56V + 90KV BLDC actuator + AS5047P SPI encoder with live rotor rotation, 3-phase current particle flow, subsystem fault highlighting, and 6 spatial HUD callouts
+- concentric dotted polar encoder radar dial (`EncoderCard`) + 24-segment load/torque/thermal envelope meters
 - actuator profile with enforced limits and joint-space view (20:1, Kt, joint torque estimate)
 - passive health check with saved reports
 - encoder hand-turn test

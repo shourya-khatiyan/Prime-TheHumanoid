@@ -1,16 +1,21 @@
 /** number formatting for live values (fixed width, explicit nan/inf) */
 
-export function fmt(v: unknown, digits = 3): string {
+export function fmt(v: unknown, digits?: number): string {
   if (v === undefined || v === null) return '--'
   if (typeof v === 'boolean') return v ? 'true' : 'false'
   if (typeof v === 'bigint') return v.toString()
   if (typeof v === 'number') {
     if (Number.isNaN(v)) return 'NaN'
     if (!Number.isFinite(v)) return v > 0 ? 'inf' : '-inf'
-    if (Number.isInteger(v) && Math.abs(v) < 1e9) return String(v)
     const a = Math.abs(v)
+    if (digits !== undefined) {
+      if (a >= 1e6) return v.toExponential(2)
+      const clean = a < 0.5 * Math.pow(10, -digits) ? 0 : v
+      return clean.toFixed(digits)
+    }
+    if (Number.isInteger(v) && a < 1e9) return String(v)
     if (a !== 0 && (a < 1e-3 || a >= 1e6)) return v.toExponential(2)
-    return v.toFixed(digits)
+    return v.toFixed(3)
   }
   return String(v)
 }

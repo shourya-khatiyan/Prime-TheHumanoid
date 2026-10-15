@@ -92,7 +92,7 @@ export function LivePlot({ series, windowS = 10, paused = false }: { series: Ser
   useEffect(() => {
     if (!plotEl.current) return
     const scales = [...new Set(series.map((s) => s.scale ?? 'y'))]
-    const opts = baseOpts(size.w, Math.max(60, size.h - 20), series, scales, 's', false)
+    const opts = baseOpts(size.w, Math.max(60, size.h - 24), series, scales, 's', false)
     const empty: AlignedData = [[], ...series.map(() => [])]
     chart.current = new uPlot(opts, empty, plotEl.current)
     return () => {
@@ -102,7 +102,7 @@ export function LivePlot({ series, windowS = 10, paused = false }: { series: Ser
   }, [key])
 
   useEffect(() => {
-    chart.current?.setSize({ width: size.w, height: Math.max(60, size.h - 20) })
+    chart.current?.setSize({ width: size.w, height: Math.max(60, size.h - 24) })
   }, [size.w, size.h])
 
   useEffect(() => {
