@@ -201,6 +201,8 @@ class DeviceWorker(threading.Thread):
         if self.mode == "auto":
             last = self.transport.name if self.transport else None
             order = ["usb", "ascii"]
+            if self._mock is not None:
+                order.append("mock")
             return [last] + [k for k in order if k != last] if last in order else order
         return [self.mode]
 

@@ -41,12 +41,18 @@
 }
 
 .console {
-  height: calc(100vh - var(--bar-h) - 24px - 110px);
+  height: calc(100vh - var(--bar-h) - 24px - 155px);
+  min-height: 240px;
   overflow-y: auto;
-  border: 1px solid var(--border);
   background: var(--bg);
-  padding: 8px;
-  margin-top: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.console .in {
+  color: var(--text);
+  margin-top: 4px;
 }
 .console .in::before {
   content: 'odrv0> ';
@@ -54,18 +60,21 @@
 }
 .console-input {
   display: flex;
-  border: 1px solid var(--border);
-  border-top: 0;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
   position: relative;
 }
 .console-input .prompt {
   color: var(--accent);
-  padding: 6px 0 6px 8px;
+  font-weight: 600;
+  padding: 7px 6px 7px 12px;
 }
 .console-input input {
   flex: 1;
   border: 0;
-  background: var(--bg);
+  background: transparent;
+  padding: 7px 8px;
 }
 .suggest {
   position: absolute;

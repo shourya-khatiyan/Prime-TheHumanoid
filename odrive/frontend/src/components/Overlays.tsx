@@ -147,7 +147,7 @@ export function CommandPalette() {
       { label: 'clear errors (both axes)', hint: '', run: () => act('clear_errors', {}) },
       { label: 'acknowledge all alarms', hint: '', run: () => act('ack', {}) },
       { label: 'save configuration', hint: '', run: () => act('call', { path: 'save_configuration', args: [] }) },
-      { label: 'reconnect device', hint: '', run: () => act('connect', { mode: 'auto' }) },
+      { label: 'reconnect device', hint: '', run: () => act('connect', {}) },
       { label: 'use simulated device', hint: '', run: () => act('connect', { mode: 'mock' }) },
       { label: 'use ascii transport', hint: '', run: () => act('connect', { mode: 'ascii' }) },
       { label: 'select axis0', hint: '', run: () => useApp.setState({ axis: 0 }) },

@@ -51,7 +51,7 @@ export function Firmware() {
             >
               backup config now
             </Button>
-            <Button onClick={() => act('connect', { mode: 'auto' })}>reconnect</Button>
+            <Button onClick={() => act('connect', {})}>reconnect</Button>
           </div>
           <div className="muted" style={{ marginTop: 6 }}>
             {mine.length ? `latest backup of this board: ${mine[0].id} (${date(mine[0].created)})` : 'no backup of this board yet'}

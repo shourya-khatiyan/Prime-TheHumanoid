@@ -1,9 +1,48 @@
-import { useEffect } from 'react'
+import { Component, useEffect, type ErrorInfo, type ReactNode } from 'react'
 import { StatusBar } from './components/StatusBar'
 import { CommandPalette, ConfirmDialog, JobDock, MessageLine } from './components/Overlays'
+import { Button } from './primitives'
 import { act, useApp } from './lib/store'
 import { VIEWS } from './views/registry'
 import './components/shell.css'
+
+/** catches view render or HMR state errors so the shell never unmounts to a black screen */
+class ViewBoundary extends Component<{ view: string; children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null }
+
+  static getDerivedStateFromError(error: Error) {
+    return { error }
+  }
+
+  componentDidUpdate(prev: { view: string }) {
+    if (prev.view !== this.props.view && this.state.error) {
+      this.setState({ error: null })
+    }
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('View render error:', error, info)
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="panel" style={{ padding: 16, height: 'auto' }}>
+          <div className="error-text" style={{ marginBottom: 8 }}>
+            ■ VIEW RENDER ERROR: {this.state.error.message}
+          </div>
+          <div className="row">
+            <Button kind="primary" onClick={() => this.setState({ error: null })}>
+              retry view
+            </Button>
+            <Button onClick={() => location.reload()}>reload page</Button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 function typing(e: KeyboardEvent): boolean {
   const el = e.target as HTMLElement
@@ -40,7 +79,6 @@ function useHotkeys() {
 
 export function App() {
   useHotkeys()
-  // re-render the whole tree once the device's alias table arrives (or changes after a reflash)
   useApp((s) => s.alias)
   const view = useApp((s) => s.view)
   const link = useApp((s) => s.link)
@@ -69,11 +107,16 @@ export function App() {
           </div>
         )}
         {link === 'open' && !connected && (
-          <div className="warn-text" style={{ marginBottom: 6 }}>
-            no device: {lastError || 'searching...'}. plug in the ODrive over usb, or use the palette (:) to switch to the simulated device.
+          <div className="row warn-text" style={{ marginBottom: 6 }}>
+            <span>no device: {lastError || 'searching...'}.</span>
+            <Button small kind="primary" onClick={() => act('connect', { mode: 'mock' })}>
+              use simulated device
+            </Button>
           </div>
         )}
-        <View />
+        <ViewBoundary view={view}>
+          <View />
+        </ViewBoundary>
       </main>
       <MessageLine />
       <JobDock />

@@ -63,7 +63,15 @@ const META: Record<PanelId, { idx: string; title: string }> = {
 /** load user-customized dashboard layouts from localStorage with preset fallbacks */
 function loadLayouts(): Record<string, Layout[]> {
   try {
-    return { ...PRESETS, ...JSON.parse(localStorage.getItem(STORE) ?? '{}') }
+    const raw = JSON.parse(localStorage.getItem(STORE) ?? '{}')
+    if (!raw || typeof raw !== 'object') return { ...PRESETS }
+    const out: Record<string, Layout[]> = { ...PRESETS }
+    for (const [k, v] of Object.entries(raw)) {
+      if (Array.isArray(v) && v.every((x) => x && typeof x.i === 'string' && META[x.i as PanelId])) {
+        out[k] = v as Layout[]
+      }
+    }
+    return out
   } catch {
     return { ...PRESETS }
   }
@@ -80,7 +88,10 @@ export function Dashboard() {
   const [edit, setEdit] = useState(false)
   const [paused, setPaused] = useState(false)
   const [windowS, setWindowS] = useState(10)
-  const layout = layouts[preset] ?? PRESETS.bench
+  const rawLayout = layouts && typeof layouts === 'object' ? layouts[preset] : undefined
+  const layout = Array.isArray(rawLayout) ? rawLayout : PRESETS.bench
+  const safeW = typeof gridW === 'number' && Number.isFinite(gridW) ? gridW : 1200
+  const safeWin = typeof windowS === 'number' && Number.isFinite(windowS) ? windowS : 10
 
   useEffect(() => {
     const el = wrapRef.current
@@ -97,13 +108,13 @@ export function Dashboard() {
       case 'hologram':
         return <OdriveHologram ax={ax} />
       case 'motion':
-        return <MotionPlot ax={ax} windowS={windowS} paused={paused} />
+        return <MotionPlot ax={ax} windowS={safeWin} paused={paused} />
       case 'current':
-        return <CurrentPlot ax={ax} windowS={windowS} paused={paused} />
+        return <CurrentPlot ax={ax} windowS={safeWin} paused={paused} />
       case 'power':
-        return <PowerPlot windowS={windowS} paused={paused} />
+        return <PowerPlot windowS={safeWin} paused={paused} />
       case 'thermal':
-        return <ThermalPlot ax={ax} windowS={Math.max(windowS, 60)} paused={paused} />
+        return <ThermalPlot ax={ax} windowS={Math.max(safeWin, 60)} paused={paused} />
       case 'axis':
         return <AxisCard ax={ax} />
       case 'joint':
@@ -177,7 +188,7 @@ export function Dashboard() {
       <GridLayout
         className={`bento ${edit ? 'editing' : ''}`}
         layout={layout}
-        width={gridW}
+        width={safeW}
         cols={12}
         rowHeight={22}
         margin={[8, 8]}
@@ -188,7 +199,7 @@ export function Dashboard() {
         onLayoutChange={(l) => edit && save(l)}
       >
         {items.map((id) => {
-          const m = META[id]
+          const m = META[id] ?? { idx: '--', title: String(id) }
           const isAlarm = id === 'errors' && alarms > 0
           return (
             <div key={id}>
