@@ -11,8 +11,8 @@ motor:
   # datasheet 0.186 ohm is line-to-line; odrive reports phase-to-neutral
   phase_resistance_ohm: 0.093
   resistance_tolerance: 0.6        # accept measured R within +-60 %
-  current_continuous_a: 8          # unproven, set from thermal test
-  current_peak_a: 22
+  current_continuous_a: 12         # continuous current limit (A)
+  current_peak_a: 30               # peak current limit for 90KV 6S-12S BLDC
   calibration_current_a: 5
   resistance_calib_max_voltage_v: 4.0
 
@@ -25,20 +25,21 @@ encoder:
   use_index: false
 
 gear:
-  ratio: 20
+  ratio: 30                        # 2-stage planetary gearbox: stage 1 (6:1) x stage 2 (5:1) = 30:1
+  stages: [6, 5]
   efficiency: 0.87                 # unproven, set from characterization
 
 limits:
-  vel_max_turns_s: 10              # motor side; 10 turn/s = 180 deg/s at the joint
-  pos_min_turns: -10               # motor turns from encoder zero (= -180 deg joint)
-  pos_max_turns: 10
-  bring_up_current_a: 6            # current limit used during commissioning
+  vel_max_turns_s: 30              # motor side; 30 turn/s = 1800 RPM (360 deg/s at 30:1 joint)
+  pos_min_turns: -100              # motor turns from encoder zero
+  pos_max_turns: 100
+  bring_up_current_a: 12           # current limit used during commissioning
 
 power:
-  bus_min_v: 15.0
-  bus_max_v: 26.5                  # 6s full charge is 25.2 v
-  overvoltage_trip_v: 28.0
-  undervoltage_trip_v: 14.0
+  bus_min_v: 18.0                  # 6S LiPo min (3.0 V/cell)
+  bus_max_v: 52.0                  # 12S LiPo full charge is 50.4 V (4.2 V/cell)
+  overvoltage_trip_v: 54.0         # protects 56V ODESC bus above 12S full charge
+  undervoltage_trip_v: 16.0        # below 6S cutoff
   brake_resistance_ohm: 2.0
   max_regen_current_a: 0.0
   dc_max_negative_current_a: -0.01 # bench psu cannot sink current; regen goes to the brake resistor

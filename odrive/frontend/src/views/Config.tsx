@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Button, NumInput, Panel, PropInput, Tabs, Tag } from '../primitives'
+import { Button, NumInput, Panel, PropInput, Segmented, Tabs, Tag } from '../primitives'
 import { act, say, startJob, useApp, waitJob } from '../lib/store'
 import { rpc } from '../lib/rpc'
 import { date, fmt } from '../lib/format'
@@ -60,16 +60,19 @@ function Editor({ snap, reload }: { snap: Snapshot; reload: () => void }) {
     <div className="grid2" style={{ gridTemplateColumns: '220px 1fr' }}>
       <Panel title="groups">
         <div className="col">
-          {GROUPS.map(([id, label]) => (
-            <Button key={id} small kind={id === group ? 'on' : ''} onClick={() => setGroup(id)}>
-              {label}
-            </Button>
-          ))}
-          <div className="row" style={{ marginTop: 8 }}>
-            {[0, 1].map((x) => (
-              <Button key={x} small kind={x === ax ? 'on' : ''} onClick={() => useApp.setState({ axis: x })}>
-                axis{x}
-              </Button>
+          <Segmented
+            options={[
+              [0, 'axis0'],
+              [1, 'axis1'],
+            ]}
+            value={ax}
+            onChange={(x) => useApp.setState({ axis: x })}
+          />
+          <div className="vlist">
+            {GROUPS.map(([id, label]) => (
+              <button key={id} className={id === group ? 'active' : ''} onClick={() => setGroup(id)}>
+                {label}
+              </button>
             ))}
           </div>
         </div>
@@ -266,24 +269,55 @@ function ProfileEditor() {
       <div className="grid3">
         {sections.map(([sec, obj]) => (
           <Panel key={sec} title={sec}>
-            {Object.entries(obj as Record<string, unknown>).map(([k, v]) => (
-              <div className="field" key={k}>
-                <label>{k}</label>
-                {typeof v === 'number' ? (
-                  <NumInput value={v} onCommit={(nv) => set(sec, k, nv)} />
-                ) : typeof v === 'boolean' ? (
-                  <input type="checkbox" checked={v} onChange={(e) => set(sec, k, e.target.checked)} />
-                ) : sec === 'encoder' && k === 'mode' ? (
-                  <select value={String(v)} onChange={(e) => set(sec, k, e.target.value)}>
-                    <option value="SPI_ABS_AMS">SPI_ABS_AMS (absolute, AS5047P over SPI)</option>
-                    <option value="INCREMENTAL">INCREMENTAL (A/B/Z quadrature)</option>
-                  </select>
-                ) : (
-                  <input value={String(v)} onChange={(e) => set(sec, k, e.target.value)} />
-                )}
-                <span />
-              </div>
-            ))}
+            {Object.entries(obj as Record<string, unknown>).map(([k, v]) => {
+              const isInc = sec === 'encoder' && draft.encoder?.mode === 'INCREMENTAL'
+              if (sec === 'encoder' && k === 'cs_gpio') {
+                return (
+                  <div className="field" key={k}>
+                    <label>{isInc ? 'cs_gpio (SPI only)' : 'cs_gpio'}</label>
+                    {isInc ? (
+                      <span className="muted num" style={{ fontSize: 'var(--fs-tick)' }}>
+                        unused in INCREMENTAL (uses J4 M0 A/B/Z)
+                      </span>
+                    ) : (
+                      <select value={String(v)} onChange={(e) => set(sec, k, Number(e.target.value))}>
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((pin) => (
+                          <option key={pin} value={pin}>
+                            GPIO {pin} {pin <= 2 ? '(UART conflict)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <span />
+                  </div>
+                )
+              }
+              return (
+                <div className="field" key={k}>
+                  <label>{k}</label>
+                  {typeof v === 'number' ? (
+                    <NumInput value={v} onCommit={(nv) => set(sec, k, nv)} />
+                  ) : typeof v === 'boolean' ? (
+                    <input type="checkbox" checked={v} onChange={(e) => set(sec, k, e.target.checked)} />
+                  ) : sec === 'encoder' && k === 'mode' ? (
+                    <select
+                      value={String(v)}
+                      onChange={(e) => {
+                        const nextMode = e.target.value
+                        const nextCpr = nextMode === 'INCREMENTAL' && draft.encoder?.cpr === 16384 ? 4000 : nextMode === 'SPI_ABS_AMS' && draft.encoder?.cpr !== 16384 ? 16384 : draft.encoder?.cpr
+                        setDraft({ ...draft, encoder: { ...draft.encoder, mode: nextMode, cpr: nextCpr } })
+                      }}
+                    >
+                      <option value="INCREMENTAL">INCREMENTAL (J4 M0 A/B/Z quadrature)</option>
+                      <option value="SPI_ABS_AMS">SPI_ABS_AMS (J3 SPI + CS GPIO)</option>
+                    </select>
+                  ) : (
+                    <input value={String(v)} onChange={(e) => set(sec, k, e.target.value)} />
+                  )}
+                  <span />
+                </div>
+              )
+            })}
           </Panel>
         ))}
       </div>

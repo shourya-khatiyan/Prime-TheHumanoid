@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button, Panel, Tag } from '../primitives'
+import { Button, Panel, Segmented, Tag } from '../primitives'
 import { act, startJob, useApp, waitJob } from '../lib/store'
 import { rpc } from '../lib/rpc'
 import { date } from '../lib/format'
@@ -62,12 +62,15 @@ export function Health() {
       <div className="view-head">
         <h1>health check</h1>
         <span className="sub">passive: never energizes the motor</span>
-        <div className="row" style={{ marginLeft: 'auto' }}>
-          {[0, 1].map((a) => (
-            <Button key={a} small kind={a === ax ? 'on' : ''} onClick={() => useApp.setState({ axis: a })}>
-              axis{a}
-            </Button>
-          ))}
+        <div className="row" style={{ marginLeft: 'auto', gap: 10 }}>
+          <Segmented
+            options={[
+              [0, 'axis0'],
+              [1, 'axis1'],
+            ]}
+            value={ax}
+            onChange={(a) => useApp.setState({ axis: a })}
+          />
           <Button kind="primary" disabled={busy} onClick={run}>
             run health check
           </Button>

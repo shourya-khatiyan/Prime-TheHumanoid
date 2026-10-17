@@ -25,7 +25,7 @@ The AS5047P has two independent outputs:
 
 **This actuator uses SPI absolute mode** (wired on MISO/MOSI/SCK + CS on GPIO4); the profile
 default `encoder.mode: SPI_ABS_AMS` matches. Absolute here means absolute within one motor
-revolution: with the 20:1 gearbox the joint angle is still ambiguous across the 18 deg sectors, so
+revolution: with the 30:1 two-stage planetary gearbox (6:1 stage 1 × 5:1 stage 2) the joint angle is still ambiguous across the 12 deg sectors, so
 the output-side absolute encoder (Phase 1, P1.6) remains required before arm motion.
 
 Reading the encoder card:

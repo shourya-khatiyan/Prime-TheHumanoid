@@ -18,7 +18,7 @@ import time
 from typing import Any
 
 from .device import DeviceWorker
-from .profile import Profile
+from .profile import Profile, save_profile
 from .storage import AuditLog
 from .transport import Transport, TransportError
 
@@ -86,24 +86,34 @@ class Safety:
 
     # ---------- limits ----------
 
-    def _limit_for(self, path: str) -> tuple[float | None, str]:
-        """Return (max value, label) the profile allows for a limit-type path, or (None, '')."""
+    def _limit_for(self, path: str) -> tuple[float | None, str, float | None]:
+        """Return (profile max, profile key, hardware max) for a limit-type path."""
         p = self.profile
         tail = path.split(".", 1)[1] if path.startswith("axis") else path
-        vbus = self.worker.latest.get(self.worker.path("vbus") or "", None)
         table = {
-            "motor.config.current_lim": (p.get("motor.current_peak_a"), "motor.current_peak_a"),
-            "motor.config.calibration_current": (p.get("motor.current_continuous_a"), "motor.current_continuous_a"),
-            "motor.config.torque_lim": (p.torque_max_nm, "derived torque_max_nm"),
-            "motor.config.requested_current_range": (60.0, "hardware range 60 A"),
-            "controller.config.vel_limit": (p.get("limits.vel_max_turns_s"), "limits.vel_max_turns_s"),
-            "trap_traj.config.vel_limit": (p.get("limits.vel_max_turns_s"), "limits.vel_max_turns_s"),
-            "config.dc_bus_overvoltage_trip_level": (p.get("power.overvoltage_trip_v"), "power.overvoltage_trip_v"),
-            "config.dc_max_positive_current": (p.get("motor.current_peak_a"), "motor.current_peak_a"),
-            "motor.config.resistance_calib_max_voltage": (0.5 * vbus if isinstance(vbus, float) and vbus > 1 else None, "0.5 x vbus"),
+            "motor.config.current_lim": (p.get("motor.current_peak_a"), "motor.current_peak_a", 60.0),
+            "motor.config.calibration_current": (p.get("motor.current_continuous_a"), "motor.current_continuous_a", 25.0),
+            "motor.config.torque_lim": (p.torque_max_nm, "derived torque_max_nm", 20.0),
+            "motor.config.requested_current_range": (60.0, "hardware range 60 A", 60.0),
+            "controller.config.vel_limit": (p.get("limits.vel_max_turns_s"), "limits.vel_max_turns_s", 100.0),
+            "trap_traj.config.vel_limit": (p.get("limits.vel_max_turns_s"), "limits.vel_max_turns_s", 100.0),
+            "config.dc_bus_overvoltage_trip_level": (p.get("power.overvoltage_trip_v"), "power.overvoltage_trip_v", 58.0),
+            "config.dc_max_positive_current": (p.get("motor.current_peak_a"), "motor.current_peak_a", 60.0),
+            "motor.config.resistance_calib_max_voltage": (16.0, "max calibration voltage 16 V", 18.0),
         }
-        lim, label = table.get(tail, (None, ""))
-        return (float(lim), label) if lim is not None else (None, "")
+        lim, label, hw_max = table.get(tail, (None, "", None))
+        return ((float(lim) if lim is not None else None), label, hw_max)
+
+    def _expand_profile_limit(self, label: str, value: float) -> None:
+        """Raise the matching profile limit when the operator sets a higher value within hardware bounds."""
+        if "." not in label or label.startswith("derived"):
+            return
+        sec, key = label.split(".", 1)
+        if isinstance(self.profile.data.get(sec), dict) and key in self.profile.data[sec]:
+            self.profile.data[sec][key] = float(value)
+            if sec == "power" and key == "overvoltage_trip_v":
+                self.profile.data["power"]["bus_max_v"] = max(float(self.profile.get("power.bus_max_v", 26.5)), float(value) - 1.5)
+            save_profile(self.profile.data)
 
     def clamp_setpoint(self, path: str, value: float) -> tuple[float, str | None]:
         """Clamp input_pos / input_vel / input_torque to the profile envelope.
@@ -142,13 +152,18 @@ class Safety:
             return self._request_state(path, int(value), token, source)
         if path.endswith((".input_torque", ".input_vel", ".input_pos")):
             value, warning = self.clamp_setpoint(path, float(value))
-        lim, label = self._limit_for(path)
+        lim, label, hw_max = self._limit_for(path)
 
         def op(t: Transport) -> dict:
+            nonlocal warning
             old = t.read(path)
             if lim is not None and isinstance(value, (int, float)) and value > lim:
-                raise ValueError(f"{path} = {value:g} exceeds profile limit {lim:g} ({label}); raise it in the profile first")
-            if lim is not None and isinstance(old, (int, float)) and value > old:
+                if hw_max is None or value > hw_max:
+                    raise ValueError(f"{path} = {value:g} exceeds profile limit {lim:g} (hardware max {hw_max or lim:g})")
+                self._require(f"write:{path}", token, f"Raise {path} from {old:g} to {value:g} (and update profile {label})?")
+                self._expand_profile_limit(label, float(value))
+                warning = f"updated profile {label} -> {value:g}"
+            elif lim is not None and isinstance(old, (int, float)) and value > old:
                 self._require(f"write:{path}", token, f"Raise {path} from {old:g} to {value:g}?")
             t.write(path, value)
             return {"value": value, "old": old, "warning": warning}
@@ -331,13 +346,14 @@ class Safety:
             return f"phase current {iq:.1f} A above peak limit"
         if state == 8:
             vel = get(f"vel.{ax}")
-            if isinstance(vel, float) and abs(vel) > float(p.get("limits.vel_max_turns_s")) * 1.25:
+            if isinstance(vel, float) and abs(vel) > float(p.get("limits.vel_max_turns_s")) * 1.5:
                 return f"velocity {vel:.2f} turn/s above limit"
-            pos = get(f"pos.{ax}")
-            span = float(p.get("limits.pos_max_turns")) - float(p.get("limits.pos_min_turns"))
-            margin = 0.05 * span
-            if isinstance(pos, float) and not (p.get("limits.pos_min_turns") - margin <= pos <= p.get("limits.pos_max_turns") + margin):
-                return f"position {pos:.2f} turns outside limits"
+            if p.get("limits.enforce_pos_limits", False):
+                pos = get(f"pos.{ax}")
+                span = float(p.get("limits.pos_max_turns")) - float(p.get("limits.pos_min_turns"))
+                margin = 0.05 * span
+                if isinstance(pos, float) and not (p.get("limits.pos_min_turns") - margin <= pos <= p.get("limits.pos_max_turns") + margin):
+                    return f"position {pos:.2f} turns outside limits"
         return None
 
     def _check_errors(self, w: DeviceWorker, get) -> None:

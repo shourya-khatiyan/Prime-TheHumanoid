@@ -226,6 +226,23 @@ async def op_profile_set(a: dict) -> dict:
         raise ValueError("disarm all axes before editing the profile")
     profile = save_profile(a["data"])
     safety.profile = profile
+    if worker.connected:
+        ax = profile.axis
+        mode_num = commissioning.encoder_mode(profile)
+        cpr = int(profile.get("encoder.cpr", 4000 if mode_num == 0 else 16384))
+        use_idx = bool(profile.get("encoder.use_index", False)) if mode_num == 0 else False
+        cs_pin = int(profile.get("encoder.cs_gpio", 4))
+        for p, v in [
+            (f"axis{ax}.encoder.config.mode", mode_num),
+            (f"axis{ax}.encoder.config.cpr", cpr),
+            (f"axis{ax}.encoder.config.use_index", use_idx),
+            (f"axis{ax}.encoder.config.abs_spi_cs_gpio_pin", cs_pin),
+        ]:
+            if worker.tree.get(p, {}).get("writable"):
+                try:
+                    await asyncio.to_thread(safety.write, p, v, None, "profile")
+                except Exception:
+                    pass
     audit.add("config", "gui", "profile", None, a["data"], detail="profile saved")
     return profile.to_json()
 

@@ -216,7 +216,7 @@ class DeviceWorker(threading.Thread):
                 self._mock = t
             try:
                 info = t.connect(self.serial, timeout=2.0 if kind == "usb" else 1.0)
-            except TransportError as ex:
+            except Exception as ex:
                 errors.append(f"{kind}: {ex}")
                 t.close()
                 continue

@@ -18,7 +18,9 @@ export function Panel(props: {
     <section className={`panel ${props.alarm ? 'alarm' : ''} ${props.className ?? ''}`}>
       <header className="panel-head">
         {props.index && <span className="panel-idx num">{props.index}</span>}
-        <span className="panel-title">{props.title}</span>
+        <span className="panel-title" data-term={props.title}>
+          {props.title}
+        </span>
         {props.subtitle && <span className="panel-sub">{props.subtitle}</span>}
         <div className="panel-tools">
           {props.tools}
@@ -34,19 +36,60 @@ type BtnProps = {
   children: ReactNode
   onClick?: () => void
   disabled?: boolean
-  kind?: 'primary' | 'danger' | 'on' | ''
+  kind?: 'primary' | 'danger' | 'on' | 'chip' | ''
   small?: boolean
   title?: string
   hotkey?: string
 }
 
-/** plain button; `hotkey` only renders the key hint */
+/** executable action button (or toggle/chip when kind='on'|'chip') */
 export function Button({ children, onClick, disabled, kind = '', small, title, hotkey }: BtnProps) {
+  const label = typeof children === 'string' ? children : undefined
   return (
-    <button className={`btn ${kind} ${small ? 'small' : ''}`} onClick={onClick} disabled={disabled} title={title}>
+    <button
+      className={`btn ${kind} ${small ? 'small' : ''}`}
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      data-term={label}
+    >
       {children}
       {hotkey && <span className="key">{hotkey}</span>}
     </button>
+  )
+}
+
+/** joined segmented selector for mutually exclusive modes, axes, or time windows */
+export function Segmented<T extends string | number>({
+  options,
+  value,
+  onChange,
+  disabled,
+}: {
+  options: [T, ReactNode][]
+  value: T
+  onChange: (v: T) => void
+  disabled?: boolean
+}) {
+  return (
+    <div className="seg-group" role="group">
+      {options.map(([val, label]) => {
+        const active = val === value
+        const term = typeof label === 'string' ? label : String(val)
+        return (
+          <button
+            key={String(val)}
+            type="button"
+            disabled={disabled}
+            data-term={term}
+            className={`seg-opt ${active ? 'active' : ''}`}
+            onClick={() => onChange(val)}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -89,7 +132,7 @@ export function HoldButton({ children, onFire, ms = 900, disabled }: { children:
       onKeyUp={(e) => (e.key === 'Enter' || e.key === ' ') && stop()}
     >
       <div className="fill" ref={fill} />
-      <span>{children}</span>
+      <span>■ {children}</span>
     </button>
   )
 }
@@ -98,7 +141,9 @@ export function HoldButton({ children, onFire, ms = 900, disabled }: { children:
 export function Value({ k, v, u, big, cls }: { k: string; v: ReactNode; u?: string; big?: boolean; cls?: string }) {
   return (
     <div className="val">
-      <span className="k">{k}</span>
+      <span className="k" data-term={k}>
+        {k}
+      </span>
       <span className={`v num ${big ? 'big' : ''} ${cls ?? ''}`}>
         {v}
         {u && <span className="u">{u}</span>}
@@ -118,24 +163,41 @@ export function Tag({ level, children, blink }: { level: 'alarm' | 'warn' | 'inf
   )
 }
 
+/** prominent numbered sub-page tab bar */
 export function Tabs({ tabs, value, onChange }: { tabs: [string, string][]; value: string; onChange: (v: string) => void }) {
   return (
-    <div className="tabs">
-      {tabs.map(([id, label]) => (
-        <button key={id} className={id === value ? 'active' : ''} onClick={() => onChange(id)}>
-          {label}
-        </button>
-      ))}
+    <div className="tabs" role="tablist">
+      {tabs.map(([id, label], idx) => {
+        const active = id === value
+        return (
+          <button key={id} role="tab" aria-selected={active} className={active ? 'active' : ''} onClick={() => onChange(id)}>
+            <span className="tab-idx num">{String(idx + 1).padStart(2, '0')}</span>
+            <span>{label}</span>
+          </button>
+        )
+      })}
     </div>
   )
 }
 
+/** format a numeric value for an unfocused input, stripping float32 representation noise */
+function formatInputNum(v: unknown): string {
+  if (v === undefined || v === null) return ''
+  if (typeof v === 'number') {
+    if (Number.isNaN(v)) return ''
+    if (!Number.isFinite(v)) return v > 0 ? 'inf' : '-inf'
+    if (Math.abs(v) < 1e-9) return '0'
+    return String(Number(v.toPrecision(6)))
+  }
+  return String(v)
+}
+
 /** numeric input that commits on enter/blur and accepts inf/nan */
 export function NumInput({ value, onCommit, step, disabled, width }: { value: unknown; onCommit: (v: number) => void; step?: number; disabled?: boolean; width?: number }) {
-  const [text, setText] = useState(String(value ?? ''))
+  const [text, setText] = useState(() => formatInputNum(value))
   const [focus, setFocus] = useState(false)
   useEffect(() => {
-    if (!focus) setText(value === undefined || value === null ? '' : String(value))
+    if (!focus) setText(formatInputNum(value))
   }, [value, focus])
   const commit = () => {
     const t = text.trim().toLowerCase()

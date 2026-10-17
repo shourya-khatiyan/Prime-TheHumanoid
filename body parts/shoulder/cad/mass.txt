@@ -1,4 +1,4 @@
-   14.17 | 6061-T6 | 01 Encoder lid 6061-T6 D59.8x2
+   14.75 | 7075-T6 | 01 Encoder lid 7075-T651 D59.8x2
     0.13 | Steel 12.9 fastener | 02.1 Screw M2x4 CSK lid
     0.13 | Steel 12.9 fastener | 02.2 Screw M2x4 CSK lid
     0.13 | Steel 12.9 fastener | 02.3 Screw M2x4 CSK lid
@@ -9,7 +9,7 @@
     0.46 | Steel 12.9 fastener | 05.2 Screw M2.5x5 pan PCB
     0.46 | Steel 12.9 fastener | 05.3 Screw M2.5x5 pan PCB
     0.46 | Steel 12.9 fastener | 05.4 Screw M2.5x5 pan PCB
-    0.85 | 6061-T6 | 06 Magnet holder 6061 D10, pin D2.8 into the rotor cap
+    0.88 | 7075-T6 | 06 Magnet holder 7075-T651 D10, pin D2.8 into the rotor cap
     0.53 | NdFeB magnet | 07 Encoder magnet D6x2.5 diametric
   129.71 | 7075-T6 | 08 Rear mount plate 7075-T6 (D100 rim + D94.5 plug)
     0.55 | Steel 12.9 fastener | 09.1 Screw M3x8 CSK radial housing->plate
@@ -38,7 +38,7 @@
     0.38 | Steel 12.9 fastener | 19.3 Screw M3x5 CSK sun-1->rotor
     0.38 | Steel 12.9 fastener | 19.4 Screw M3x5 CSK sun-1->rotor
     0.99 | 52100 bearing steel | 20 Thrust washer C1 rear D48/42x0.3
-   76.03 | EN24T (34CrNiMo6) Q&T | 21 Carrier-1 rear plate + posts (EN24T)
+   76.03 | 42CrMo4 Q&T | 21 Carrier-1 rear plate + posts (42CrMo4 Q&T)
    92.02 | 16MnCr5 carburized | 22 Carrier-1 front plate + Sun-2 18T m1 (16MnCr5)
     0.66 | Steel 12.9 fastener | 23.1 Screw M3x10 CSK carrier-1
     0.66 | Steel 12.9 fastener | 23.2 Screw M3x10 CSK carrier-1
@@ -65,7 +65,7 @@
     9.01 | Bearing (purchased) | 31 Rear 61813-2Z (floating outer ring) ball set
     4.95 | Bearing (purchased) | 31 Rear 61813-2Z (floating outer ring) seal rear
     4.95 | Bearing (purchased) | 31 Rear 61813-2Z (floating outer ring) seal front
-  232.26 | EN24T (34CrNiMo6) Q&T | 32 Carrier-2 rear half (hub D65 + posts, EN24T)
+  232.26 | 42CrMo4 Q&T | 32 Carrier-2 rear half (hub D65 + posts, 42CrMo4 Q&T)
   350.98 | 42CrMo4 nitrided | 33 Bearing cartridge + Ring-2 72T m1 (42CrMo4 nitrided)
     1.01 | Steel 12.9 fastener | 34.1 Screw M3x10 SHCS cartridge->housing
     1.01 | Steel 12.9 fastener | 34.2 Screw M3x10 SHCS cartridge->housing
@@ -97,7 +97,7 @@
     9.01 | Bearing (purchased) | 41 Front 61813-2RS1 (located outer ring) ball set
     4.95 | Bearing (purchased) | 41 Front 61813-2RS1 (located outer ring) seal rear
     4.95 | Bearing (purchased) | 41 Front 61813-2RS1 (located outer ring) seal front
-  313.85 | EN24T (34CrNiMo6) Q&T | 42 Carrier-2 front half + output flange D78 (EN24T)
+  313.85 | 42CrMo4 Q&T | 42 Carrier-2 front half + output flange D78 (42CrMo4 Q&T)
     2.65 | Steel 12.9 fastener | 43.1 Screw M4x16 SHCS carrier-2 halves
     2.65 | Steel 12.9 fastener | 43.2 Screw M4x16 SHCS carrier-2 halves
     2.65 | Steel 12.9 fastener | 43.3 Screw M4x16 SHCS carrier-2 halves
@@ -112,4 +112,4 @@
     0.29 | Steel 12.9 fastener | 47.6 Screw M2.5x6 CSK cover->cartridge
     0.29 | Steel 12.9 fastener | 47.7 Screw M2.5x6 CSK cover->cartridge
     0.29 | Steel 12.9 fastener | 47.8 Screw M2.5x6 CSK cover->cartridge
- 2427.42 | TOTAL modelled (excl. motor 336 g, electronics)
+ 2428.03 | TOTAL modelled (excl. motor 336 g, electronics)

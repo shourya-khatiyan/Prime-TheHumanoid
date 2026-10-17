@@ -147,7 +147,7 @@ class MockTransport(Transport):
 
     def _encoder_ok(self, ax: int) -> bool:
         a = f"axis{ax}.encoder.config"
-        return ax == 0 and self.v[f"{a}.mode"] == 257 and self.v[f"{a}.abs_spi_cs_gpio_pin"] == 4
+        return ax == 0 and (self.v[f"{a}.mode"] == 0 or (self.v[f"{a}.mode"] == 257 and self.v[f"{a}.abs_spi_cs_gpio_pin"] == 4))
 
     def _request(self, ax: int, state: int) -> None:
         a = f"axis{ax}"

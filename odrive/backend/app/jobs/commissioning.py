@@ -194,8 +194,14 @@ async def calibrate(ctx: JobCtx, params: dict) -> dict:
         cal_range_path = f"axis{axis}.encoder.config.calib_range"
         if ctx.worker.tree.get(cal_range_path, {}).get("writable"):
             cur_range = float(await ctx.read1(cal_range_path) or 0.02)
-            if cur_range < 0.08:
-                await ctx.write(cal_range_path, 0.08)
+            if cur_range < 0.10:
+                await ctx.write(cal_range_path, 0.10)
+        scan_dist_path = f"axis{axis}.encoder.config.calib_scan_distance"
+        scan_omega_path = f"axis{axis}.encoder.config.calib_scan_omega"
+        if ctx.worker.tree.get(scan_dist_path, {}).get("writable"):
+            await ctx.write(scan_dist_path, 4.0 * math.pi)
+        if ctx.worker.tree.get(scan_omega_path, {}).get("writable"):
+            await ctx.write(scan_omega_path, 2.0 * math.pi)
     clear = ctx.worker.path(f"clear_errors.{axis}")
     if clear:
         await ctx.call(clear)
@@ -219,8 +225,15 @@ async def calibrate(ctx: JobCtx, params: dict) -> dict:
         ]
     if kind in ("encoder", "full"):
         off_path = ctx.worker.path(f"enc_offset.{axis}")
+        scan_path = f"axis{axis}.encoder.calib_scan_response"
+        scan_resp = await ctx.read1(scan_path) if scan_path in ctx.worker.tree else None
         result["encoder_offset"] = await ctx.read1(off_path) if off_path else None
-        result["checks"].append({"id": "enc_ready", "ok": bool(ready), "msg": "encoder ready" if ready else "encoder not ready"})
+        result["calib_scan_response"] = scan_resp
+        result["checks"].append({
+            "id": "enc_ready",
+            "ok": bool(ready),
+            "msg": f"encoder ready (scan delta {scan_resp:.0f} counts)" if ready and isinstance(scan_resp, (int, float)) else ("encoder ready" if ready else f"encoder not ready (scan delta {scan_resp} counts)"),
+        })
     result["ok"] = not errs and all(c["ok"] for c in result["checks"])
     for c in result["checks"]:
         ctx.log(("PASS " if c["ok"] else "FAIL ") + c["msg"], "info" if c["ok"] else "alarm")
@@ -234,6 +247,52 @@ async def calibrate(ctx: JobCtx, params: dict) -> dict:
         ctx.log("pre_calibrated set (save configuration to keep it after reboot)")
     ctx.progress(1.0)
     return result
+
+
+@job("encoder_setup", "Configure encoder (ABZ / SPI)", energizes=False, confirm=True)
+async def encoder_setup(ctx: JobCtx, params: dict) -> dict:
+    """Switch encoder between INCREMENTAL (A/B/Z on J4) and SPI_ABS_AMS (SPI on J3), update profile, save & reboot."""
+    from ..profile import save_profile
+
+    pr = ctx.safety.profile
+    axis = int(params.get("axis", pr.axis))
+    a = f"axis{axis}"
+    mode_str = str(params.get("mode", pr.get("encoder.mode", "INCREMENTAL"))).upper()
+    mode_num = ENC_MODES.get(mode_str, ENC_MODE_INCREMENTAL if mode_str == "0" else ENC_MODE_SPI_AMS)
+    mode_name = "INCREMENTAL" if mode_num == 0 else "SPI_ABS_AMS"
+    cpr = int(params.get("cpr", 4000 if mode_num == 0 else 16384))
+    use_index = bool(params.get("use_index", False)) if mode_num == 0 else False
+    cs_gpio = int(params.get("cs_gpio", pr.get("encoder.cs_gpio", 4)))
+
+    # 1. Update and persist the actuator profile
+    pr.data.setdefault("encoder", {})
+    pr.data["encoder"]["mode"] = mode_name
+    pr.data["encoder"]["cpr"] = cpr
+    pr.data["encoder"]["use_index"] = use_index
+    pr.data["encoder"]["cs_gpio"] = cs_gpio
+    save_profile(pr.data)
+
+    # 2. Write settings to the ODrive
+    await ctx.write(f"{a}.encoder.config.mode", mode_num)
+    await ctx.write(f"{a}.encoder.config.cpr", cpr)
+    await ctx.write(f"{a}.encoder.config.use_index", use_index)
+    if mode_num >= 256 and ctx.worker.tree.get(f"{a}.encoder.config.abs_spi_cs_gpio_pin", {}).get("writable"):
+        await ctx.write(f"{a}.encoder.config.abs_spi_cs_gpio_pin", cs_gpio)
+    if ctx.worker.tree.get(f"{a}.encoder.config.pre_calibrated", {}).get("writable"):
+        await ctx.write(f"{a}.encoder.config.pre_calibrated", False)
+
+    ctx.log(f"{a}: set mode={mode_name} ({mode_num}), cpr={cpr}, use_index={use_index}" + (f", cs_gpio={cs_gpio}" if mode_num >= 256 else " (J4 M0 A/B/Z pins — no CS GPIO used)"))
+    ctx.progress(0.5)
+
+    # 3. Save to NVM and reboot so boot-latched encoder mode / pins take effect
+    sim = bool(ctx.worker.info and ctx.worker.info.extra.get("simulated"))
+    if not sim:
+        await _save_and_reboot(ctx)
+    clear = ctx.worker.path(f"clear_errors.{axis}")
+    if clear:
+        await ctx.call(clear)
+    ctx.progress(1.0)
+    return {"axis": axis, "mode": mode_name, "mode_num": mode_num, "cpr": cpr, "use_index": use_index, "cs_gpio": cs_gpio}
 
 
 @job("encoder_turn", "Encoder hand-turn test", energizes=False)

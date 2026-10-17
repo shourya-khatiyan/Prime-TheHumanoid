@@ -33,13 +33,22 @@ function Step({ n, title, children, done }: { n: number; title: string; children
   )
 }
 
-const WIRING: [string, string, string][] = [
-  ['VDD 3V3', '3.3V', 'run the AS5047P board in 3.3 V mode'],
-  ['GND', 'GND', 'common ground'],
-  ['CLK', 'SCK', 'keep short; 20-50 ohm series resistor helps with noise'],
-  ['MISO (DO)', 'MISO', 'stuck at 0 = shorted/unpowered, stuck at 16383 = floating'],
-  ['MOSI (DI)', 'MOSI', 'may be tied to 3.3 V instead'],
-  ['CSn', 'GPIO4', 'profile encoder.cs_gpio (GPIO1/2 are UART, do not use)'],
+const WIRING_SPI: [string, string, string][] = [
+  ['VDD 3V3 / 5V', 'J4 3V3 / 5V', 'power supply'],
+  ['GND', 'J4 GND', 'common ground'],
+  ['CLK', 'J3 SCK', 'SPI clock'],
+  ['MISO (DO)', 'J3 MISO', 'SPI data out'],
+  ['MOSI (DI)', 'J3 MOSI / 3V3', 'tie high (3.3 V) or J3 MOSI'],
+  ['CSn', 'J3 GPIO4', 'SPI chip select (GPIO1/2 are UART)'],
+]
+
+const WIRING_ABZ: [string, string, string][] = [
+  ['5V / 3V3', 'J4 M0 5V / 3V3', 'power supply on M0 header'],
+  ['GND', 'J4 M0 GND', 'top-most pin on J4 M0 header'],
+  ['A', 'J4 M0 A', '4th pin from top on J4 (PB4 / TIM3_CH1) — do NOT swap with Z'],
+  ['B', 'J4 M0 B', '3rd pin from top on J4 (PB5 / TIM3_CH2)'],
+  ['I / Z (Index)', 'J4 M0 Z', '2nd pin from top on J4 (PC9) — optional if use_index = false'],
+  ['CS GPIO4', 'NOT USED', 'incremental ABZ uses J4 M0 A/B/Z directly; GPIO 4 is ignored'],
 ]
 
 /** guided bring-up for a new actuator, in the order that avoids surprises */
@@ -84,13 +93,13 @@ export function Commission() {
           <table>
             <thead>
               <tr>
-                <th>AS5047P</th>
-                <th>ODrive</th>
+                <th>Encoder Pin</th>
+                <th>ODESC 3.6 Pin</th>
                 <th>note</th>
               </tr>
             </thead>
             <tbody>
-              {WIRING.map(([a, b, c]) => (
+              {(profile?.encoder?.mode === 'INCREMENTAL' ? WIRING_ABZ : WIRING_SPI).map(([a, b, c]) => (
                 <tr key={a}>
                   <td>{a}</td>
                   <td>{b}</td>
@@ -101,10 +110,10 @@ export function Commission() {
           </table>
           <EncoderCard ax={ax} />
           <div className="row">
-            <Button disabled={turn.busy} onClick={() => turn.run('encoder_turn', { axis: ax })}>
+            <Button kind="primary" disabled={turn.busy} onClick={() => turn.run('encoder_turn', { axis: ax })}>
               hand-turn test
             </Button>
-            <span className="muted">needs step 3 applied first (cs pin / cpr)</span>
+            <span className="muted">turn shaft 1 full revolution by hand to verify CPR</span>
           </div>
           <Checks checks={turn.job?.result?.checks} />
         </Step>

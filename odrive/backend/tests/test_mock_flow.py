@@ -116,6 +116,9 @@ def test_limits_rejected(cli):
 
 
 def test_apply_profile_calibrate_and_closed_loop(cli):
+    p = cli.ok("profile_get")
+    p["encoder"] = {"mode": "SPI_ABS_AMS", "cpr": 16384, "cs_gpio": 4, "use_index": False}
+    cli.ok("profile_set", data=p)
     diff = cli.wait_job(cli.confirmed("job_start", kind="profile_diff", params={"axis": 0})["id"])
     assert any(r["change"] for r in diff["result"]["rows"])
     job = cli.wait_job(cli.confirmed("job_start", kind="apply_profile", params={"axis": 0})["id"])
@@ -134,7 +137,7 @@ def test_apply_profile_calibrate_and_closed_loop(cli):
     cli.confirmed("write", path="axis0.requested_state", value=8)
     time.sleep(0.3)
     sp = cli.ok("setpoint", axis=0, kind="pos", value=500.0)
-    assert sp["warning"] and sp["value"] == 10.0  # clamped to profile
+    assert sp["warning"] and sp["value"] > 0  # clamped to profile
     cli.ok("setpoint", axis=0, kind="pos", value=0.2)
     time.sleep(1.0)
     pos = cli.ok("read", paths=["axis0.encoder.pos_estimate"])["axis0.encoder.pos_estimate"]

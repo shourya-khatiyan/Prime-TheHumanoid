@@ -1,14 +1,32 @@
 import { useEffect, useState } from 'react'
 import { Button, Panel, Tabs, Tag } from '../primitives'
-import { act, useApp } from '../lib/store'
+import { act, say, startJob, useApp } from '../lib/store'
 import { date, fmt, time } from '../lib/format'
-import { flagDoc } from '../lib/meta'
+import { explainFlag, type ErrorGuide } from '../lib/meta'
 import { EventsPanel } from './panels'
 
-/** alarms (ack, shelve with expiry, first-out), event log and the write audit trail */
+/** execute a one-click resolution action from an error guide and clear device errors */
+export async function applyErrorFix(fix: NonNullable<ErrorGuide['fixes']>[number], axis: number) {
+  if (fix.kind === 'write' && fix.path) {
+    const path = fix.path.replace(/^axis\d\./, `axis${axis}.`)
+    await act('write', { path, value: fix.value })
+    await act('clear_errors', { axis })
+    say(`applied ${path} = ${fix.value} and cleared errors`)
+  } else if (fix.kind === 'job' && fix.job) {
+    if (fix.job === 'calibrate') {
+      await act('write', { path: `axis${axis}.encoder.config.calib_range`, value: 0.15 }).catch(() => undefined)
+    }
+    await startJob(fix.job, { axis, ...(fix.params ?? {}) })
+  } else if (fix.kind === 'clear') {
+    await act('clear_errors', { axis })
+  }
+}
+
+/** alarms (ack, shelve with expiry, first-out), detailed root-cause + fix guide, event log and audit trail */
 export function Alarms() {
   const safety = useApp((s) => s.status?.safety)
   const meta = useApp((s) => s.meta)
+  const ax = useApp((s) => s.axis)
   const [tab, setTab] = useState('alarms')
   const [audit, setAudit] = useState<any[]>([])
   const [kind, setKind] = useState('')
@@ -25,7 +43,7 @@ export function Alarms() {
           <Button small onClick={() => act('ack', {})}>
             ack all
           </Button>
-          <Button small onClick={() => act('clear_errors', {})}>
+          <Button small kind="primary" onClick={() => act('clear_errors', {})}>
             clear device errors
           </Button>
         </div>
@@ -41,42 +59,84 @@ export function Alarms() {
       />
       <div style={{ marginTop: 6 }}>
         {tab === 'alarms' && (
-          <Panel title="active">
-            {alarms.length === 0 && <span className="ok-text">no active alarms</span>}
+          <Panel title="active alarms & resolution guide">
+            {alarms.length === 0 && <span className="ok-text">● no active alarms — all subsystems nominal</span>}
             <table>
               <tbody>
-                {alarms.map((a) => (
-                  <tr key={a.key}>
-                    <td style={{ width: 140 }}>
-                      <Tag level={a.level === 'alarm' ? 'alarm' : 'warn'} blink={!a.acked}>
-                        {a.level}
-                      </Tag>
-                      {safety?.first_out === a.key && (
-                        <>
-                          {' '}
-                          <Tag level="info">first-out</Tag>
-                        </>
-                      )}
-                    </td>
-                    <td className="muted num">{time(a.ts)}</td>
-                    <td>
-                      <div>{a.msg}</div>
-                      {a.flags.map((f) => (
-                        <div key={f} className="muted" style={{ fontSize: 'var(--fs-tick)' }}>
-                          {f}: {flagDoc(meta, a.key, f).split('\n')[0]}
+                {alarms.map((a) => {
+                  const axisMatch = a.key.match(/^axis(\d)\./)
+                  const errAxis = axisMatch ? Number(axisMatch[1]) : ax
+                  return (
+                    <tr key={a.key}>
+                      <td style={{ width: 150 }}>
+                        <Tag level={a.level === 'alarm' ? 'alarm' : 'warn'} blink={!a.acked}>
+                          {a.level}
+                        </Tag>
+                        {safety?.first_out === a.key && (
+                          <>
+                            {' '}
+                            <Tag level="info">first-out</Tag>
+                          </>
+                        )}
+                        <div className="muted num" style={{ marginTop: 4, fontSize: 'var(--fs-micro)' }}>
+                          {time(a.ts)}
                         </div>
-                      ))}
-                    </td>
-                    <td className="row">
-                      <Button small onClick={() => act('ack', { key: a.key })}>
-                        ack
-                      </Button>
-                      <Button small onClick={() => act('shelve', { key: a.key, seconds: 600 })}>
-                        shelve 10 min
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td>
+                        <div className="num" style={{ fontWeight: 600, color: 'var(--text)' }}>
+                          {a.msg}
+                        </div>
+                        {a.flags.map((f) => {
+                          const g = explainFlag(meta, a.key, f)
+                          return (
+                            <div
+                              key={f}
+                              style={{
+                                marginTop: 6,
+                                padding: '6px 8px',
+                                background: 'var(--surface-2)',
+                                borderLeft: '2px solid var(--warn)',
+                                fontSize: 'var(--fs-tick)',
+                              }}
+                            >
+                              <div>
+                                <span className="error-text" style={{ fontWeight: 600 }}>
+                                  {f}
+                                </span>{' '}
+                                — <span className="dim">{g.summary}</span>
+                              </div>
+                              <div className="muted" style={{ marginTop: 2 }}>
+                                <strong>WHY:</strong> {g.why}
+                              </div>
+                              <div style={{ marginTop: 2, color: 'var(--text-2)' }}>
+                                <strong>HOW TO FIX:</strong> {g.fix}
+                              </div>
+                              {g.fixes && g.fixes.length > 0 && (
+                                <div className="row" style={{ marginTop: 6 }}>
+                                  {g.fixes.map((fx) => (
+                                    <Button key={fx.label} small kind="primary" onClick={() => applyErrorFix(fx, errAxis).catch(() => undefined)}>
+                                      {fx.label}
+                                    </Button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </td>
+                      <td style={{ width: 170 }}>
+                        <div className="row">
+                          <Button small onClick={() => act('ack', { key: a.key })}>
+                            ack
+                          </Button>
+                          <Button small onClick={() => act('shelve', { key: a.key, seconds: 600 })}>
+                            shelve 10m
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
             {(safety?.shelved.length ?? 0) > 0 && (

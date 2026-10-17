@@ -83,10 +83,14 @@ class AsciiSerialTransport(Transport):
             self.ser.reset_input_buffer()
         except serial.SerialException as ex:
             raise TransportError(f"cannot open {port}: {ex}") from ex
-        fw = tuple(int(self._raw(f"r fw_version_{k}")) for k in ("major", "minor", "revision"))
-        hw = tuple(int(self._raw(f"r hw_version_{k}")) for k in ("major", "minor", "variant"))
-        self.meta = meta_mod.load(meta_mod.pick_version(*fw))
-        unreleased = int(parse_reply(self._raw("r fw_version_unreleased"), "uint8"))
+        try:
+            fw = tuple(int(parse_reply(self._raw(f"r fw_version_{k}"), "uint8")) for k in ("major", "minor", "revision"))
+            hw = tuple(int(parse_reply(self._raw(f"r hw_version_{k}"), "uint8")) for k in ("major", "minor", "variant"))
+            self.meta = meta_mod.load(meta_mod.pick_version(*fw))
+            unreleased = int(parse_reply(self._raw("r fw_version_unreleased"), "uint8"))
+        except (KeyError, ValueError) as ex:
+            self.close()
+            raise TransportError(f"serial handshake failed on {port}: {ex}") from ex
         return DeviceInfo(serial=usb_serial or "unknown", fw=fw, hw=hw, unreleased=unreleased, extra={"port": port})
 
     def close(self) -> None:

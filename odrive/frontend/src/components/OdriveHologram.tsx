@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '../primitives'
+import { Button, Segmented } from '../primitives'
 import { useAliasLatest, useApp } from '../lib/store'
 import { fmt, num } from '../lib/format'
 
@@ -142,7 +142,7 @@ const ANCHORS: Record<Exclude<SubId, 'pcb'>, Vec3> = {
 
 /**
  * Interactive 3D CAD / Point-Cloud Hologram of the ODESC 3.6 56V controller,
- * coupled 90KV BLDC actuator (20:1), and AS5047P SPI absolute encoder.
+ * coupled 90KV BLDC actuator (30:1 two-stage planetary 6:1 x 5:1), and AS5047P SPI absolute encoder.
  */
 export function OdriveHologram({ ax }: { ax: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -152,7 +152,7 @@ export function OdriveHologram({ ax }: { ax: number }) {
 
   const status = useApp((s) => s.status)
   const profile = useApp((s) => s.profile)
-  const [vbus, ibus, brakeArmed, state, err, motErr, encErr, pos, vel, iq, iqSet, fet0, spiErr, posAbs, encCs, encCpr] =
+  const [vbus, ibus, brakeArmed, state, err, motErr, encErr, pos, vel, iq, iqSet, fet0, spiErr, posAbs, shadow, encMode, encCs, encCpr] =
     useAliasLatest(
       [
         'vbus',
@@ -169,6 +169,8 @@ export function OdriveHologram({ ax }: { ax: number }) {
         `fet_temp.${ax}`,
         `spi_err.${ax}`,
         `pos_abs.${ax}`,
+        `shadow.${ax}`,
+        `enc_mode.${ax}`,
         `enc_cs.${ax}`,
         `enc_cpr.${ax}`,
       ],
@@ -197,10 +199,11 @@ export function OdriveHologram({ ax }: { ax: number }) {
 
   const busV = num(vbus)
   const busBad = !!profile && Number.isFinite(busV) && (busV < profile.power.bus_min_v || busV > profile.power.bus_max_v)
-  const encBad = (num(encErr) !== 0 && encErr !== undefined) || num(spiErr) > 0.05 || num(posAbs) === 16383
+  const isSpi = num(encMode) >= 256
+  const encBad = (num(encErr) !== 0 && encErr !== undefined) || (isSpi && (num(spiErr) > 0.05 || num(posAbs) === 16383))
   const motBad = (num(motErr) !== 0 && motErr !== undefined) || (num(err) !== 0 && err !== undefined && !encBad)
   const isClosedLoop = num(state) === 8
-  const ratio = Number(profile?.gear.ratio ?? 20)
+  const ratio = Number(profile?.gear.ratio ?? 30)
   const eff = Number(profile?.gear.efficiency ?? 0.87)
   const kt = Number(profile?.derived.kt_nm_per_a ?? 0.0919)
   const jointDeg = Number.isFinite(num(pos)) ? (num(pos) * 360) / ratio : undefined
@@ -491,9 +494,9 @@ export function OdriveHologram({ ax }: { ax: number }) {
     },
     {
       id: 'spi',
-      label: 'AS5047P',
-      val: `${fmt(posAbs, 0)}`,
-      tip: `CS GPIO${fmt(encCs, 0)} · CPR ${fmt(encCpr, 0)}`,
+      label: isSpi ? 'AS5047P' : 'ABZ ENC',
+      val: isSpi ? `${fmt(posAbs, 0)}` : `${fmt(shadow, 0)}`,
+      tip: isSpi ? `CS GPIO${fmt(encCs, 0)} · CPR ${fmt(encCpr, 0)}` : `J4 M0 A/B/Z · CPR ${fmt(encCpr, 0)}`,
       state: encBad ? 'alarm' : undefined,
     },
     {
@@ -575,14 +578,19 @@ export function OdriveHologram({ ax }: { ax: number }) {
       />
 
       <div className="holo-hud-bottom num">
-        <div className="holo-controls" style={{ marginLeft: 'auto' }}>
-          {(['orbit', 'top', 'side', 'motor'] as CamPreset[]).map((p) => (
-            <Button key={p} small kind={cam === p ? 'on' : ''} onClick={() => applyPreset(p)}>
-              {p}
-            </Button>
-          ))}
-          <Button small kind={autoSpin ? 'primary' : ''} onClick={() => setAutoSpin(!autoSpin)}>
-            {autoSpin ? 'spin' : 'hold'}
+        <div className="holo-controls" style={{ marginLeft: 'auto', gap: 6 }}>
+          <Segmented
+            options={[
+              ['orbit', 'orbit'],
+              ['top', 'top'],
+              ['side', 'side'],
+              ['motor', 'motor'],
+            ]}
+            value={cam}
+            onChange={applyPreset}
+          />
+          <Button small kind={autoSpin ? 'on' : 'chip'} onClick={() => setAutoSpin(!autoSpin)}>
+            {autoSpin ? 'spin: on' : 'spin: off'}
           </Button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { Component, useEffect, type ErrorInfo, type ReactNode } from 'react'
 import { StatusBar } from './components/StatusBar'
-import { CommandPalette, ConfirmDialog, JobDock, MessageLine } from './components/Overlays'
+import { CommandPalette, ConfirmDialog, HoverTip, JobDock, MessageLine } from './components/Overlays'
 import { Button } from './primitives'
 import { act, useApp } from './lib/store'
 import { VIEWS } from './views/registry'
@@ -122,6 +122,7 @@ export function App() {
       <JobDock />
       <ConfirmDialog />
       <CommandPalette />
+      <HoverTip />
     </div>
   )
 }

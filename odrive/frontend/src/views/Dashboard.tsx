@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import GridLayout, { type Layout } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
-import { Button, Panel } from '../primitives'
+import { Button, Panel, Segmented } from '../primitives'
 import { useApp } from '../lib/store'
 import { OdriveHologram } from '../components/OdriveHologram'
 import { AxisCard, CurrentPlot, EncoderCard, ErrorsPanel, EventsPanel, JointCard, MotionPlot, PowerCard, PowerPlot, ThermalPlot } from './panels'
@@ -145,38 +145,38 @@ export function Dashboard() {
     <div ref={wrapRef}>
       <div className="view-head">
         <h1>DASHBOARD</h1>
-        <div className="row" style={{ marginLeft: 'auto' }}>
-          {Object.keys(PRESETS).map((p) => (
-            <Button
-              key={p}
-              small
-              kind={p === preset ? 'on' : ''}
-              onClick={() => {
-                setPreset(p)
-                localStorage.setItem(STORE + '.active', p)
-              }}
-            >
-              {p}
-            </Button>
-          ))}
-          <span className="muted">|</span>
-          {[0, 1].map((a) => (
-            <Button key={a} small kind={a === ax ? 'on' : ''} onClick={() => useApp.setState({ axis: a })}>
-              ax{a}
-            </Button>
-          ))}
-          <span className="muted">|</span>
-          {[5, 10, 30, 60].map((w) => (
-            <Button key={w} small kind={w === windowS ? 'on' : ''} onClick={() => setWindowS(w)}>
-              {w}s
-            </Button>
-          ))}
+        <div className="row" style={{ marginLeft: 'auto', gap: 10 }}>
+          <Segmented
+            options={Object.keys(PRESETS).map((p) => [p, p])}
+            value={preset}
+            onChange={(p) => {
+              setPreset(p)
+              localStorage.setItem(STORE + '.active', p)
+            }}
+          />
+          <Segmented
+            options={[
+              [0, 'ax0'],
+              [1, 'ax1'],
+            ]}
+            value={ax}
+            onChange={(a) => useApp.setState({ axis: a })}
+          />
+          <Segmented
+            options={[
+              [5, '5s'],
+              [10, '10s'],
+              [30, '30s'],
+              [60, '60s'],
+            ]}
+            value={windowS}
+            onChange={setWindowS}
+          />
           <Button small kind={paused ? 'danger' : ''} onClick={() => setPaused(!paused)}>
-            {paused ? 'paused' : 'pause'}
+            {paused ? 'resume' : 'pause'}
           </Button>
-          <span className="muted">|</span>
-          <Button small kind={edit ? 'primary' : ''} onClick={() => setEdit(!edit)}>
-            {edit ? 'lock' : 'edit'}
+          <Button small kind={edit ? 'on' : ''} onClick={() => setEdit(!edit)}>
+            {edit ? 'lock layout' : 'edit layout'}
           </Button>
           {edit && (
             <Button small onClick={() => save(PRESETS[preset])}>

@@ -31,10 +31,10 @@ BACKLASH_HALF = 0.025  # circular thinning per gear at pitch (0.05 per mesh)
 # material name -> (display colour, density g/cm3)
 MATERIALS = {
     "7075-T6": ("#B8BEC6", 2.81),
-    "6061-T6": ("#C9CED4", 2.70),
+    "6061-T6": ("#C9CED4", 2.70),  # elbow and arm still use this key
     "16MnCr5 carburized": ("#8A6F4E", 7.85),
     "42CrMo4 nitrided": ("#6E5A44", 7.85),
-    "EN24T (34CrNiMo6) Q&T": ("#7D8590", 7.85),
+    "42CrMo4 Q&T": ("#7D8590", 7.85),
     "Spring steel": ("#4F6D7A", 7.80),
     "52100 bearing steel": ("#9AA3AD", 7.81),
     "Steel 12.9 fastener": ("#2B2B2B", 7.85),
@@ -234,7 +234,7 @@ def build():
     lid = lid - box(25.5, 31, -7.5, 7.5, -1, 3).rotate((0, 0, lead_ang))  # notch beside the phase lead slot
     for a in every(4, 45):
         lid = lid - csk_hole(*polar(27, a), 0.0, 2.0, 2.0, 1)
-    add("01 Encoder lid 6061-T6 D59.8x2", "6061-T6", lid)
+    add("01 Encoder lid 7075-T651 D59.8x2", "7075-T6", lid)
     for i, a in enumerate(every(4, 45)):
         add(f"02.{i + 1} Screw M2x4 CSK lid", "Steel 12.9 fastener", csk(*polar(27, a), 0.0, 4.0, 2.0, 1))
     pcb = (box(-15, 15, -15, 15, 2.5, 4.1).rotate((0, 0, 45))) - holes(17, 2.7, 2, 5, every(4))  # m2.5 fine clearance: +/-0.1 centring
@@ -245,7 +245,7 @@ def build():
         add(f"05.{i + 1} Screw M2.5x5 pan PCB", "Steel 12.9 fastener", cyl(2.5, 0.75, 2.5, x, y) + cyl(1.25, 2.49, 7.5, x, y))
     z_mag = z_mount - 4.75  # holder length 4.75: magnet-ic gap 1.25 at the nominal pack, 0.75..1.75 over the shim range
     holder = cyl(5, z_mag, z_mount) - cyl(3, z_mag - 0.1, z_mag + 2.5) + cyl(1.4, z_mount - 0.01, z_mount + 2.0)
-    add("06 Magnet holder 6061 D10, pin D2.8 into the rotor cap", "6061-T6", holder)
+    add("06 Magnet holder 7075-T651 D10, pin D2.8 into the rotor cap", "7075-T6", holder)
     add("07 Encoder magnet D6x2.5 diametric", "NdFeB magnet", cyl(3, z_mag, z_mag + 2.5))
     plate = cyl(50, 0, z_plug) + cyl(plug_r, z_plug - 0.01, 10)  # d100 seat rim + d94.5 k6 plug
     plate = plate - cyl(30.05, -1, 2) - cyl(25, 1.9, 6.0) - cyl(7, 5.9, 11)
@@ -308,7 +308,7 @@ def build():
     add("20 Thrust washer C1 rear D48/42x0.3", "52100 bearing steel", tube(24, 21, 42.5, 42.8))
     c1r = cyl(30, 43, 46) + pattern(lambda a: cyl(5, 45.9, 57.0, *polar(22, a)), post_angles)
     c1r = c1r - cyl(9, 42, 47) - holes(a1, 8.0, 42.9, 46.1, planet_angles) - holes(22, 3.0, 49.0, 57.1, post_angles)
-    add("21 Carrier-1 rear plate + posts (EN24T)", "EN24T (34CrNiMo6) Q&T", c1r)
+    add("21 Carrier-1 rear plate + posts (42CrMo4 Q&T)", "42CrMo4 Q&T", c1r)
     c1f = cyl(30, 57, 60) + cyl(7, 59.9, 71.1) + ext_gear(s2, m2, 71.0, 81.0)
     c1f = c1f - holes(a1, 8.0, 56.9, 60.1, planet_angles) - cyl(9.5, 56.9, 58.2)  # recess: 1.5 axial gap over the sun-1 tips
     for a in post_angles:
@@ -336,7 +336,7 @@ def build():
     c2r = c2r - cyl(11.5, 60, 71) - holes(a2, 8.0, 64.5, 70.6, planet_angles) - holes(27, 4.0, 73.5, 81.6, post_angles)
     c2r = c2r - holes(a2, 3.0, 60.4, 64.6, planet_angles)  # pin seat shoulder, d3 vent + punch-out
     c2r = c2r - tube(40, 32.5, 60, 70.5) - tube(29.5, 21, 60.4, 63.5)  # inner-ring zone clear + lightening groove
-    add("32 Carrier-2 rear half (hub D65 + posts, EN24T)", "EN24T (34CrNiMo6) Q&T", c2r)
+    add("32 Carrier-2 rear half (hub D65 + posts, 42CrMo4 Q&T)", "42CrMo4 Q&T", c2r)
     cart = cyl(44.5, 60.0, 84.0) + cyl(50, 84.0, 91.5) - cyl(42.5, 59.9, 91.6)
     cart = cart + ring_gear(r2, m2, 42.5, 70.8, 81.2)
     cart = cart - holes(46.5, 3.4, 83.9, 91.6, flange_ang) - holes(46.5, 5.8, 88.3, 91.6, flange_ang)
@@ -360,7 +360,7 @@ def build():
     c2f = c2f - holes(26, 5.0, 87.5, 95.6, every(6, 30))  # m5 tapped in steel
     c2f = c2f - holes(a2, 8.0, 81.4, 87.8, planet_angles) - holes(27, 4.5, 81.4, 95.6, post_angles) - holes(27, 8.0, 91.5, 95.6, post_angles)
     mag = Manifold.cylinder(2.3, 1.5, 1.5, segs(1.5)).rotate((0, 90, 0)).translate((36.8, 0, 93.75))
-    add("42 Carrier-2 front half + output flange D78 (EN24T)", "EN24T (34CrNiMo6) Q&T", c2f - mag)
+    add("42 Carrier-2 front half + output flange D78 (42CrMo4 Q&T)", "42CrMo4 Q&T", c2f - mag)
     for i, a in enumerate(post_angles):
         add(f"43.{i + 1} Screw M4x16 SHCS carrier-2 halves", "Steel 12.9 fastener", shcs(*polar(27, a), 91.5, 16.0, 4.0, -1))
     add("44 Homing magnet D3x2 radial (in flange rim)", "NdFeB magnet", Manifold.cylinder(2.0, 1.5, 1.5, segs(1.5)).rotate((0, 90, 0)).translate((36.8, 0, 93.75)))

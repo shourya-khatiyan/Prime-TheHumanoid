@@ -2,7 +2,71 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, HoldButton } from '../primitives'
 import { act, useApp } from '../lib/store'
 import { time } from '../lib/format'
+import { explainTerm, type TermGuide } from '../lib/meta'
 import { VIEWS } from '../views/registry'
+
+/** global instant HUD tooltip for any hovered keyword, metric, parameter label, or [title] element */
+export function HoverTip() {
+  const meta = useApp((s) => s.meta)
+  const [tip, setTip] = useState<{ x: number; y: number; guide: TermGuide } | null>(null)
+
+  useEffect(() => {
+    const resolveGuide = (el: HTMLElement): TermGuide | null => {
+      if (el.hasAttribute('title')) {
+        const raw = el.getAttribute('title') ?? ''
+        el.setAttribute('data-tip', raw)
+        el.removeAttribute('title')
+      }
+      const dataTip = el.getAttribute('data-tip')
+      const dataTerm = el.getAttribute('data-term') || el.textContent || ''
+      const g = explainTerm(meta, dataTerm, dataTip && dataTip.includes('.') && !dataTip.includes(' ') ? dataTip : undefined)
+      if (g) return g
+      if (dataTip) {
+        const lines = dataTip.split('\n').filter(Boolean)
+        return {
+          title: lines.length > 1 ? lines[0] : dataTerm.trim().slice(0, 42) || 'INFO',
+          desc: lines.length > 1 ? lines.slice(1).join(' ') : lines[0],
+        }
+      }
+      return null
+    }
+
+    const onOver = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement | null)?.closest?.(
+        '[data-term], [data-tip], [title], .field label, .val .k, .stat-strip .cell .k, .statusbar .cell .k, .seg-head span:first-child',
+      ) as HTMLElement | null
+      if (!target) {
+        setTip(null)
+        return
+      }
+      const guide = resolveGuide(target)
+      if (!guide) {
+        setTip(null)
+        return
+      }
+      const x = Math.max(8, Math.min(window.innerWidth - 356, e.clientX + 14))
+      const y = e.clientY + 24 > window.innerHeight - 130 ? Math.max(8, e.clientY - 105) : e.clientY + 18
+      setTip({ x, y, guide })
+    }
+
+    const onDown = () => setTip(null)
+    window.addEventListener('mouseover', onOver)
+    window.addEventListener('pointerdown', onDown)
+    return () => {
+      window.removeEventListener('mouseover', onOver)
+      window.removeEventListener('pointerdown', onDown)
+    }
+  }, [meta])
+
+  if (!tip) return null
+  return (
+    <div className="hud-tip" style={{ left: tip.x, top: tip.y }}>
+      <div className="ht-title">{tip.guide.title}</div>
+      <div className="ht-desc">{tip.guide.desc}</div>
+      {tip.guide.range && <div className="ht-range">{tip.guide.range}</div>}
+    </div>
+  )
+}
 
 /** confirmation dialog for every action the backend marks as dangerous (hold to confirm) */
 export function ConfirmDialog() {

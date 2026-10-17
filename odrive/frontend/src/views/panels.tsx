@@ -1,8 +1,9 @@
 import { Button, Tag } from '../primitives'
 import { LivePlot } from '../components/Plot'
 import { act, P, startJob, useAliasLatest, useApp, useLatest } from '../lib/store'
-import { AXIS_STATES, decodeFlags, enumName, flagDoc } from '../lib/meta'
+import { AXIS_STATES, decodeFlags, enumName, explainFlag } from '../lib/meta'
 import { fmt, hex, num, time } from '../lib/format'
+import { applyErrorFix } from './Alarms'
 
 /** live position and velocity chart for the selected axis */
 export function MotionPlot({ ax, windowS, paused }: { ax: number; windowS: number; paused?: boolean }) {
@@ -174,7 +175,7 @@ export function JointCard({ ax }: { ax: number }) {
   const tJoint = tMotor !== undefined ? tMotor * ratio * eff : undefined
   const angleDeg = Number.isFinite(num(pos)) ? (num(pos) * 360) / ratio : undefined
   const speedDeg = Number.isFinite(num(vel)) ? (num(vel) * 360) / ratio : undefined
-  const peakNm = Number(profile.derived.joint_torque_peak_nm || 35)
+  const peakNm = Number(profile.derived.joint_torque_peak_nm || 50)
 
   return (
     <div className="inst-card">
@@ -215,21 +216,28 @@ export function JointCard({ ax }: { ax: number }) {
   )
 }
 
-/** AS5047P SPI absolute encoder radar dial, link quality, and raw counts */
+/** encoder radar dial (supports both INCREMENTAL A/B/Z on J4 and SPI_ABS_AMS on J3) */
 export function EncoderCard({ ax }: { ax: number }) {
-  const [spi, abs, cnt, mode, cpr, cs] = useAliasLatest(
-    [`spi_err.${ax}`, `pos_abs.${ax}`, `count_in_cpr.${ax}`, `enc_mode.${ax}`, `enc_cpr.${ax}`, `enc_cs.${ax}`],
+  const [spi, abs, cnt, shadow, mode, cpr, cs, encErr, hall] = useAliasLatest(
+    [`spi_err.${ax}`, `pos_abs.${ax}`, `count_in_cpr.${ax}`, `shadow.${ax}`, `enc_mode.${ax}`, `enc_cpr.${ax}`, `enc_cs.${ax}`, `enc_error.${ax}`, `hall_state.${ax}`],
     10,
   )
   const rate = num(spi)
   const absCount = num(abs)
+  const inCpr = num(cnt)
+  const cprVal = num(cpr) > 0 ? num(cpr) : 4000
   const isSpi = num(mode) >= 256
-  const mechDeg = Number.isFinite(absCount) ? (absCount / 16384) * 360 : 0
+  const rawCount = isSpi ? absCount : ((inCpr % cprVal) + cprVal) % cprVal
+  const denom = isSpi ? 16384 : cprVal
+  const mechDeg = Number.isFinite(rawCount) && denom > 0 ? (rawCount / denom) * 360 : 0
   const mechRad = (mechDeg * Math.PI) / 180
   const elecRad = mechRad * 20
-  const stuckHigh = absCount === 16383
-  const fault = !isSpi || rate > 0.05 || stuckHigh
-  const linkQuality = isSpi && Number.isFinite(rate) ? Math.max(0, (1 - Math.min(1, rate)) * 100) : 0
+  const stuckHigh = isSpi && absCount === 16383
+  const hasErr = num(encErr) !== 0 && encErr !== undefined
+  const fault = hasErr || (isSpi && (rate > 0.05 || stuckHigh))
+  const linkQuality = isSpi && Number.isFinite(rate) ? Math.max(0, (1 - Math.min(1, rate)) * 100) : 100
+  const h = Number.isFinite(num(hall)) ? Math.trunc(num(hall)) : 0
+  const abzPins = `${h & 1}/${(h >> 1) & 1}/${(h >> 2) & 1}`
 
   const outerDots = Array.from({ length: 32 }, (_, i) => {
     const a = (i / 32) * Math.PI * 2 - Math.PI * 0.5
@@ -269,26 +277,26 @@ export function EncoderCard({ ax }: { ax: number }) {
                 <span className="unit">°</span>
               </span>
             </div>
-            {!isSpi ? <Tag level="warn">mode 0</Tag> : fault ? <Tag level="alarm">fail</Tag> : <Tag level="quiet">ok</Tag>}
+            {fault ? <Tag level="alarm">fail</Tag> : <Tag level="quiet">{isSpi ? 'spi ok' : 'abz ok'}</Tag>}
           </div>
           <span className="muted num" style={{ fontSize: '8.5px', letterSpacing: '0.08em' }}>
-            {isSpi ? `CS GPIO${fmt(cs, 0)} · CPR ${fmt(cpr, 0)}` : 'BYPASSED (INCREMENTAL)'}
+            {isSpi ? `SPI CS GPIO${fmt(cs, 0)} · CPR ${fmt(cpr, 0)}` : `J4 M0 A/B/Z · CPR ${fmt(cpr, 0)}`}
           </span>
         </div>
       </div>
 
       <div className="stat-strip num">
         <div className="cell">
-          <span className="k">abs</span>
-          <span className="v">{isSpi ? fmt(abs, 0) : '--'}</span>
+          <span className="k">{isSpi ? 'abs' : 'shadow'}</span>
+          <span className="v">{fmt(isSpi ? abs : shadow, 0)}</span>
         </div>
         <div className="cell">
           <span className="k">cnt</span>
           <span className="v">{fmt(cnt, 0)}</span>
         </div>
         <div className="cell">
-          <span className="k">spi</span>
-          <span className={`v ${fault ? 'error-text' : ''}`}>{isSpi ? `${linkQuality.toFixed(0)}%` : 'OFF'}</span>
+          <span className="k">{isSpi ? 'spi' : 'a/b/z'}</span>
+          <span className={`v ${fault ? 'error-text' : ''}`}>{isSpi ? `${linkQuality.toFixed(0)}%` : abzPins}</span>
         </div>
       </div>
     </div>
@@ -394,12 +402,29 @@ export function ErrorsPanel({ ax }: { ax: number }) {
               </span>
               {safety?.first_out === r.path && <Tag level="warn">1st</Tag>}
             </div>
-            <div className="row" style={{ gap: 6 }}>
-              {decodeFlags(meta, r.path, r.value).map((f) => (
-                <span key={f} className="muted num" style={{ fontSize: '9px' }} title={flagDoc(meta, r.path, f)}>
-                  {f}
-                </span>
-              ))}
+            <div className="col" style={{ gap: 4, marginTop: 2 }}>
+              {decodeFlags(meta, r.path, r.value).map((f) => {
+                const g = explainFlag(meta, r.path, f)
+                return (
+                  <div key={f} style={{ fontSize: '9.5px', lineHeight: 1.35 }} title={`${g.summary}\nWHY: ${g.why}\nFIX: ${g.fix}`}>
+                    <div>
+                      <span className="error-text num" style={{ fontWeight: 600 }}>
+                        {f}
+                      </span>{' '}
+                      <span className="muted">— {g.fix}</span>
+                    </div>
+                    {g.fixes && g.fixes.length > 0 && (
+                      <div className="row" style={{ gap: 4, marginTop: 2 }}>
+                        {g.fixes.map((fx) => (
+                          <Button key={fx.label} small kind="primary" onClick={() => applyErrorFix(fx, ax).catch(() => undefined)}>
+                            {fx.label}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         ))}

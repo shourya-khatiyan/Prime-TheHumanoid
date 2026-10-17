@@ -8,12 +8,19 @@ This is a two-stage planetary shoulder joint, 30:1 overall (6:1 then 5:1). The e
 
 At 24 V the motor runs at 2,160 rpm, the first carrier at 360 rpm, and the output at 72 rpm. Continuous output is 30 N·m. Proof torque is 50 N·m, including a 50 N·m tilt case. The motor torque constant used in the calc is 0.0919 N·m/A, so 30 N·m needs about 12.1 A and 50 N·m needs about 20.2 A.
 
-The real actuator is metal. Aluminium is used for the lid, the magnet holder, the rear plate, the housing, and the front cover. The gears, the rings, the carriers, and the planet pins stay steel: the stage-2 sun sees about 1,350 MPa contact stress at 30 N·m, which case-hardened 16MnCr5 can carry and aluminium cannot. The fit check is a 3D print of those same metal parts. Bought parts (motor, bearings, pins, screws, dowels, spring, washers, shims, magnets, electronics) are not printed.
+The real actuator is metal. The stage-2 sun sees about 1,350 MPa contact stress at 30 N·m, which case-hardened 16MnCr5 can carry and aluminium cannot. The fit check is a 3D print of the machined parts. Bought parts (motor, bearings, pins, screws, dowels, spring, washers, shims, magnets, electronics) are not printed.
 
-Three classes:
+Milling pack A (`shoulder/cad/milling/`) is the file set for the first metal quotation. Geometry is still Rev 1.4. It uses three alloys:
 
-- **3D print, then CNC in aluminium:** 01, 06, 08, 15, 45. The print file is `shoulder/cad/actuator_print.zip`.
-- **3D print, then CNC in steel:** 16, 18, 21, 22, 24, 32, 33, 36, 42. Same zip.
+- **7075-T651:** encoder lid, magnet holder, housing, front cover. The lid and the magnet holder moved off 6061. 7075 is non-magnetic, so the magnet holder still satisfies the encoder rule.
+- **16MnCr5, carburized:** sun-1, both planet sets, and carrier-1 front, because sun-2 is cut on that same part. The carrier plate is masked during carburizing.
+- **42CrMo4 (EN19), quenched and tempered:** ring-1, the cartridge, carrier-1 rear, and both carrier-2 halves. Ring-1 and the cartridge are wire-EDM'd and then nitrided. The carriers get no further heat treatment. EN24T is not used.
+
+The rear plate (08) is 3D-printed for this build and is not in the milling STEP. The housing is still machined for the metal plug, so a 7075 plate can replace the print later. Planet pins stay purchased 52100 shaft.
+
+Three classes for the fit-check print (unchanged files):
+
+- **3D print, then CNC:** 01, 06, 15, 16, 18, 21, 22, 24, 32, 33, 36, 42, 45. The print file is `shoulder/cad/actuator_print.zip`. Part 08 is printed for this build and is not sent for milling.
 - **Purchase:** everything else. Shop links are given only for the bearings and the wave spring.
 
 ### Rev 1.4: motor fit (from the first build)
@@ -28,7 +35,7 @@ The gearbox, bearings, and gears are unchanged. They sit 5.0 mm further forward.
 
 ## 01 Encoder lid
 
-3D print for the fit check, then CNC from 6061-T6. Quantity 1. Mass 14.2 g. Size Ø59.8 mm × 2 mm.
+3D print for the fit check, then CNC from 7075-T651. Quantity 1. Mass 14.8 g. Size Ø59.8 mm × 2 mm.
 
 It is the rearmost cover, from Z 0 to Z 2. Four M2 countersunk screws on a Ø54 mm circle clamp it to the rear plate. A slot at 0° lets the encoder cable out. A notch at 180° clears the phase-lead slot. Clear anodize. The screws are a light joint at 0.3 N·m.
 
@@ -58,7 +65,7 @@ They clamp the PCB to four bosses in the rear plate. Torque 0.4 N·m. No threadl
 
 ## 06 Magnet holder
 
-3D print for the fit check, then CNC from 6061-T6. Quantity 1. Mass 0.85 g. Body Ø10 mm × 4.75 mm with a Ø6 × 2.5 mm magnet pocket in the rear face. A Ø2.8 × 2 mm pin is on the front face.
+3D print for the fit check, then CNC from 7075-T651. Quantity 1. Mass 0.88 g. Body Ø10 mm × 4.75 mm with a Ø6 × 2.5 mm magnet pocket in the rear face. A Ø2.8 × 2 mm pin is on the front face. 7075 is non-magnetic, which this part requires.
 
 It sits on the motor's rear cap, which turns with the rotor, from Z 6.25 to Z 11. The pin goes into the cap's plain centre hole, and that pin is what centres the magnet on the rotor axis. The model assumes a Ø3 hole at least 2 mm deep. Measure it, then turn the pin to the hole with 0–0.02 mm clearance. Glue the face and the pin with structural epoxy. The holder must be non-magnetic. Concentricity of pin to pocket within 0.03 mm TIR. No anodize required.
 
@@ -70,7 +77,7 @@ It sits in the holder, from Z 6.25 to Z 8.75. Glue it with structural epoxy. Kee
 
 ## 08 Rear mount plate
 
-3D print for the fit check, then CNC from 7075-T651. Quantity 1. Mass 129.7 g. A Ø100 × 2 mm rim (Z 0–2) and a Ø94.5 × 8 mm plug (Z 2–10).
+3D-printed for milling pack A. Not in the milling STEP. A later metal plate is still 7075-T651. Quantity 1. Mass 129.7 g. A Ø100 × 2 mm rim (Z 0–2) and a Ø94.5 × 8 mm plug (Z 2–10).
 
 It is the part that bolts to the torso. The plug takes the place of the old housing lip: the motor is screwed to the plug's front face, and the plate and motor slide into the housing's open rear bore together. The rim seats on the housing's rear face at Z 2. The plug is Ø94.5 k6 in the housing's H7 bore (−25 to +32 µm). Both parts are 7075, so the fit does not change with temperature. Eight M3 radial holes, tapped 6 mm deep at Z 6 on 22.5° + 45° steps, take the housing screws. It carries:
 
@@ -164,7 +171,7 @@ It is the thrust face between the stationary housing partition and the back of c
 
 ## 21 Carrier-1 rear
 
-3D print for the fit check, then CNC from EN24T (34CrNiMo6), already quenched and tempered. Quantity 1. Mass 76.0 g. Envelope Ø60 mm × 14 mm, with three posts.
+3D print for the fit check, then CNC from 42CrMo4 (EN19), quenched and tempered to 28–34 HRC. Quantity 1. Mass 76.0 g. Envelope Ø60 mm × 14 mm, with three posts.
 
 The plate is from Z 48 to Z 51. Three posts run forward to Z 62 on a Ø44 mm circle and are tapped M3. Three Ø8 mm R7 holes on a Ø43.2 mm circle hold planet pins 1. No further heat treatment. The R7 fit on an h6 pin is 4–28 µm interference, so the pin cannot walk.
 
@@ -236,7 +243,7 @@ Buy: [61813-2Z listing](https://en.tradebearings.com/61813_2Z-80293.html). Confi
 
 ## 32 Carrier-2 rear
 
-3D print for the fit check, then CNC from EN24T, already quenched and tempered. Quantity 1. Mass 232.3 g. Hub Ø65 mm × 10 mm, three posts, envelope about Ø67 mm × 21 mm.
+3D print for the fit check, then CNC from 42CrMo4 (EN19), quenched and tempered to 28–34 HRC. Quantity 1. Mass 232.3 g. Hub Ø65 mm × 10 mm, three posts, envelope about Ø67 mm × 21 mm.
 
 The hub is the rear inner-ring seat, from Z 65.5 to Z 75.5, Ø65 mm j5. The posts run forward to Z 86.5 on a Ø54 mm circle and are tapped M4. The post faces are the shoulder for the rear inner ring. Three Ø8 mm R7 pin holes on a Ø45 mm circle are 6 mm deep from the front and stop on a 1.0 mm shoulder. A Ø3 mm hole through that shoulder vents the press and lets a punch drive the pin out. The rear lightening groove is Ø42–Ø59 mm and 3 mm deep, and it does not break the pin shoulder. No heat treatment unless a later endurance test shows fretting on the hub.
 
@@ -300,7 +307,7 @@ Buy: [SKF 61813-2RS1](https://www.skf.com/uk/products/rolling-bearings/ball-bear
 
 ## 42 Carrier-2 front
 
-3D print for the fit check, then CNC from EN24T, already quenched and tempered. Quantity 1. Mass 313.9 g. Flange Ø78 mm, hub Ø65 mm, overall length 14 mm.
+3D print for the fit check, then CNC from 42CrMo4 (EN19), quenched and tempered to 28–34 HRC. Quantity 1. Mass 313.9 g. Flange Ø78 mm, hub Ø65 mm, overall length 14 mm.
 
 This is the arm flange. The hub is from Z 86.5 to Z 97 and is the front inner-ring seat, Ø65 mm j5. The flange runs out to Z 100.5. Six M5 holes on a Ø52 mm circle, tapped 8 mm deep in the steel, take the arm screws. A Ø40 mm H7 pilot, 2 mm deep, centres the arm. Runout within 0.02 mm TIR, face flatness within 0.03 mm. Three Ø8 mm R7 holes, blind 6.3 mm deep, take planet pins 2. Three M4 counterbores on a Ø54 mm circle clamp this half to the rear half. A Ø3 mm radial hole in the rim at Z 98.75 holds the homing magnet.
 
