@@ -147,6 +147,30 @@ def test_apply_profile_calibrate_and_closed_loop(cli):
     assert cli.ok("read", paths=["axis0.current_state"])["axis0.current_state"] == 1
 
 
+def test_closed_loop_entry_drops_stale_setpoints(cli):
+    cli.ok("write", path="axis0.controller.input_vel", value=1.5)
+    cli.ok("write", path="axis0.controller.input_torque", value=0.3)
+    cli.confirmed("write", path="axis0.requested_state", value=8)
+    vals = cli.ok("read", paths=["axis0.controller.input_vel", "axis0.controller.input_torque", "axis0.controller.vel_integrator_torque"])
+    assert all(v == 0.0 for v in vals.values()), vals
+    cli.ok("disarm", reason="test")
+    time.sleep(0.3)
+
+
+def test_abz_index_search_then_offset_and_cpr_check(cli):
+    p = cli.ok("profile_get")
+    p["encoder"] = {"mode": "INCREMENTAL", "cpr": 4000, "cs_gpio": 4, "use_index": True}
+    cli.ok("profile_set", data=p)
+    cli.ok("clear_errors", axis=0)
+    cal = cli.wait_job(cli.confirmed("job_start", kind="calibrate", params={"axis": 0, "kind": "encoder"})["id"])
+    assert cal["state"] == "done" and cal["result"]["ok"], cal
+    assert any(c["id"] == "index" and c["ok"] for c in cal["result"]["checks"])
+    assert any("index search (state 6)" in log["msg"] for log in cal["logs"])
+    spin = cli.wait_job(cli.confirmed("job_start", kind="open_loop", params={"axis": 0, "current_a": 3.0, "vel_turns_s": 0.5, "turns": 1.0})["id"])
+    assert spin["state"] == "done", spin
+    assert abs(spin["result"]["counts_per_turn"] - 4000) < 200, spin["result"]
+
+
 def test_step_response_job(cli):
     j = cli.wait_job(cli.confirmed("job_start", kind="step_response", params={"axis": 0, "mode": "position", "amplitude": 0.1, "hold_s": 0.8})["id"])
     assert j["state"] == "done", j

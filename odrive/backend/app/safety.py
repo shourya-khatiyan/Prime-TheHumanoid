@@ -182,6 +182,8 @@ class Safety:
                 return {"value": IDLE, "old": old, "warning": None}
             self._preflight(t, ax, state)
             self._require(f"state:{ax}:{state}", token, f"Put axis{ax} into {name}? The motor will be energized.")
+            if state == 8:
+                self._reset_setpoints(t, ax)
             self._enable_watchdog(t, ax)
             self.active_axes.add(ax)
             self._activated[ax] = self.client_seen = time.monotonic()
@@ -210,6 +212,19 @@ class Safety:
             for alias in ("iq", "pos"):
                 if not w.path(f"{alias}.{ax}"):
                     raise ValueError(f"axis{ax} has no {alias} telemetry")
+
+    def _reset_setpoints(self, t: Transport, ax: int) -> None:
+        """Start closed loop at rest: hold the current position, zero velocity, torque and the integrator.
+
+        The odrive keeps the last setpoints after a fault, so without this a setpoint that tripped
+        the axis is applied again the moment closed loop is re-entered.
+        """
+        w = self.worker
+        hold = t.read(w.path(f"pos.{ax}"))
+        for alias, value in (("input_pos", hold), ("input_vel", 0.0), ("input_torque", 0.0), ("vel_integ", 0.0)):
+            path = w.path(f"{alias}.{ax}")
+            if path:
+                t.write(path, value)
 
     @staticmethod
     def _safe_read(t: Transport, path: str) -> Any:

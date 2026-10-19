@@ -69,6 +69,7 @@ AXIS = {
     "pos_set": ["controller.pos_setpoint"],
     "vel_set": ["controller.vel_setpoint"],
     "torque_set": ["controller.torque_setpoint"],
+    "vel_integ": ["controller.vel_integrator_torque"],
     "pos_gain": ["controller.config.pos_gain"],
     "vel_gain": ["controller.config.vel_gain"],
     "vel_int_gain": ["controller.config.vel_integrator_gain"],

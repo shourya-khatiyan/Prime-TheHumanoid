@@ -73,8 +73,8 @@ const GUIDES: Record<string, ErrorGuide> = {
   },
   CURRENT_LIMIT_VIOLATION: {
     summary: 'Measured phase current exceeded motor.config.current_lim + current_lim_margin.',
-    why: 'Aggressive controller gains, a sudden mechanical impact, or noisy SPI encoder velocity spikes caused a current spike.',
-    fix: 'Increase current_lim_margin (e.g. 12 A), lower current_control_bandwidth (250–500), or raise current_lim.',
+    why: 'Most often a wrong encoder cpr (e.g. 4096 set for the AS5047P A/B/Z output, which is 4000): commutation drifts as the rotor turns until torque reverses and current runs away. Also aggressive gains, a mechanical impact, or encoder noise.',
+    fix: 'First run an open-loop spin of 2+ turns and check counts/turn equals cpr. Only if cpr is right: increase current_lim_margin (e.g. 12 A), lower current_control_bandwidth (250–500), or raise current_lim.',
     fixes: [
       { label: 'set current_lim_margin = 12 A', kind: 'write', path: 'axis0.motor.config.current_lim_margin', value: 12 },
       { label: 'set current_lim = 15 A', kind: 'write', path: 'axis0.motor.config.current_lim', value: 15 },
@@ -88,8 +88,8 @@ const GUIDES: Record<string, ErrorGuide> = {
   },
   CPR_POLEPAIRS_MISMATCH: {
     summary: 'During encoder offset calibration, the measured encoder count change did not match (scan_distance / (2π × pole_pairs)) × cpr.',
-    why: '1) The encoder PCB/magnet moved, tilted, or was not rigidly fixed over the shaft center during the scan; 2) the 14-bit absolute count wrapped across 0/16383 during a long scan; or 3) calib_range (default 2%) is too tight for motor cogging.',
-    fix: 'Hold/mount the AS5047P centered 1–2 mm above the magnet, widen calib_range to 0.15 and shorten scan distance to 4π, then re-run Encoder Offset Calibration.',
+    why: '1) cpr does not match the encoder (AS5047P: 4000 on A/B/Z, 16384 on SPI) or pole_pairs is wrong; 2) the encoder PCB/magnet moved, tilted, or was not rigidly fixed over the shaft center during the scan; or 3) calib_range (default 2%) is too tight for motor cogging.',
+    fix: 'Check counts/turn with an open-loop spin first; widening calib_range hides a wrong cpr. Then mount the AS5047P centered 1–2 mm above the magnet, widen calib_range to 0.15 and re-run Encoder Offset Calibration.',
     fixes: [
       { label: 'relax calib_range (0.15) & re-calibrate', kind: 'job', job: 'calibrate', params: { kind: 'encoder', mark_precalibrated: true } },
       { label: 'set calib_range = 0.15', kind: 'write', path: 'axis0.encoder.config.calib_range', value: 0.15 },
@@ -97,9 +97,21 @@ const GUIDES: Record<string, ErrorGuide> = {
   },
   NO_RESPONSE: {
     summary: 'The motor rotated during calibration, but encoder shadow_count changed by less than 8 counts.',
-    why: '1) The encoder PCB is not over the rotating motor magnet; or 2) encoder.config.mode was in INCREMENTAL (0) instead of SPI_ABS_AMS (257).',
+    why: '1) The encoder PCB is not over the rotating motor magnet; 2) encoder.config.mode does not match the wiring (INCREMENTAL (0) for A/B/Z on J4, SPI_ABS_AMS (257) for SPI); or 3) the A/B wires are loose.',
     fix: 'Position the AS5047P chip directly over the motor shaft magnet (1–2 mm gap) and run Encoder Offset Calibration.',
     fixes: [{ label: 'run encoder offset cal', kind: 'job', job: 'calibrate', params: { kind: 'encoder', mark_precalibrated: true } }],
+  },
+  BRAKE_RESISTOR_DISARMED: {
+    summary: 'The brake resistor was disarmed by an earlier fault, so the axis refuses to arm the motor.',
+    why: 'A system fault (often regen current the bench PSU cannot sink, after a hard stop from high speed or torque) disarms the brake resistor. fw 0.5.1 re-arms it only at boot; 0.5.2+ also on clear_errors.',
+    fix: 'Click Clear Errors and confirm the reboot, then run Encoder Offset again before closed loop. Avoid commanding speeds above what the bus voltage allows (~25 turn/s at 20 V).',
+    fixes: [{ label: 'clear errors (reboots on fw 0.5.1)', kind: 'clear' }],
+  },
+  INDEX_NOT_FOUND_YET: {
+    summary: 'use_index is on, but the encoder index (Z) pulse has not been seen since boot.',
+    why: 'With use_index = true the firmware refuses encoder offset calibration and closed loop until an index search (state 6) has crossed the Z pulse. index_found resets at every reboot.',
+    fix: 'Run Index Search (Encoder Offset also searches first). If the search itself fails, check the encoder I/PWM -> J4 Z wire.',
+    fixes: [{ label: 'index search + offset cal', kind: 'job', job: 'calibrate', params: { kind: 'encoder', mark_precalibrated: true } }],
   },
   ABS_SPI_COM_FAIL: {
     summary: 'More than 0.5% of 16-bit SPI packets from the AS5047P failed parity or had the Error Flag (EF) bit set.',
@@ -114,7 +126,8 @@ export function explainFlag(meta: Metadata | null, path: string, flag: string): 
   if (g) return g
   const raw = flagDoc(meta, path, flag)
   return {
-    summary: raw ? raw.split('\n')[0] : `Hardware fault flag ${flag} on ${path}.`,
+    // firmware docs wrap mid-sentence, so take the first sentence rather than the first line
+    summary: raw ? raw.replace(/\s+/g, ' ').split(/(?<=\.) /)[0] : `Hardware fault flag ${flag} on ${path}.`,
     why: raw || 'See ODrive error register documentation.',
     fix: 'Fix the underlying condition and click Clear Errors.',
   }
@@ -154,7 +167,8 @@ const GLOSSARY: Record<string, TermGuide> = {
   'closed loop': { title: 'Closed-Loop FOC Control (State 8)', desc: 'Actively regulates torque, velocity, or position using live AS5047P encoder feedback.', range: 'Requires motor_cal & enc_ready' },
   'motor r/l': { title: 'Motor Phase R / L Calibration (State 4)', desc: 'Injects a test current to measure stator phase resistance (R ≈ 84 mΩ) and inductance (L ≈ 37 µH), then tunes current PI gains.', range: '~3 seconds (motor beeps)' },
   'encoder offset': { title: 'Encoder Offset Calibration (State 7)', desc: 'Slowly sweeps the rotor forward and backward to align the encoder zero angle with the motor magnetic poles.', range: '~5 seconds (sets is_ready = true)' },
-  full: { title: 'Full Calibration Sequence (State 3)', desc: 'Runs Motor R/L Calibration (State 4) followed immediately by Encoder Offset Calibration (State 7).', range: '~8 seconds total' },
+  'index search': { title: 'Encoder Index Search (State 6)', desc: 'Turns the motor slowly until the encoder Z (index) pulse is seen. Needed after every reboot when use_index is on, before closed loop.', range: 'up to 5 motor turns (~16 s)' },
+  full: { title: 'Full Calibration Sequence (State 3)', desc: 'Runs Motor R/L Calibration (State 4), an Index Search (State 6) when use_index is on, then Encoder Offset Calibration (State 7).', range: '~8 seconds total (+ index search)' },
   pos_gain: { title: 'pos_gain (Position P Gain)', desc: 'Outer position loop proportional gain: converts position error (turns) into a velocity command (turn/s). Higher = stiffer position hold.', range: 'Typical: 10–30 [(turn/s) / turn]' },
   vel_gain: { title: 'vel_gain (Velocity P Gain)', desc: 'Velocity loop proportional gain: converts speed error (turn/s) into motor torque (Nm). Too high causes buzzing/vibration.', range: 'Typical: 0.08–0.30 [Nm / (turn/s)]' },
   vel_integrator_gain: { title: 'vel_integrator_gain (Velocity I Gain)', desc: 'Velocity loop integral gain: eliminates steady-state speed or position droop under constant load.', range: 'Typical: 0.15–0.60 [Nm / (turn/s · s)]' },

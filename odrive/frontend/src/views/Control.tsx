@@ -224,16 +224,22 @@ function Generator({ ax, kind, active }: { ax: number; kind: 'pos' | 'vel' | 'to
   const [offset, setOffset] = useState(0)
   const [running, setRunning] = useState(false)
   const timer = useRef(0)
+  const inFlight = useRef(false)
   const [posNow] = useAliasLatest([`pos.${ax}`], 2)
   useEffect(() => {
     if (!running) return
     const t0 = performance.now()
     const base = kind === 'pos' ? (num(posNow) || 0) + offset : offset
     timer.current = window.setInterval(() => {
+      // skip this tick while the last setpoint is unanswered, so a slow link never builds a queue of stale setpoints
+      if (inFlight.current) return
       const t = (performance.now() - t0) / 1000
       const ph = 2 * Math.PI * freq * t
       const v = base + (shape === 'sine' ? amp * Math.sin(ph) : Math.sin(ph) >= 0 ? amp : -amp)
-      act('setpoint', { axis: ax, kind, value: v }, true).catch(() => setRunning(false))
+      inFlight.current = true
+      act('setpoint', { axis: ax, kind, value: v }, true)
+        .catch(() => setRunning(false))
+        .finally(() => (inFlight.current = false))
     }, 20)
     return () => clearInterval(timer.current)
   }, [running])
@@ -243,7 +249,7 @@ function Generator({ ax, kind, active }: { ax: number; kind: 'pos' | 'vel' | 'to
   return (
     <div className="col" style={{ borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 4 }}>
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <span className="muted" style={{ fontSize: 'var(--fs-micro)' }}>WAVEFORM GENERATOR (50 HZ STREAM)</span>
+        <span className="muted" style={{ fontSize: 'var(--fs-micro)' }}>WAVEFORM GENERATOR (UP TO 50 HZ STREAM)</span>
         <Button small kind={running ? 'on' : 'primary'} disabled={!active} onClick={() => setRunning(!running)}>
           {running ? 'stop wave' : 'start wave'}
         </Button>
@@ -280,7 +286,8 @@ function OpenLoopPanel({ ax }: { ax: number }) {
   const [dur, setDur] = useState(4.0)
   const maxCur = profile.motor.current_continuous_a ?? 12
   const maxVel = profile.limits.vel_max_turns_s ?? 30
-  const bypassed = num(encMode) === 0
+  // mode 0 only means "spi bypassed" when the profile expects an spi encoder; for abz wiring it is the normal mode
+  const bypassed = num(encMode) === 0 && String(profile.encoder?.mode ?? '').startsWith('SPI')
   const spiBad = num(encMode) >= 256 && num(spiErr) > 0.01
   const spinning = num(state) === 9 || runner.busy
 
@@ -296,12 +303,12 @@ function OpenLoopPanel({ ax }: { ax: number }) {
         <span className="muted" style={{ fontSize: 'var(--fs-micro)' }}>
           DRIVES ROTATING CURRENT VECTOR DIRECTLY (NO ENCODER REQUIRED)
         </span>
-        {bypassed ? (
+        {num(encMode) === 0 ? (
           <Tag level="info">enc mode 0 (ABZ)</Tag>
         ) : spiBad ? (
           <Tag level="warn">spi fault (auto-bypass)</Tag>
         ) : (
-          <Tag level="quiet">spi mode 257</Tag>
+          <Tag level="quiet">spi mode {fmt(encMode, 0)}</Tag>
         )}
       </div>
 
@@ -393,6 +400,10 @@ function OpenLoopPanel({ ax }: { ax: number }) {
         <div className="cell">
           <span className="k">peak Iq</span>
           <span className="v">{runner.result ? `${fmt(runner.result.iq_peak, 2)} A` : '--'}</span>
+        </div>
+        <div className="cell">
+          <span className="k">counts / turn</span>
+          <span className="v">{runner.result?.counts_per_turn != null ? fmt(runner.result.counts_per_turn, 0) : '--'}</span>
         </div>
         <div className="cell">
           <span className="k">status</span>
@@ -564,8 +575,8 @@ export function Control() {
   const meta = useApp((s) => s.meta)
   const profile = useApp((s) => s.profile)
   const active = useApp((s) => !!s.status?.safety.active_axes.includes(ax))
-  const [state, cm, im, err, cal, ready] = useAliasLatest(
-    [`state.${ax}`, `ctrl_mode.${ax}`, `input_mode.${ax}`, `error.${ax}`, `motor_cal.${ax}`, `enc_ready.${ax}`],
+  const [state, cm, im, err, cal, ready, useIdx, idxFound] = useAliasLatest(
+    [`state.${ax}`, `ctrl_mode.${ax}`, `input_mode.${ax}`, `error.${ax}`, `motor_cal.${ax}`, `enc_ready.${ax}`, `enc_use_index.${ax}`, `enc_index.${ax}`],
     8,
   )
   const [subTab, setSubTab] = useState<'drive' | 'openloop' | 'gains' | 'encoder'>('drive')
@@ -584,6 +595,7 @@ export function Control() {
         <div className="row" style={{ marginLeft: 'auto', gap: 8 }}>
           <span className={`tech-chip num ${cal ? 'on' : 'warn'}`}>MOT CAL: {cal ? 'YES' : 'NO'}</span>
           <span className={`tech-chip num ${ready ? 'on' : 'warn'}`}>ENC: {ready ? 'READY' : 'UNREADY'}</span>
+          {Boolean(useIdx) && <span className={`tech-chip num ${idxFound ? 'on' : 'warn'}`}>INDEX: {idxFound ? 'FOUND' : 'NOT FOUND'}</span>}
           {num(err) !== 0 && <Tag level="alarm">FAULT</Tag>}
           {active && <Tag level="info">WATCHDOG FED</Tag>}
           <Segmented
@@ -615,6 +627,11 @@ export function Control() {
             <Button kind="primary" small onClick={() => startJob('calibrate', { axis: ax, kind: 'motor' }).catch(() => undefined)}>
               motor R/L
             </Button>
+            {Boolean(useIdx) && (
+              <Button kind={idxFound ? 'on' : 'primary'} small onClick={() => startJob('calibrate', { axis: ax, kind: 'index' }).catch(() => undefined)}>
+                index search
+              </Button>
+            )}
             <Button kind="primary" small onClick={() => startJob('calibrate', { axis: ax, kind: 'encoder' }).catch(() => undefined)}>
               encoder offset
             </Button>
@@ -673,7 +690,7 @@ export function Control() {
                 </div>
                 {!active && (
                   <div className="warn-text" style={{ fontSize: 'var(--fs-tick)', padding: '4px 8px', background: 'rgba(255, 176, 0, 0.08)', border: '1px solid var(--warn)' }}>
-                    ▲ Setpoints are locked while IDLE. Click &quot;CLOSED LOOP&quot; above (or use the 02 OPEN-LOOP SPIN tab to test without an encoder).
+                    ▲ Setpoints are locked while IDLE. Click &quot;CLOSED LOOP&quot; above: it starts at rest (holds position, zero speed and torque), so a setpoint that faulted the axis is not re-applied. Use the 02 OPEN-LOOP SPIN tab to test without an encoder.
                   </div>
                 )}
                 <Setpoint ax={ax} kind={kind} active={active} />

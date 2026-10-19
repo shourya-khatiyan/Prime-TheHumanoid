@@ -171,16 +171,17 @@ async def calibrate(ctx: JobCtx, params: dict) -> dict:
 
     Params:
         axis: axis index.
-        kind: 'motor', 'encoder' or 'full'.
+        kind: 'motor', 'index' (index search only), 'encoder' or 'full'.
+            'encoder' runs the index search first when use_index is on and the index was not seen since boot.
         mark_precalibrated: if true and the results pass, set pre_calibrated flags (not saved).
     """
     axis = int(params.get("axis", ctx.safety.profile.axis))
     kind = params.get("kind", "motor")
-    state = {"motor": 4, "encoder": 7, "full": 3}[kind]
+    states = [{"motor": 4, "index": 6, "encoder": 7, "full": 3}[kind]]
     pr = ctx.safety.profile
     if kind == "motor":
         await _bypass_faulted_spi(ctx, axis)
-    elif kind in ("encoder", "full"):
+    elif kind in ("index", "encoder", "full"):
         want_mode = encoder_mode(pr)
         cur_mode = (await ctx.get(f"enc_mode.{axis}"))[0]
         if cur_mode != want_mode:
@@ -202,18 +203,29 @@ async def calibrate(ctx: JobCtx, params: dict) -> dict:
             await ctx.write(scan_dist_path, 4.0 * math.pi)
         if ctx.worker.tree.get(scan_omega_path, {}).get("writable"):
             await ctx.write(scan_omega_path, 2.0 * math.pi)
+        if kind == "encoder" and ctx.worker.path(f"enc_index.{axis}"):
+            use_idx, found = await ctx.get(f"enc_use_index.{axis}", f"enc_index.{axis}")
+            if use_idx and not found:
+                # fw refuses offset calibration with INDEX_NOT_FOUND_YET until an index search crossed the z pulse
+                states = [6, 7]
     clear = ctx.worker.path(f"clear_errors.{axis}")
     if clear:
         await ctx.call(clear)
-    ctx.log(f"axis{axis}: starting {kind} calibration (state {state}); expect a beep and/or slow rotation")
-    await ctx.set_state(axis, state)
-    ctx.progress(0.1)
-    final = await ctx.wait_state(axis, leave=1, reach=1, timeout=60)
+    for i, state in enumerate(states):
+        ctx.log(f"axis{axis}: starting {'index search' if state == 6 else kind + ' calibration'} (state {state}); expect a beep and/or slow rotation")
+        await ctx.set_state(axis, state)
+        ctx.progress(0.1 + 0.8 * i / len(states))
+        final = await ctx.wait_state(axis, leave=1, reach=1, timeout=60)
+        errs = await ctx.errors(axis)
+        if errs:
+            break
     ctx.progress(0.9)
-    errs = await ctx.errors(axis)
     result = {"axis": axis, "kind": kind, "final_state": final, "errors": errs, "checks": []}
     r, l, cal, ready = await ctx.get(f"phase_r.{axis}", f"phase_l.{axis}", f"motor_cal.{axis}", f"enc_ready.{axis}")
     result.update({"phase_resistance": r, "phase_inductance": l, "motor_calibrated": bool(cal), "encoder_ready": bool(ready)})
+    if 6 in states:
+        found = bool((await ctx.get(f"enc_index.{axis}"))[0])
+        result["checks"].append({"id": "index", "ok": found, "msg": "index (Z) pulse found" if found else "index (Z) pulse not found: check the encoder I/PWM -> J4 Z wire"})
     if kind in ("motor", "full"):
         r_nom = float(pr.get("motor.phase_resistance_ohm"))
         tol = float(pr.get("motor.resistance_tolerance", 0.5))
@@ -401,6 +413,8 @@ async def open_loop(ctx: JobCtx, params: dict) -> dict:
     fet_path = ctx.p(f"fet_temp.{axis}")
     ctx.capture_start([iq_path, fet_path])
     ctx.log(f"axis{axis}: open-loop spin {vel_turns_s:+.2f} turn/s @ {current_a:.1f} A ({'%.1f turns' % turns if finish_on_dist else '%.1f s' % run_limit})")
+    cpr, count0 = await ctx.get(f"enc_cpr.{axis}", f"shadow.{axis}")
+    counts_per_turn = None
 
     try:
         await ctx.set_state(axis, 9)
@@ -411,6 +425,9 @@ async def open_loop(ctx: JobCtx, params: dict) -> dict:
             if err:
                 break
             if elapsed > 0.6 and st == 1:
+                # the lockin moved exactly `turns` motor turns, so the encoder should have counted turns x cpr
+                if finish_on_dist and turns >= 1 and not bypassed:
+                    counts_per_turn = abs((await ctx.get(f"shadow.{axis}"))[0] - count0) / turns
                 break
             await ctx.sleep(0.15)
     finally:
@@ -435,6 +452,10 @@ async def open_loop(ctx: JobCtx, params: dict) -> dict:
         + (f", FET {fet_max:.1f} C" if fet_max is not None else ""),
         "info" if ok else "alarm",
     )
+    if counts_per_turn is not None:
+        cpr_ok = abs(counts_per_turn - cpr) <= 0.015 * cpr
+        ctx.log(f"{'PASS' if cpr_ok else 'WARN'} encoder counted {counts_per_turn:.0f} counts/turn, cpr is {cpr}"
+                + ("" if cpr_ok else " (wrong cpr, or the rotor slipped poles: raise the current and spin slower)"), "info" if cpr_ok else "warn")
     ctx.progress(1.0)
     return {
         "axis": axis,
@@ -445,6 +466,7 @@ async def open_loop(ctx: JobCtx, params: dict) -> dict:
         "iq_avg": iq_avg,
         "iq_peak": iq_peak,
         "fet_max_c": fet_max,
+        "counts_per_turn": counts_per_turn,
         "errors": errs,
     }
 

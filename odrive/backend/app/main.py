@@ -198,7 +198,17 @@ async def op_disarm(a: dict) -> dict:
 
 
 async def op_clear_errors(a: dict) -> dict:
-    for ax in [int(a["axis"])] if "axis" in a else [0, 1]:
+    axes = [int(a["axis"])] if "axis" in a else [0, 1]
+    brake_off = any("BRAKE_RESISTOR_DISARMED" in safety.alarms.get(worker.path(f"error.{ax}") or "", {}).get("flags", []) for ax in axes)
+    # fw 0.5.1 has no device-level clear_errors: a disarmed brake resistor is re-armed only by a reboot
+    if brake_off and worker.tree.get("clear_errors", {}).get("kind") != "func" and not safety.active_axes:
+        if not safety.consume("rearm_brake", a.get("token")):
+            raise ConfirmRequired("rearm_brake", "The brake resistor was disarmed by a fault and this firmware only re-arms it at boot, "
+                                  "so closed loop is refused until then. Reboot the ODrive now? Unsaved calibration is lost; run encoder offset afterwards.")
+        await asyncio.to_thread(safety.call, "reboot", [], safety.arm("call:reboot")["token"], "gui")
+        safety.clear_stale_alarms()
+        return {"ok": True, "rebooted": True}
+    for ax in axes:
         path = worker.path(f"clear_errors.{ax}")
         if path:
             await asyncio.to_thread(safety.call, path, [], None, "gui")

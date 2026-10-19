@@ -25,10 +25,7 @@ async def enter_closed_loop(ctx: JobCtx, axis: int, mode: str) -> float:
     await ctx.write(ctx.p(f"ctrl_mode.{axis}"), CONTROL[mode])
     await ctx.write(ctx.p(f"input_mode.{axis}"), PASSTHROUGH)
     pos = float((await ctx.get(f"pos.{axis}"))[0])
-    await ctx.write(ctx.p(f"input_vel.{axis}"), 0.0)
-    await ctx.write(ctx.p(f"input_torque.{axis}"), 0.0)
-    if mode == "position":
-        await ctx.write(ctx.p(f"input_pos.{axis}"), pos)
+    # entering closed loop holds this position and zeroes the other setpoints (see Safety._reset_setpoints)
     await ctx.set_state(axis, 8)
     await ctx.wait_state(axis, reach=8, timeout=3)
     await ctx.sleep(0.3)

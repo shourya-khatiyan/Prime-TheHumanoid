@@ -17,10 +17,16 @@ cd ..\frontend ; npm install
 powershell -ExecutionPolicy Bypass -File odrive\tools\fix_winusb_guid.ps1
 
 # start (from odrive/)
-.\dev.ps1           # real board: native usb, falls back to ascii over the COM port
-.\dev.ps1 mock      # simulated board, no hardware needed
+# git bash: forward slash. a backslash escapes the next letter, so .\dev.sh fails
+./dev.sh            # mode from backend/.env (default auto: native usb, then ascii)
+./dev.sh mock       # override .env for this run: simulated board, no hardware
+# powershell:
+.\dev.ps1
+.\dev.ps1 mock
 # open http://localhost:5173
 ```
+
+`backend/.env` holds `ODRV_MODE` and `ODRV_NO_BROWSER` so they do not need to be typed each run. A value already set in the shell wins.
 
 Production build: `.\build.ps1` makes `backend\dist\vayn-odrv.exe` (serves the UI on
 http://127.0.0.1:8765 and opens the browser). Firmware flashing needs the source install.

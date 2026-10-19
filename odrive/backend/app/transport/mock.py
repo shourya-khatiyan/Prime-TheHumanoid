@@ -17,6 +17,7 @@ from .base import DeviceInfo, Transport, TransportError
 
 AXIS_ERR = {"INVALID_STATE": 1, "MOTOR_FAILED": 64, "ENCODER_FAILED": 256, "WATCHDOG": 2048}
 ENC_SPI_FAIL = 128
+ENC_INDEX_NOT_FOUND = 0x20
 MOTOR_R_RANGE = 1
 
 
@@ -158,10 +159,16 @@ class MockTransport(Transport):
             return
         motor_ok = self.v[f"{a}.motor.is_calibrated"]
         enc_ready = self.v[f"{a}.encoder.is_ready"]
-        if (state in (7, 8, 9) and not motor_ok) or (state == 8 and not enc_ready) or (state == 9 and not self.v[f"{a}.motor.config.direction"]):
+        use_idx = self.v[f"{a}.encoder.config.use_index"]
+        if (state in (6, 7, 8, 9) and not motor_ok) or (state == 8 and not enc_ready) or (state == 9 and not self.v[f"{a}.motor.config.direction"]) or (state == 6 and not use_idx):
             self.v[f"{a}.error"] |= AXIS_ERR["INVALID_STATE"]
             return
-        if state in (3, 4, 7, 8, 9):
+        if state == 7 and use_idx and not self.v[f"{a}.encoder.index_found"]:
+            # like fw 0.5.1: offset calibration needs the index pulse first
+            self.v[f"{a}.encoder.error"] |= ENC_INDEX_NOT_FOUND
+            self.v[f"{a}.error"] |= AXIS_ERR["ENCODER_FAILED"]
+            return
+        if state in (3, 4, 6, 7, 8, 9):
             if self.v[f"{a}.error"]:
                 return
             self.v[f"{a}.current_state"] = 4 if state == 3 else state
@@ -221,11 +228,19 @@ class MockTransport(Transport):
                     v[f"{a}.motor.config.phase_inductance"] = 4.2e-5 * (1 + random.gauss(0, 0.03))
                     v[f"{a}.motor.is_calibrated"] = True
                     if target == 3:
-                        v[f"{a}.current_state"] = 7
-                        self._timers[ax] = (7, now)
+                        # full sequence: index search first when use_index is on
+                        v[f"{a}.current_state"] = 6 if v[f"{a}.encoder.config.use_index"] else 7
+                        self._timers[ax] = (3 if v[f"{a}.encoder.config.use_index"] else 7, now)
                     else:
                         v[f"{a}.current_state"] = 1
                         self._timers.pop(ax, None)
+            elif state == 6 and now - t0 > 1.0:
+                v[f"{a}.encoder.index_found"] = True
+                v[f"{a}.current_state"] = 7 if target == 3 else 1
+                if target == 3:
+                    self._timers[ax] = (7, now)
+                else:
+                    self._timers.pop(ax, None)
             elif state == 7:
                 if not self._encoder_ok(ax):
                     v[f"{a}.error"] |= AXIS_ERR["ENCODER_FAILED"]

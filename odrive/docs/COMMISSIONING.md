@@ -35,6 +35,27 @@ Reading the encoder card:
   held low or the encoder is unpowered, or the new mode/CS pin has not been activated yet:
   on fw 0.5.1 encoder mode and CS changes need **save configuration + reboot**
 
+### Incremental (ABZ) bring-up
+
+Wiring on J4 M0: 5V, GND, A, B, encoder `I/PWM` -> `Z`. Control > encoder setup: `incremental`,
+cpr **4000**, use_index on, apply & save (reboots).
+
+- **cpr must be 4000.** The AS5047P ABI output defaults to 1000 pulses/rev. A wrong cpr (e.g. 4096)
+  still passes offset calibration when `calib_range` is widened, but commutation then drifts as the
+  rotor turns and closed loop ends in `CURRENT_LIMIT_VIOLATION`. Check it with Control > open-loop
+  spin, 2 turns, 8 A, 0.25 turn/s: the job logs `counts/turn`, which must match cpr within 1.5 %.
+  At 5 A / 0.5 turn/s the rotor slips poles and the count reads low.
+- **Index after every boot.** With use_index on, the firmware refuses offset calibration and closed
+  loop until an index search (state 6) has crossed the Z pulse (`INDEX_NOT_FOUND_YET`). The
+  `encoder offset` button runs the search first when needed; after a reboot with a saved
+  `pre_calibrated` offset, `index search` alone is enough. The `INDEX` chip shows the state.
+- **Encoder noise.** A/B edges picked up from the motor phases at high current are counted as
+  motion; the count then slips against the rotor and the axis runs away (`OVERSPEED`,
+  `CURRENT_LIMIT_VIOLATION`) after working at low current. Use twisted/shielded A, B, Z leads with
+  their GND, keep them away from the phase wires, fix the encoder PCB rigidly, and fit 22-47 nF from
+  A, B, Z to GND at the ODrive. Check: run `index search` twice, push some high-current moves, run
+  it again; the count at the index should stay within a few counts of a multiple of 4000.
+
 ## Steps
 
 1. **Identify**: transport, serial, fw, hw.
