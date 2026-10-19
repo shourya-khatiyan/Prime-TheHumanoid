@@ -57,6 +57,9 @@ class Safety:
         self.alarms: dict[str, dict] = {}
         self.first_out: str | None = None
         self._prev_err: dict[str, int] = {}
+        # per-axis zero (motor turns) that the position window and joint angles are measured from
+        self.origin: dict[int, float] = {0: 0.0, 1: 0.0}
+        self._origin_gen = worker.generation
         self._last_feed = 0.0
         self._lock = threading.Lock()
         worker.sample_hooks.append(self.on_sample)
@@ -128,7 +131,16 @@ class Safety:
             v = float(p.get("limits.vel_max_turns_s", 1))
             lo, hi = -v, v
         elif path.endswith("controller.input_pos"):
-            lo, hi = float(p.get("limits.pos_min_turns", -1)), float(p.get("limits.pos_max_turns", 1))
+            ax = int(path[4])
+            org = self.origin.get(ax, 0.0)
+            lo, hi = org + float(p.get("limits.pos_min_turns", -1)), org + float(p.get("limits.pos_max_turns", 1))
+            # clamping would drag an axis that is already outside the window across the whole range
+            pos = self.worker.latest.get(self.worker.path(f"pos.{ax}") or "")
+            margin = 0.05 * (hi - lo)
+            if isinstance(pos, float) and not (lo - margin <= pos <= hi + margin):
+                raise ValueError(f"axis{ax} is at {pos:.2f} motor turns, outside the position window {lo:.1f}..{hi:.1f} "
+                                 f"(zero {org:.2f} {p.get('limits.pos_min_turns')}..{p.get('limits.pos_max_turns')} turns). "
+                                 "Click 'set zero here' in Control, then retry.")
         else:
             return value, None
         if not math.isfinite(value):
@@ -157,6 +169,9 @@ class Safety:
         def op(t: Transport) -> dict:
             nonlocal warning
             old = t.read(path)
+            if path.endswith("controller.config.control_mode") and int(path[4]) in self.active_axes and value != old:
+                # bumpless switch: the new loop would otherwise chase a stale input_pos / input_vel / input_torque
+                self._reset_setpoints(t, int(path[4]))
             if lim is not None and isinstance(value, (int, float)) and value > lim:
                 if hw_max is None or value > hw_max:
                     raise ValueError(f"{path} = {value:g} exceeds profile limit {lim:g} (hardware max {hw_max or lim:g})")
@@ -212,6 +227,22 @@ class Safety:
             for alias in ("iq", "pos"):
                 if not w.path(f"{alias}.{ax}"):
                     raise ValueError(f"axis{ax} has no {alias} telemetry")
+
+    def set_origin(self, ax: int, value: float | None = None, source: str = "gui") -> float:
+        """Set the axis zero (motor turns) used by the position window and joint angles.
+
+        Inputs: axis index, and a position in motor turns (None = where the rotor is now).
+        Output: the new zero. It resets to 0 whenever the board reconnects, because
+        the encoder count restarts at boot.
+        """
+        if value is None:
+            value = self.worker.latest.get(self.worker.path(f"pos.{ax}") or "")
+            if not isinstance(value, float):
+                raise ValueError(f"axis{ax} has no position reading yet")
+        old = self.origin.get(ax, 0.0)
+        self.origin[ax] = float(value)
+        self.audit.add("config", source, f"axis{ax}.origin", old, float(value), detail="zero set")
+        return float(value)
 
     def _reset_setpoints(self, t: Transport, ax: int) -> None:
         """Start closed loop at rest: hold the current position, zero velocity, torque and the integrator.
@@ -328,6 +359,9 @@ class Safety:
         v = dict(zip(cols, values))
         p = self.profile
         get = lambda alias: v.get(w.path(alias) or "")
+        if w.generation != self._origin_gen:
+            self._origin_gen = w.generation
+            self.origin = {0: 0.0, 1: 0.0}
         vbus = get("vbus")
         for ax in (0, 1):
             state = get(f"state.{ax}")
@@ -365,9 +399,10 @@ class Safety:
                 return f"velocity {vel:.2f} turn/s above limit"
             if p.get("limits.enforce_pos_limits", False):
                 pos = get(f"pos.{ax}")
-                span = float(p.get("limits.pos_max_turns")) - float(p.get("limits.pos_min_turns"))
-                margin = 0.05 * span
-                if isinstance(pos, float) and not (p.get("limits.pos_min_turns") - margin <= pos <= p.get("limits.pos_max_turns") + margin):
+                lo = self.origin.get(ax, 0.0) + float(p.get("limits.pos_min_turns"))
+                hi = self.origin.get(ax, 0.0) + float(p.get("limits.pos_max_turns"))
+                margin = 0.05 * (hi - lo)
+                if isinstance(pos, float) and not (lo - margin <= pos <= hi + margin):
                     return f"position {pos:.2f} turns outside limits"
         return None
 
@@ -429,4 +464,5 @@ class Safety:
             "alarms": [a for a in self.alarms.values() if a["shelved_until"] < now],
             "shelved": [a for a in self.alarms.values() if a["shelved_until"] >= now],
             "first_out": self.first_out,
+            "origin": self.origin,
         }

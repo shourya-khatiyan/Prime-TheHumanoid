@@ -54,7 +54,11 @@ function Tuning({ ax }: { ax: number }) {
                 ['velocity', 'velocity'],
               ]}
               value={mode}
-              onChange={setMode}
+              onChange={(m) => {
+                setMode(m)
+                // below ~0.5 turn/s friction and encoder speed noise hide the response
+                setAmp(m === 'velocity' ? 1 : 0.1)
+              }}
             />
           </F>
           <F label="amplitude" unit={mode === 'position' ? 'turn' : 'turn/s'}>

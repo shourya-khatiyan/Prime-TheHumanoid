@@ -5,6 +5,7 @@ import { act, P, startJob, useAliasLatest, useApp, useJobRunner, useLatest } fro
 import { AXIS_STATES, enumDef } from '../lib/meta'
 import { fmt, num } from '../lib/format'
 import { CurrentPlot, MotionPlot } from './panels'
+import { AnglePanel, PushPanel } from './AnglePush'
 
 const KIND = { 1: 'torque', 2: 'vel', 3: 'pos' } as const
 
@@ -33,13 +34,14 @@ function Setpoint({ ax, kind, active }: { ax: number; kind: 'pos' | 'vel' | 'tor
     [`input_${kind}.${ax}`, `iq_set.${ax}`, `iq.${ax}`, `current_lim.${ax}`, `kt.${ax}`, `pos.${ax}`, `vel.${ax}`],
     8,
   )
+  const origin = useApp((s) => s.status?.safety.origin?.[ax] ?? 0)
   const kt = Number.isFinite(num(ktDev)) && num(ktDev) > 0 ? num(ktDev) : profile.derived.kt_nm_per_a
   const ratio = Number(profile.gear.ratio ?? 30)
   const eff = Number(profile.gear.efficiency ?? 0.87)
   const maxCurA = Number.isFinite(num(curLim)) && num(curLim) > 0 ? Math.min(num(curLim), profile.motor.current_peak_a) : profile.motor.current_continuous_a
 
-  const lo = kind === 'pos' ? profile.limits.pos_min_turns : kind === 'vel' ? -profile.limits.vel_max_turns_s : -(maxCurA * kt)
-  const hi = kind === 'pos' ? profile.limits.pos_max_turns : kind === 'vel' ? profile.limits.vel_max_turns_s : maxCurA * kt
+  const lo = kind === 'pos' ? origin + profile.limits.pos_min_turns : kind === 'vel' ? -profile.limits.vel_max_turns_s : -(maxCurA * kt)
+  const hi = kind === 'pos' ? origin + profile.limits.pos_max_turns : kind === 'vel' ? profile.limits.vel_max_turns_s : maxCurA * kt
   const [slider, setSlider] = useState(0)
   useEffect(() => setSlider(num(cur) || 0), [cur])
   const send = (v: number) => act('setpoint', { axis: ax, kind, value: v }).catch(() => undefined)
@@ -71,6 +73,12 @@ function Setpoint({ ax, kind, active }: { ax: number; kind: 'pos' | 'vel' | 'tor
           <NumInput value={cmdTorque} onCommit={send} disabled={!active} width={96} />
           <span className="unit">Nm (Kt={fmt(kt, 4)})</span>
         </div>
+
+        <PropRow path={P(`vel_limit.${ax}`)} label="speed cap (vel_limit)" />
+        <span className="muted" style={{ fontSize: 'var(--fs-tick)' }}>
+          With no load, any torque above friction accelerates the rotor until this speed cap. Under load (stick on the scale) the torque presses instead of
+          spinning. Keep the cap low (1-2 turn/s) for torque tests.
+        </span>
 
         <input
           type="range"
@@ -118,10 +126,12 @@ function Setpoint({ ax, kind, active }: { ax: number; kind: 'pos' | 'vel' | 'tor
     )
   }
 
+  // joint angles are measured from the zero set with "set zero here"; speeds need no offset
+  const zero = kind === 'pos' ? origin : 0
   const cmdVal = Number.isFinite(num(cur)) ? num(cur) : 0
-  const cmdJoint = (cmdVal * 360) / ratio
+  const cmdJoint = ((cmdVal - zero) * 360) / ratio
   const measVal = kind === 'pos' ? num(posMeas) : num(velMeas)
-  const measJoint = Number.isFinite(measVal) ? (measVal * 360) / ratio : undefined
+  const measJoint = Number.isFinite(measVal) ? ((measVal - zero) * 360) / ratio : undefined
 
   return (
     <div className="col">
@@ -138,7 +148,7 @@ function Setpoint({ ax, kind, active }: { ax: number; kind: 'pos' | 'vel' | 'tor
 
       <div className="field">
         <label>{kind === 'pos' ? `joint target (${ratio}:1)` : `joint speed (${ratio}:1)`}</label>
-        <NumInput value={cmdJoint} onCommit={(deg) => send((deg / 360) * ratio)} disabled={!active} width={96} />
+        <NumInput value={cmdJoint} onCommit={(deg) => send(zero + (deg / 360) * ratio)} disabled={!active} width={96} />
         <span className="unit">{kind === 'pos' ? 'deg' : 'deg/s'}</span>
       </div>
 
@@ -579,7 +589,7 @@ export function Control() {
     [`state.${ax}`, `ctrl_mode.${ax}`, `input_mode.${ax}`, `error.${ax}`, `motor_cal.${ax}`, `enc_ready.${ax}`, `enc_use_index.${ax}`, `enc_index.${ax}`],
     8,
   )
-  const [subTab, setSubTab] = useState<'drive' | 'openloop' | 'gains' | 'encoder'>('drive')
+  const [subTab, setSubTab] = useState<'drive' | 'angle' | 'openloop' | 'gains' | 'encoder'>('drive')
   const kind = KIND[num(cm) as 1 | 2 | 3] ?? 'pos'
   const imDef = enumDef(meta, P(`input_mode.${ax}`))
   const reqState = (s: number) => act('write', { path: P(`req_state.${ax}`), value: s }).catch(() => undefined)
@@ -620,7 +630,10 @@ export function Control() {
             <Button kind={num(state) === 8 ? 'on' : 'primary'} onClick={() => reqState(8)}>
               closed loop
             </Button>
-            <Button onClick={() => act('clear_errors', { axis: ax })}>clear errors</Button>
+            <Button onClick={() => act('clear_errors', { axis: ax }).catch(() => undefined)}>clear errors</Button>
+            <Button onClick={() => act('set_origin', { axis: ax }).catch(() => undefined)} title="Make the current rotor position the zero for angles and the position window">
+              set zero here
+            </Button>
           </div>
           <div className="row" style={{ gap: 8 }}>
             <span className="muted" style={{ fontSize: 'var(--fs-micro)' }}>CALIBRATION:</span>
@@ -648,6 +661,7 @@ export function Control() {
           <Tabs
             tabs={[
               ['drive', 'closed-loop drive'],
+              ['angle', 'angle & push'],
               ['openloop', 'open-loop spin'],
               ['gains', 'gains & limits'],
               ['encoder', 'encoder setup'],
@@ -698,6 +712,17 @@ export function Control() {
                 <Generator key={kind} ax={ax} kind={kind} active={active} />
               </div>
             </Panel>
+          )}
+
+          {subTab === 'angle' && (
+            <>
+              <Panel index="05A" title="MOVE TO ANGLE (TRAPEZOIDAL TRAJECTORY)" status={active ? 'live' : undefined}>
+                <AnglePanel ax={ax} active={active} />
+              </Panel>
+              <Panel index="05B" title="PUSH TEST (TORQUE AGAINST A SCALE)">
+                <PushPanel ax={ax} />
+              </Panel>
+            </>
           )}
 
           {subTab === 'openloop' && (

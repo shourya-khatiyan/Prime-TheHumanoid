@@ -118,7 +118,8 @@ async def gain_sweep(ctx: JobCtx, params: dict) -> dict:
                 break
             res = await one_step(ctx, axis, mode, base, amp, hold)
             m = res["metrics"]
-            score = (m["iae"] or 1e9) * (1 + (m["overshoot_pct"] or 0) / 20)
+            # a gain that never reaches 90 % of the step has no overshoot but did not track; rank it last
+            score = (m["iae"] or 1e9) * (1 + (m["overshoot_pct"] or 0) / 20) * (1 if m["rise_s"] is not None else 1e3)
             rows.append({"value": val, "metrics": m, "score": score, "trace": res["trace"]})
             ctx.log(f"{gain}={val:g}: overshoot {m['overshoot_pct']:.1f} %, settle {m['settle_s']}, iae {m['iae']:.4f}" if m["iae"] is not None else f"{gain}={val:g}: no data")
             ctx.progress((i + 1) / len(values))

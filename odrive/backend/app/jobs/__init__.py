@@ -163,6 +163,13 @@ class JobCtx:
         except Exception as ex:
             log.warning("idle failed: %s", ex)
 
+    async def restore(self, path: str, value: Any) -> None:
+        """Write a saved setting back, even after an abort; never raises."""
+        try:
+            await asyncio.to_thread(self._confirmed, lambda tok: self.safety.write(path, value, tok, self.source))
+        except Exception as ex:
+            log.warning("restore %s failed: %s", path, ex)
+
     async def wait_state(self, ax: int, leave: int | None = None, reach: int | None = 1, timeout: float = 60.0) -> int:
         """Wait until the axis leaves `leave` (if given) and then reaches `reach`.
 

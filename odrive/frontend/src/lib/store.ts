@@ -19,7 +19,7 @@ export type Status = {
     generation: number
     last_error: string
   }
-  safety: { active_axes: number[]; watchdog_axes: number[]; alarms: Alarm[]; shelved: Alarm[]; first_out: string | null }
+  safety: { active_axes: number[]; watchdog_axes: number[]; alarms: Alarm[]; shelved: Alarm[]; first_out: string | null; origin?: Record<string, number> }
   jobs: string[]
   recording: boolean
   can: { open: boolean; interface?: string; channel?: string; bitrate?: number; rx: number; tx: number; errors: number; last_error: string }

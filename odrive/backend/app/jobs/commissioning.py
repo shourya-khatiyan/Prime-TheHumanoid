@@ -229,11 +229,13 @@ async def calibrate(ctx: JobCtx, params: dict) -> dict:
     if kind in ("motor", "full"):
         r_nom = float(pr.get("motor.phase_resistance_ohm"))
         tol = float(pr.get("motor.resistance_tolerance", 0.5))
-        ok_r = bool(cal) and abs(r - r_nom) <= tol * r_nom
-        ok_l = bool(cal) and 2e-6 <= l <= 4e-3
+        # after a failed calibration the device still reports the previous (stored) R and L
+        stale = " (old value: this calibration failed)" if errs else ""
+        ok_r = bool(cal) and not errs and abs(r - r_nom) <= tol * r_nom
+        ok_l = bool(cal) and not errs and 2e-6 <= l <= 4e-3
         result["checks"] += [
-            {"id": "phase_r", "ok": ok_r, "msg": f"R = {r * 1000:.1f} mOhm (expect {r_nom * 1000:.0f} +- {tol * 100:.0f} %)"},
-            {"id": "phase_l", "ok": ok_l, "msg": f"L = {l * 1e6:.1f} uH (plausible 2..4000 uH)"},
+            {"id": "phase_r", "ok": ok_r, "msg": f"R = {r * 1000:.1f} mOhm (expect {r_nom * 1000:.0f} +- {tol * 100:.0f} %){stale}"},
+            {"id": "phase_l", "ok": ok_l, "msg": f"L = {l * 1e6:.1f} uH (plausible 2..4000 uH){stale}"},
         ]
     if kind in ("encoder", "full"):
         off_path = ctx.worker.path(f"enc_offset.{axis}")

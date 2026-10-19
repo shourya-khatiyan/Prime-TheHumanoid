@@ -13,6 +13,8 @@ Every write and call from the UI, the console and jobs goes through `app/safety.
 | actuator profile | `profiles/vayn_shoulder.yaml` (edit in Configuration > actuator profile). Limits below come from it |
 | limit writes | `current_lim`, `calibration_current`, `torque_lim`, `vel_limit`, trap `vel_limit`, `dc_bus_overvoltage_trip_level`, `dc_max_positive_current`, `resistance_calib_max_voltage` (<= vbus/2) are rejected above the profile. Raising any of them needs confirmation |
 | setpoints | `input_pos/vel/torque` are clamped to the profile envelope; only accepted while this GUI activated the axis |
+| position window | `limits.pos_min/max_turns` are measured from the axis zero (`set zero here`, resets to 0 when the board reconnects). If the rotor is already outside the window (e.g. after spinning in torque or velocity mode) position commands are refused instead of clamped, because a clamp would drive the axis across the whole range at full speed |
+| mode switch | changing `control_mode` while in closed loop first resets the setpoints (hold position, zero speed and torque), so the new loop does not chase a stale target |
 | energizing | any `requested_state` other than IDLE needs a hold-to-confirm, and a preflight: bus voltage in window, current/velocity limits and over-voltage trip within the profile |
 | closed-loop entry | starts at rest: `input_pos` = current position, `input_vel`, `input_torque` and the velocity integrator = 0. The ODrive keeps setpoints after a fault, so otherwise the setpoint that tripped the axis would be re-applied instantly |
 | brake resistor | a fault can disarm it, and fw 0.5.1 re-arms it only at boot. Clear errors detects `BRAKE_RESISTOR_DISARMED` and asks to reboot the board |

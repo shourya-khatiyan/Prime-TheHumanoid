@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import statistics
+import time
 
 from ..storage import save_report
 from .analysis import linear_fit
@@ -111,6 +112,146 @@ async def kt_efficiency(ctx: JobCtx, params: dict) -> dict:
     ctx.log(f"output Kt {fit['k']:.3f} Nm/A vs ideal {ideal:.3f} -> efficiency {eff * 100:.1f} %" if eff else "fit failed")
     result["report_id"] = save_report("kt_efficiency", {"kind": "kt_efficiency", **result, "verdict": "pass"},
                                       f"# Kt / efficiency axis{axis}\n\nKt_out {fit['k']} Nm/A, ideal {ideal}, efficiency {eff}\n")["id"]
+    return result
+
+
+TORQUE_RAMP, TRAP_TRAJ = 6, 5
+
+
+async def _wait_contact(ctx: JobCtx, axis: int, start: float, sign: int, vel_motor: float, ratio: float,
+                        max_travel_deg: float, min_s: float, timeout_s: float) -> float:
+    """Wait until the joint stalls against the load (push-mode contact detection).
+
+    Returns the joint travel in degrees at contact. Raises if the joint travels past
+    `max_travel_deg` (no load in the way) or nothing settles within `timeout_s`.
+    """
+    t0 = time.monotonic()
+    still_since = None
+    while (elapsed := time.monotonic() - t0) < timeout_s:
+        pos, vel, state = await ctx.get(f"pos.{axis}", f"vel.{axis}", f"state.{axis}")
+        if state != 8:
+            raise RuntimeError(f"axis left closed loop during the push: {await ctx.errors(axis)}")
+        travel = sign * (pos - start) * 360.0 / ratio
+        if travel > max_travel_deg:
+            raise RuntimeError(f"no contact within {max_travel_deg:g} deg of joint travel; move the load closer or raise max travel")
+        # contact = stalled (speed below 15 % of the approach speed) for 0.3 s after the force ramp is done
+        if elapsed > min_s and abs(vel) < 0.15 * vel_motor:
+            still_since = still_since or time.monotonic()
+            if time.monotonic() - still_since > 0.3:
+                return travel
+        else:
+            still_since = None
+        await ctx.sleep(0.05)
+    raise RuntimeError("the joint did not settle against the load in time")
+
+
+@job("push_test", "Push against a load (torque test)", energizes=True)
+async def push_test(ctx: JobCtx, params: dict) -> dict:
+    """Push mode: approach a load slowly, push with each current in turn, record the scale reading.
+
+    Works like the push mode of industrial servo actuators: the motor runs in torque control
+    with a speed cap, so it travels at the approach speed until it meets the load, then the
+    full torque presses on it.
+
+    Params:
+        axis; direction (+1 / -1); approach_deg_s (joint speed before contact);
+        currents (A, pushed one after the other); ramp_s (time to build up each push);
+        max_travel_deg (joint travel allowed before contact, otherwise abort);
+        arm_length_m (joint axis to the scale contact, 0 = only report torque);
+        settle_s (wait after contact before measuring); return_to_start (bool).
+    Returns:
+        points with commanded/measured current, estimated and scale-measured joint torque,
+        plus a fit of output torque vs current (Kt at the output, gearbox efficiency).
+    """
+    pr = ctx.safety.profile
+    axis = int(params.get("axis", pr.axis))
+    sign = 1 if float(params.get("direction", 1)) >= 0 else -1
+    ratio = float(pr.gear_ratio)
+    eff = float(pr.get("gear.efficiency", 0.87))
+    approach = max(0.5, min(60.0, float(params.get("approach_deg_s", 10.0))))
+    vel_motor = approach * ratio / 360.0
+    currents = [float(c) for c in params.get("currents", [2.0])]
+    max_cur = float(pr.get("motor.current_continuous_a"))
+    if not currents or len(currents) > 12 or any(c <= 0 or c > max_cur for c in currents):
+        raise ValueError(f"give 1-12 push currents between 0 and {max_cur:g} A (continuous limit)")
+    ramp = max(0.1, min(10.0, float(params.get("ramp_s", 1.0))))
+    max_travel = max(1.0, min(360.0, float(params.get("max_travel_deg", 30.0))))
+    arm = max(0.0, float(params.get("arm_length_m", 0.0)))
+    settle = max(0.2, min(10.0, float(params.get("settle_s", 1.0))))
+    ret = bool(params.get("return_to_start", True))
+
+    kt = float((await ctx.get(f"kt.{axis}"))[0])
+    tq_path, mode_path = ctx.p(f"input_torque.{axis}"), ctx.p(f"input_mode.{axis}")
+    ramp_path = f"axis{axis}.controller.config.torque_ramp_rate"
+    traj = {k: f"axis{axis}.trap_traj.config.{k}" for k in ("vel_limit", "accel_limit", "decel_limit")}
+    vel_lim_path = ctx.worker.path(f"torque_mode_vel_limit.{axis}")
+    saved = dict(zip([ctx.p(f"vel_limit.{axis}"), ramp_path, *traj.values()],
+                     await ctx.read(ctx.p(f"vel_limit.{axis}"), ramp_path, *traj.values())))
+    if ret:
+        # the return move is a position command, so refuse early if the axis is outside its window
+        ctx.safety.clamp_setpoint(ctx.p(f"input_pos.{axis}"), float((await ctx.get(f"pos.{axis}"))[0]))
+    if vel_lim_path:
+        await ctx.write(vel_lim_path, True)
+    await ctx.write(ctx.p(f"vel_limit.{axis}"), vel_motor)
+    start = await enter_closed_loop(ctx, axis, "torque")
+    ctx.log(f"approach {'+' if sign > 0 else '-'} at {approach:g} deg/s (joint), max travel {max_travel:g} deg")
+    points = []
+    try:
+        await ctx.write(mode_path, TORQUE_RAMP)
+        for i, cur in enumerate(currents):
+            await ctx.write(ramp_path, cur * kt / ramp)
+            await ctx.write(tq_path, sign * cur * kt)
+            travel = await _wait_contact(ctx, axis, start, sign, vel_motor, ratio, max_travel, ramp + 0.2,
+                                         ramp + max_travel / approach + 5.0)
+            await ctx.sleep(settle)
+            iq = statistics.fmean([abs((await ctx.get(f"iq.{axis}"))[0]) for _ in range(10)])
+            joint_est = iq * kt * ratio * eff
+            expect_kg = joint_est / (arm * 9.81) if arm > 0 else None
+            ctx.log(f"contact after {travel:.1f} deg; pushing {cur:g} A (measured {iq:.2f} A) = {joint_est:.2f} Nm at the joint (est.)")
+            ans = await ctx.ask(
+                f"Pushing with {cur:g} A (measured {iq:.2f} A), about {joint_est:.2f} Nm at the joint"
+                + (f", the scale should read about {expect_kg:.2f} kg" if expect_kg is not None else "")
+                + ". Enter the scale reading (0 to skip).",
+                ["Record"], [{"key": "kg", "label": "scale", "unit": "kg"}])
+            kg = float((ans.get("values") or {}).get("kg", 0) or 0)
+            measured = kg * 9.81 * arm if kg > 0 and arm > 0 else None
+            points.append({"current_cmd": cur, "iq": iq, "travel_deg": travel, "joint_torque_est_nm": joint_est,
+                           "expected_kg": expect_kg, "scale_kg": kg or None, "joint_torque_meas_nm": measured,
+                           "efficiency": measured / (iq * kt * ratio) if measured else None})
+            ctx.log(f"{cur:g} A: scale {kg:g} kg -> {measured:.2f} Nm measured" if measured else f"{cur:g} A: no scale reading")
+            ctx.progress((i + 1) / len(currents))
+    finally:
+        try:
+            # release the load, then optionally drive back to the start angle along a gentle trajectory
+            await ctx.write(mode_path, 1)
+            await ctx.write(tq_path, 0.0)
+            if ret and (await ctx.get(f"state.{axis}"))[0] == 8:
+                for k in ("vel_limit", "accel_limit", "decel_limit"):
+                    await ctx.write(traj[k], vel_motor if k == "vel_limit" else 2 * vel_motor)
+                await ctx.write(ctx.p(f"ctrl_mode.{axis}"), 3)
+                await ctx.write(mode_path, TRAP_TRAJ)
+                await ctx.write(ctx.p(f"input_pos.{axis}"), start)
+                t0 = time.monotonic()
+                while time.monotonic() - t0 < max_travel / approach + 5.0:
+                    if abs((await ctx.get(f"pos.{axis}"))[0] - start) < 0.01:
+                        break
+                    await ctx.sleep(0.1)
+        finally:
+            # runs after an abort too, so the approach speed cap never stays behind
+            await ctx.idle(axis)
+            await ctx.restore(mode_path, 1)
+            for path, val in saved.items():
+                await ctx.restore(path, val)
+    done = [p for p in points if p["joint_torque_meas_nm"]]
+    fit = linear_fit([p["iq"] for p in done], [p["joint_torque_meas_nm"] for p in done]) if len(done) >= 2 else {"k": None, "b": None, "r2": None}
+    result = {"axis": axis, "direction": sign, "approach_deg_s": approach, "arm_length_m": arm, "points": points,
+              "kt_out_nm_per_a": fit["k"], "offset_nm": fit["b"], "r2": fit["r2"], "kt_ideal_out": kt * ratio,
+              "efficiency": fit["k"] / (kt * ratio) if fit["k"] else None}
+    rows = "\n".join(f"| {p['current_cmd']:g} | {p['iq']:.2f} | {p['joint_torque_est_nm']:.2f} | {p['scale_kg'] or '-'} | "
+                     f"{p['joint_torque_meas_nm'] and round(p['joint_torque_meas_nm'], 2) or '-'} |" for p in points)
+    result["report_id"] = save_report("push_test", {"kind": "push_test", **result, "verdict": "pass"},
+                                      f"# Push test axis{axis}\n\narm {arm} m, approach {approach} deg/s\n\n"
+                                      f"| cmd A | Iq A | joint est Nm | scale kg | joint meas Nm |\n|---|---|---|---|---|\n{rows}\n")["id"]
     return result
 
 

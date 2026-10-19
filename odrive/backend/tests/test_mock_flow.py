@@ -171,6 +171,31 @@ def test_abz_index_search_then_offset_and_cpr_check(cli):
     assert abs(spin["result"]["counts_per_turn"] - 4000) < 200, spin["result"]
 
 
+def test_position_window_follows_zero_and_mode_switch_is_bumpless(cli):
+    cli.ok("clear_errors", axis=0)
+    cli.ok("write", path="axis0.controller.config.control_mode", value=1)
+    cli.confirmed("write", path="axis0.requested_state", value=8)
+    time.sleep(0.3)
+    # an axis far outside its window must be refused, not dragged back across the range
+    cli.ok("set_origin", axis=0, value=1000.0)
+    res = cli.rpc("setpoint", axis=0, kind="pos", value=1000.0)
+    assert not res["ok"] and "outside the position window" in res["error"], res
+    cli.ok("set_origin", axis=0)
+    cli.ok("write", path="axis0.controller.config.control_mode", value=3)
+    vals = cli.ok("read", paths=["axis0.controller.input_pos", "axis0.encoder.pos_estimate"])
+    assert abs(vals["axis0.controller.input_pos"] - vals["axis0.encoder.pos_estimate"]) < 0.05, vals
+    cli.ok("setpoint", axis=0, kind="pos", value=vals["axis0.encoder.pos_estimate"] + 0.1)
+    cli.ok("disarm", reason="test")
+    time.sleep(0.3)
+
+
+def test_push_test_aborts_without_contact(cli):
+    j = cli.wait_job(cli.confirmed("job_start", kind="push_test", params={
+        "axis": 0, "currents": [1.0], "approach_deg_s": 30, "max_travel_deg": 5, "ramp_s": 0.2})["id"])
+    assert j["state"] == "failed" and "no contact" in j["error"], j
+    assert cli.ok("read", paths=["axis0.current_state"])["axis0.current_state"] == 1
+
+
 def test_step_response_job(cli):
     j = cli.wait_job(cli.confirmed("job_start", kind="step_response", params={"axis": 0, "mode": "position", "amplitude": 0.1, "hold_s": 0.8})["id"])
     assert j["state"] == "done", j

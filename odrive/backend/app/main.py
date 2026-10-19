@@ -216,6 +216,10 @@ async def op_clear_errors(a: dict) -> dict:
     return {"ok": True}
 
 
+async def op_set_origin(a: dict) -> dict:
+    return {"origin": safety.set_origin(int(a["axis"]), a.get("value"))}
+
+
 async def op_ack(a: dict) -> dict:
     safety.ack(a.get("key"))
     return {"ok": True}
