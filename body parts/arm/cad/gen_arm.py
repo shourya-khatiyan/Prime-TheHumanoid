@@ -1,18 +1,18 @@
-"""Build the VAYN arm Rev 0 as exact OpenCascade solids and check it.
+"""Build the VAYN arm Rev 2 (twin plates, direct-drive LA8308 elbow) as exact OpenCascade solids and check it.
 
-Upper arm (two ASA prints bolted at a mid-span collar; shoulder half = two
-plates joined by x-braced walls, elbow half = closed shell), elbow clevis
-(front ring, hard stop, passive pin with an absolute output encoder), forearm
-= octagon cone of rings and 8 corner bars with an integral cheek A, a separate
-cheek B and the wrist interface for a future hand (no hand in v0). The shoulder
-and the elbow actuator are rebuilt from their own generators and placed in
-the arm frame, so every interface is checked against the real parts.
-All dimensions come from arm_params.py. Writes, beside this script:
-  arm.step          coloured, named assembly (shoulder + elbow + arm)
+Upper arm = two shaped PETG plates (each printed in two pieces joined by a
+glued, screwed half-lap) held apart by printed spacer sleeves; the LA8308
+sits between them on four standoffs. The rotor drives a printed hub that
+passes through the outer plate and carries the forearm outer plate; the
+forearm inner plate pivots on a printed stub through a 6705 bearing in an
+o-ring seat. The forearm is two PETG truss plates with spacer sleeves and a
+wrist block. Two forearm spacers wear silicone sleeves and are the hard
+stops. All dimensions come from arm_params.py. Writes, beside this script:
+  arm.step          coloured, named assembly (shoulder + arm)
   arm.3mf           named, coloured meshes
   arm_stl.zip       every arm part, assembled position
-  arm_print.zip     printed arm parts, in print orientation on the bed
-  arm_preview.png   rendered views at 0, 90 and 140 deg flexion
+  arm_print.zip     printed arm parts in print orientation + the fit coupon
+  arm_preview.png   rendered views at 0, 90 and 138 deg flexion
   mass.txt          part masses and centres of mass (read by calc.py)
 
 Run with the D: environment:
@@ -29,7 +29,6 @@ import matplotlib
 import numpy as np
 
 import arm_params as p
-from arm_params import ep
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -37,535 +36,402 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "shoulder", "cad"))
-import gen_actuator as el  # noqa: E402  (elbow generator, elbow/cad is on the path via arm_params)
-import gen_actuator_3mf as g  # noqa: E402
+import gen_actuator_3mf as g  # noqa: E402  (shoulder module, path set above)
 import gen_actuator_occ as occ  # noqa: E402
 
 OUT = os.path.join(HERE, "arm")
-REV = "0"
-g.MATERIALS.update({"NBR O-ring": ("#1A1A1A", 1.30)})
-# printed part -> rotation (deg, x then y then z) that puts its bed face down
-PRINT = {104: (90, 0, 0), 108: (90, 0, 0), 110: (90, 0, 0), 125: (0, -90, 0), 128: (-90, 0, 0),
-         133: (90, 0, 0), 140: (90, 0, 0)}
-MOVING = {125, 126, 127, 128, 129, 130, 131, 133, 139, 140, 141, 142, 143}  # turn with the forearm
-ELBOW_SKIP = ("30.", "31.")  # elbow flange washers + m3 x 12: replaced by arm parts 116/117
+REV = "2.0"
+BIG = 1000.0
+
+g.MATERIALS.update({
+    "PETG": ("#3F6FB5", p.RHO_PETG),
+    "PETG forearm": ("#8A5FBF", p.RHO_PETG),
+    "Resin": ("#D8D8D8", 1.15),
+    "Brass insert": ("#C8A24A", 8.50),
+    "Silicone": ("#D9603B", 1.20),
+    "NBR O-ring": ("#1E1E1E", 1.30),
+})
+
+# print orientation (rx, ry, rz) in world; +y up = (90, 0, 0), +y down = (-90, 0, 0)
+PRINT = {201: (-90, 0, 0), 202: (-90, 0, 0), 203: (90, 0, 0), 204: (90, 0, 0), 205: (90, 0, 0), 206: (90, 0, 0),
+         207: (90, 0, 0), 208: (90, 0, 0), 209: (-90, 0, 0), 210: (90, 0, 0), 211: (180, 0, 0)}
+MOVING = {207, 208, 209, 210, 211, 217, 220, 221, 222, 223, 224, 225}  # turn with the forearm (218 pads stay on the upper plates)
 
 
-# ---------------------------------------------------------------- frames
-def flange_to_world(s):
-    """Shoulder flange frame (z = world y) -> world."""
-    return s.rotate((-90, 0, 0))
+# ---------------------------------------------------------------- frames and primitives (local frame: x = u, y = v, z = -world y)
+def to_world(s):
+    """Local (u, v, -y) -> world (x, y, z)."""
+    return s.rotate((90, 0, 0)).translate((0, 0, p.Z_ELBOW))
 
 
-def elbow_to_world(s):
-    """Elbow frame E (x fwd, y = s down, z = actuator axis) -> world, forearm at 0 deg."""
-    return s.rotate((-90, 0, 0)).translate((0, p.Y_E0, p.Z_ELBOW))
+def flex(s, th):
+    """Turn a world solid about the elbow axis by flexion th (deg): the hanging forearm swings forward."""
+    return s.translate((0, 0, -p.Z_ELBOW)).rotate((0, -th, 0)).translate((0, 0, p.Z_ELBOW))
 
 
-def flex(s, theta):
-    """Turn a forearm-side solid by theta deg of elbow flexion."""
-    return s.translate((0, 0, -p.Z_ELBOW)).rotate((0, -theta, 0)).translate((0, 0, p.Z_ELBOW))
+def V(q):
+    """Local vector from a (u, v) pair."""
+    return cq.Vector(q[0], q[1], 0)
 
 
-# ---------------------------------------------------------------- primitives
-def octagon(u0, u1, v0, v1, c, c1=None):
-    """Rectangle u0..u1 x v0..v1 with 45 deg corner chamfers (leg c, or c1 on the u1 side), as 8 (u, v) points."""
-    c1 = c if c1 is None else c1
-    return [(u0 + c, v0), (u1 - c1, v0), (u1, v0 + c1), (u1, v1 - c1), (u1 - c1, v1), (u0 + c, v1), (u0, v1 - c), (u0, v0 + c)]
+def arc(c, r, a0, a1):
+    """Circular arc edge round c from a0 to a1 (deg, ccw)."""
+    pts = [V((c[0] + r * math.cos(math.radians(a)), c[1] + r * math.sin(math.radians(a)))) for a in (a0, (a0 + a1) / 2, a1)]
+    return cq.Edge.makeThreePointArc(*pts)
 
 
-def loft(sections):
-    """Ruled loft through closed polygon sections given as lists of (x, y, z)."""
-    wires = [cq.Wire.makePolygon([cq.Vector(*q) for q in sec], close=True) for sec in sections]
-    return occ.Solid(cq.Solid.makeLoft(wires, True))
+def slab(wire, y0, y1):
+    """Extrude a closed (u, v) wire between world faces y0 < y1."""
+    face = cq.Face.makeFromWires(wire)
+    return occ.Solid(cq.Solid.extrudeLinear(face, cq.Vector(0, 0, y1 - y0)).translate(cq.Vector(0, 0, -y1)))
 
 
-def prism(pts, z0, z1):
-    """Straight extrusion of a closed (x, y) polygon from z0 to z1."""
-    w = cq.Wire.makePolygon([cq.Vector(x, y, z0) for x, y in pts], close=True)
-    return occ.Solid(cq.Solid.extrudeLinear(w, [], cq.Vector(0, 0, z1 - z0)))
+def poly(pts, y0, y1):
+    """Prism of a (u, v) polygon between world faces y0 < y1."""
+    return slab(cq.Wire.makePolygon([V(q) for q in pts], close=True), y0, y1)
 
 
-def fillet_box(x0, x1, y0, y1, z0, z1, r, edges="|Z"):
-    """Box with the selected edges (all when None) rounded to radius r."""
-    s = cq.Workplane("XY").box(x1 - x0, y1 - y0, z1 - z0, centered=False).edges(edges).fillet(r).val()
-    return occ.Solid(s).translate((x0, y0, z0))
+def ycyl(r, y0, y1, u=0.0, v=0.0):
+    """Cylinder along world y between y0 < y1 at (u, v)."""
+    return occ.cyl(r, -y1, -y0, u, v)
 
 
-def rounded_hex(af, r, z0, z1):
-    """Hexagon prism across flats af, corners at 0 + 60k deg rounded to r."""
-    s = cq.Workplane("XY").polygon(6, 2 * af / math.sqrt(3)).extrude(z1 - z0).edges("|Z").fillet(r).val()
-    return occ.Solid(s).translate((0, 0, z0))
+def ytube(ro, ri, y0, y1, u=0.0, v=0.0):
+    """Tube along world y."""
+    return ycyl(ro, y0, y1, u, v) - ycyl(ri, y0 - 1, y1 + 1, u, v)
 
 
-def teardrop(r, x, y, z0, z1):
-    """Cylinder along z with a 45 deg point toward -x, so it prints with -x down and no support."""
-    k = r / math.sqrt(2)
-    return occ.cyl(r, z0, z1, x, y) + prism([(x - r * math.sqrt(2), y), (x - k, y - k), (x, y), (x - k, y + k)], z0, z1)
+def ybox(u0, u1, v0, v1, y0, y1):
+    """Box in (u, v, world y)."""
+    return occ.box(u0, u1, v0, v1, -y1, -y0)
 
 
-def window(pts, r, w0, w1, origin, x_dir, normal):
-    """Window prism: closed (u, v) polygon in the plane (origin, x_dir, normal), corners rounded r, from w0 to w1 along normal."""
-    wp = cq.Workplane(cq.Plane(tuple(map(float, origin)), tuple(map(float, x_dir)), tuple(map(float, normal)))).workplane(offset=w0)
-    s = wp.polyline(pts).close().extrude(w1 - w0)
-    return occ.Solid(s.edges(cq.selectors.ParallelDirSelector(cq.Vector(*normal))).fillet(r).val())
+def vcyl(r, v0, v1, u, y):
+    """Cylinder along v (arm length) at (u, world y)."""
+    return occ.Solid(cq.Solid.makeCylinder(r, v1 - v0, cq.Vector(u, v0, -y), cq.Vector(0, 1, 0)))
 
 
-def tangent_point(px, py, r):
-    """Tangent point on the circle r round the origin seen from (px, py), clockwise side."""
-    a, b = math.atan2(py, px), math.acos(r / math.hypot(px, py))
-    return r * math.cos(a - b), r * math.sin(a - b)
+def csk(u, v, y_face, length, d, into):
+    """Countersunk screw flush with world face y_face, shank going into = +1 (+y) or -1."""
+    return g.csk(u, v, -y_face, length, d, -into)
 
 
-def ycyl(r, y0, y1, x=0.0, z=0.0):
-    """Cylinder along +y between y0 and y1, centred at (x, z)."""
-    return occ.cyl(r, y0, y1, x, -z).rotate((-90, 0, 0))
+def csk_hole(u, v, y_face, depth, d, into):
+    """Countersunk clearance hole matching csk()."""
+    return g.csk_hole(u, v, -y_face, depth, d, -into)
 
 
-def along_y(s, x=0.0, z=0.0):
-    """Turn a solid built along +z so it runs along +y, then move it to (x, z)."""
-    return s.rotate((-90, 0, 0)).translate((x, 0, z))
+def shcs(u, v, y_face, length, d, into):
+    """Socket head cap screw, head on world face y_face, shank going into."""
+    return g.shcs(u, v, -y_face, length, d, -into)
 
 
-def arc_slot(r, w, a0, a1, z0, z1):
-    """Round-ended slot of width w on radius r from angle a0 to a1 (deg)."""
-    pts = [(0.0, 0.0)] + [p.polar(2 * r, a) for a in np.linspace(a0, a1, 16)]
-    s = occ.tube(r + w / 2, r - w / 2, z0, z1) ^ prism(pts, z0 - 1, z1 + 1)
-    return s + occ.cyl(w / 2, z0, z1, *p.polar(r, a0)) + occ.cyl(w / 2, z0, z1, *p.polar(r, a1))
+def insert(u, v, y_face, into, length=5.7):
+    """Brass m3 heat-set insert from world face y_face going into."""
+    y0, y1 = (y_face, y_face + length) if into > 0 else (y_face - length, y_face)
+    return ytube(p.SPACER_INSERT["d_hole"] / 2, 1.5, y0, y1, u, v)
 
 
-def holes(r_hole, z0, z1, r, angles):
-    """Union of z cylinders of radius r_hole on radius r at each angle (elbow ring_of)."""
-    return el.ring_of(lambda x, y: occ.cyl(r_hole, z0, z1, x, y), r, angles)
+def union(parts):
+    """Fuse a list of solids."""
+    out = parts[0]
+    for s in parts[1:]:
+        out = out + s
+    return out
 
 
-def insert(d_hole, d_thread, z_face, length, direction, x=0.0, y=0.0):
-    """Heat-set insert envelope from z_face going along direction."""
-    z0, z1 = (z_face, z_face + length) if direction > 0 else (z_face - length, z_face)
-    return occ.tube(d_hole / 2, d_thread / 2, z0, z1).translate((x, y, 0))
+# ---------------------------------------------------------------- outlines
+def upper_wire():
+    """Closed wire of the upper-arm plate outline (both plates)."""
+    U, sh = p.UPPER, (0.0, p.L_UPPER)
+    f0, b3 = p.polar(U["r_el"], 20.0), p.polar(U["r_el"], 160.0)
+    f3 = (sh[0] + p.polar(U["r_sh"], -20.0)[0], sh[1] + p.polar(U["r_sh"], -20.0)[1])
+    b0 = (sh[0] + p.polar(U["r_sh"], 200.0)[0], sh[1] + p.polar(U["r_sh"], 200.0)[1])
+    ha0, ha1 = U["heel_a"]
+    h0, h1 = p.polar(U["r_el"], ha0), p.polar(U["r_el"], ha1)
+    edges = [cq.Edge.makeBezier([V(q) for q in [f0, U["front"][1], U["front"][2], f3]]),
+             arc(sh, U["r_sh"], -20.0, 200.0),
+             cq.Edge.makeBezier([V(q) for q in [b0, U["back"][1], U["back"][2], b3]]),
+             arc((0.0, 0.0), U["r_el"], 160.0, ha0),
+             cq.Edge.makeLine(V(h0), V(U["heel"][0])), cq.Edge.makeLine(V(U["heel"][0]), V(U["heel"][1])),
+             cq.Edge.makeLine(V(U["heel"][1]), V(h1)),
+             arc((0.0, 0.0), U["r_el"], ha1, 380.0)]
+    return cq.Wire.assembleEdges(edges)
 
 
-def washer(w, z0, x=0.0, y=0.0):
-    """Flat washer dict(od, id, t) lying on z0."""
-    return occ.tube(w["od"] / 2, w["id"] / 2, z0, z0 + w["t"]).translate((x, y, 0))
+def fore_wire():
+    """Closed wire of the forearm plate outline (both plates)."""
+    F = p.FORE
+    a0, a1 = F["lobe_a"]
+    edges = [arc((0.0, 0.0), F["r_lobe"], a0, a1),
+             cq.Edge.makeBezier([V(q) for q in [p.polar(F["r_lobe"], a1)] + F["back"][1:]]),
+             cq.Edge.makeLine(V(F["back"][3]), V(F["front"][0])),
+             cq.Edge.makeBezier([V(q) for q in F["front"][:3] + [p.polar(F["r_lobe"], a0)]])]
+    return cq.Wire.assembleEdges(edges)
+
+
+def stadium(v0, v1, hw, y0, y1):
+    """Rounded slot along v."""
+    return ybox(-hw, hw, v0 + hw, v1 - hw, y0, y1) + ycyl(hw, y0, y1, 0, v0 + hw) + ycyl(hw, y0, y1, 0, v1 - hw)
+
+
+def bar(a, b, w, y0, y1):
+    """Straight truss bar of width w from (u, v) a to b."""
+    du, dv = b[0] - a[0], b[1] - a[1]
+    n = math.hypot(du, dv)
+    ou, ov = -dv / n * w / 2, du / n * w / 2
+    return poly([(a[0] + ou, a[1] + ov), (b[0] + ou, b[1] + ov), (b[0] - ou, b[1] - ov), (a[0] - ou, a[1] - ov)], y0, y1)
 
 
 # ---------------------------------------------------------------- upper arm
-def beam_section(z, inner=False):
-    """Upper-arm octagon section at world z (outer skin, or the cavity when inner)."""
-    xb, xf, y1, c = p.beam_station(z)
-    y0 = p.Y_BED
-    if inner:
-        t = p.BEAM_T
-        xb, xf, y0, y1, c = xb + t, xf - t, y0 + t, y1 - t, c - t * (2 - math.sqrt(2))
-    return [(u, v, z) for u, v in octagon(xb, xf, y0, y1, c)]
-
-
-def plate_section(z, inner=False):
-    """Shoulder-half beam section at world z: outer octagon, or the cavity between the plates and walls (roof chamfer under the outboard plate)."""
-    xb, xf, y1, _ = p.beam_station(z)
-    q = p.UA_TRUSS
-    if inner:
-        return [(v, u, z) for u, v in octagon(p.Y_BED + q["plate"], y1 - q["plate"], xb + q["wall"], xf - q["wall"], 1.0, q["roof_c"])]
-    return [(u, v, z) for u, v in octagon(xb, xf, p.Y_BED, y1, q["c"])]
-
-
-def joint_collar(z0, z1):
-    """Octagon flange round the beam at the mid-span joint, open in the middle for cables."""
-    xb, xf, _, _ = p.beam_station(p.Z_JOINT)
-    s = prism(octagon(xb - p.TAB_W, xf + p.TAB_W, p.Y_BED, p.BEAM_Y1, p.TAB_C), z0, z1)
-    return s - occ.box(xb + p.TAB_IN, xf - p.TAB_IN, p.Y_BED + p.BEAM_T, p.BEAM_Y1 - p.BEAM_T, z0 - 1, z1 + 1)
-
-
-def truss_windows():
-    """Four triangles per x bay through the front and back walls of the shoulder-half beam, between the plates and posts (world)."""
-    q = p.UA_TRUSS
-    v0, v1 = p.Y_BED + q["plate"], p.BEAM_Y1 - q["plate"]
-    h, length = v1 - v0, (q["z"][0] - q["z"][1] - (q["n"] - 1) * q["post"]) / q["n"]
-    m = h / length
-    k = q["bar"] / 2 * math.hypot(1.0, m)  # bar half width measured across v
-    e = (h / 2 - k) / m
-    tris = [[(-e, -h / 2), (e, -h / 2), (0, -k)], [(-e, h / 2), (0, k), (e, h / 2)],
-            [(-length / 2, -h / 2 + k), (-k / m, 0), (-length / 2, h / 2 - k)], [(length / 2, -h / 2 + k), (length / 2, h / 2 - k), (k / m, 0)]]
-    spots = []
-    for i in range(q["n"]):
-        za = q["z"][0] - i * (length + q["post"])
-        zb = za - length
-        for side, sign in ((1, -1.0), (0, 1.0)):
-            x_top, x_bot = p.beam_station(za)[side], p.beam_station(zb)[side]
-            d = np.array([x_top - x_bot, 0.0, length]) / math.hypot(x_top - x_bot, length)  # along the face, up
-            nrm = sign * np.array([d[2], 0.0, -d[0]])  # inward
-            spots += [(t, ((x_top + x_bot) / 2, (v0 + v1) / 2, (za + zb) / 2), d, nrm) for t in tris]
-    return occ.pattern(lambda v: window(v[0], q["r"], -1.0, q["wall"] + 0.3, *v[1:]), spots)
-
-
-def joint_points():
-    """World (x, y) of the joint bolts and of the joint dowels."""
-    xb, xf, _, _ = p.beam_station(p.Z_JOINT)
-    xs = (xb - p.TAB_W / 2, xf + p.TAB_W / 2)
-    return [(x, y) for x in xs for y in p.TAB_BOLT_Y], [(x, p.TAB_DOWEL_Y) for x in xs]
-
-
-def adapter():
-    """6061 adapter: hexagon key into the upper arm, d40 spigot in the shoulder pilot, 6 x m5 + 6 x m4."""
-    s = rounded_hex(p.AD_AF, p.AD_CORNER_R, 0.0, p.AD_T) + occ.cyl(p.AD_SPIGOT_R, -p.AD_SPIGOT_H, 0.0)
-    s = s - occ.cyl(p.AD_BORE_R, -3, p.AD_T + 1) - holes(p.AD_M5_HOLE_R, -3, p.AD_T + 1, p.SH_M5_R, p.SH_M5_ANG)
-    s = s - holes(2.0, -1, p.AD_T + 1, p.AD_M4_R, p.AD_M4_ANG)
-    q = p.AD_POCKET
-    s = s - occ.tube(q["groove"][1], q["groove"][0], p.AD_T - q["depth"], p.AD_T + 1) - holes(q["r"], p.AD_T - q["depth"], p.AD_T + 1, q["pcd_r"], q["ang"])
-    return flange_to_world(s - holes(p.AD_RELIEF_R, -0.1, p.AD_RELIEF_DEPTH, p.SH_M4_HEAD_R, p.SH_M4_HEAD_ANG))
-
-
-def upper_shoulder_half():
-    """Upper arm, shoulder half: drum + hub plate (hex pocket), two-plate beam with x-braced walls, joint collar."""
-    s = flange_to_world(occ.cyl(p.DRUM_R, p.Y_BED, p.DRUM_Y1)) + loft([plate_section(z) for z in p.BEAM_Z_UP])
-    s = s - flange_to_world(occ.cyl(p.DRUM_R - p.DRUM_T, p.HUB_Y1, p.DRUM_Y1 + 1) + occ.tube(p.DRUM_R - p.DRUM_T, p.HUB_RIM["r"], p.HUB_RIM["y"], p.HUB_Y1 + 0.1))
-    s = s - loft([plate_section(z, True) for z in (p.Z_CAV_TOP, p.Z_JOINT - 1)])
-    s = s + flange_to_world(holes(4.0, p.HUB_RIM["y"], p.DRUM_Y1, p.CAP_SCREW_R, p.CAP_SCREW_ANG))
-    s = s + joint_collar(p.Z_JOINT, p.Z_JOINT + p.TAB_H_UP)
-    cut = rounded_hex(p.AD_AF + 2 * p.HEX_CLEAR, p.AD_CORNER_R + p.HEX_CLEAR, p.Y_BED - 1, p.AD_T)
-    cut = cut + holes(p.M5_POCKET_R, p.AD_T - 0.01, p.M5_POCKET_Y1, p.SH_M5_R, p.SH_M5_ANG)
-    cut = cut + holes(2.25, p.AD_T - 0.01, p.HUB_Y1 + 0.1, p.AD_M4_R, p.AD_M4_ANG) + occ.cyl(15.0, p.Y_BED - 1, p.HUB_Y1 + 0.1)
-    cut = cut + holes(ep.INSERT["d_hole"] / 2, p.DRUM_Y1 - ep.INSERT["depth"], p.DRUM_Y1 + 1, p.CAP_SCREW_R, p.CAP_SCREW_ANG)
-    s = s - flange_to_world(cut) - truss_windows()
-    s = s - occ.cyl(p.CABLE_EXIT_R, p.DRUM_R - 4, p.DRUM_R + 1, 0, p.CABLE_EXIT_Y).rotate((0, -90, 0))
-    bolts, dowels = joint_points()
-    for x, y in bolts:
-        s = s - occ.cyl(2.25, p.Z_JOINT - 1, p.Z_JOINT + p.TAB_H_UP + 1, x, y)
-    for x, y in dowels:
-        s = s - occ.cyl(p.DOWEL4["d"] / 2, p.Z_JOINT - 1, p.Z_JOINT + p.TAB_H_UP + 1, x, y)
+def upper_plate(y0, y1):
+    """Full upper-arm plate between world faces y0, y1 with its slots (holes added per piece)."""
+    s = slab(upper_wire(), y0, y1)
+    for v0, v1, hw in p.SLOTS:
+        s = s - stadium(v0, v1, hw, y0 - 1, y1 + 1)
     return s
 
 
-def cap():
-    """Shoulder cap: spoked diaphragm over the drum, 4 x m3 countersunk on the spokes, decorative groove."""
-    z1 = p.DRUM_Y1 + p.CAP_T
-    r0, r1, d = p.CAP_GROOVE
-    q = p.CAP_WIN
-    spokes = occ.pattern(lambda a: occ.box(-60, 60, -q["spoke"] / 2, q["spoke"] / 2, p.DRUM_Y1 - 2, z1 + 2).rotate((0, 0, a)), p.CAP_SCREW_ANG[:2])
-    win = occ.tube(q["r"][1], q["r"][0], p.DRUM_Y1 - 1, z1 + 1) - spokes
-    win = occ.Solid(cq.Workplane().add(win.s).edges("|Z").fillet(q["r_fillet"]).val())
-    s = occ.cyl(p.DRUM_R, p.DRUM_Y1, z1) - occ.tube(r1, r0, z1 - d, z1 + 1) - win
-    for a in p.CAP_SCREW_ANG:
-        s = s - g.csk_hole(*p.polar(p.CAP_SCREW_R, a), z1, p.CAP_T, 3.0, -1)
-    return flange_to_world(s)
+def split(plate, y0, y1, v_split, gap_high):
+    """Return (lower, upper) pieces of a plate cut by a half-lap at v_split; the lower piece keeps the gap-side half."""
+    lap, c, ym = p.SPLIT["lap"], 0.1, (y0 + y1) / 2
+    gap = (ym, y1 + 1) if gap_high else (y0 - 1, ym)
+    out = (y0 - 1, ym) if gap_high else (ym, y1 + 1)
+    lo = ybox(-BIG, BIG, -BIG, v_split - lap / 2, -BIG, BIG) + ybox(-BIG, BIG, v_split - lap / 2 - 0.01, v_split + lap / 2 - c, *gap)
+    hi = ybox(-BIG, BIG, v_split + lap / 2, BIG, -BIG, BIG) + ybox(-BIG, BIG, v_split - lap / 2 + c, v_split + lap / 2 + 0.01, *out)
+    return plate ^ lo, plate ^ hi
 
 
-def ring_outline(z0, z1, grow=0.0):
-    """Front-ring outline (disc + tab up the arm), grown by grow all round."""
-    x0, x1, ytop = p.RING_TAB
-    return occ.cyl(p.RING_R + grow, z0, z1) + fillet_box(x0 - grow, x1 + grow, ytop - grow, 0.0, z0, z1, p.RING_FILLET + grow)
+def inner_plate():
+    """Upper inner plate (y 0..5) as (lower piece 201, upper piece 202)."""
+    y0, y1 = p.Y_UI
+    s = upper_plate(y0, y1)
+    cut = []
+    for u, v in p.upper_spacers():
+        cut.append(csk_hole(u, v, y0, y1 - y0, 3.0, 1))
+    for u, v in p.lap_screws("inner"):
+        cut.append(csk_hole(u, v, y0, y1 - y0, 3.0, 1))
+    # motor
+    for a in p.MOTOR_BASE["ang"]:
+        cut.append(csk_hole(*p.polar(p.MOTOR_BASE["pcd_r"], a), y0, y1 - y0, 4.0, 1))
+    cut.append(ycyl(p.LEAD["hole_r"], y0 - 1, y1 + 1, *p.polar(p.LEAD["r"], p.LEAD["ang"])))
+    # encoder pocket (bed side), pcb screws, cable groove
+    w = p.PCB["w"] / 2 + p.POCKET_CLEAR
+    cut.append(ybox(-w, w, -w, w, p.Y_PCB[0], y1 + 1))
+    for a in g.every(4, p.PCB["ang0"]):
+        cut.append(csk_hole(*p.polar(p.PCB["hole_r"], a), y0, p.Y_PCB[0] - y0, 2.5, 1))
+    gq = p.CABLE_GROOVE
+    cut.append(occ.Solid(cq.Solid.makeBox(gq["r1"], gq["w"], gq["d"] + 1, cq.Vector(0, -gq["w"] / 2, -(y1 + 1)))
+                         .rotate((0, 0, 0), (0, 0, 1), gq["ang"])))
+    # shoulder
+    sh = (0.0, p.L_UPPER)
+    for a in p.SH_M5_ANG:
+        u, v = p.polar(p.SH_M5_R, a)
+        cut.append(ycyl(p.M5["hole_r"], y0 - 1, y1 + 1, u, sh[1] + v))
+    for a in p.SH_M4_HEAD_ANG:
+        u, v = p.polar(p.SH_M4_HEAD_R, a)
+        cut.append(ycyl(p.M4_HEAD_RELIEF["r"], y0 - 1, y0 + p.M4_HEAD_RELIEF["depth"], u, sh[1] + v))
+    s = s - union(cut)
+    s = s + ycyl(p.SPIGOT["r"], -p.SPIGOT["h"], y0 + 0.01, 0, sh[1])
+    # pivot stub on the inboard face
+    pb = p.PIVOT_BRG
+    stub = ycyl(p.STUB["shoulder_r"], -2.0, y0 + 0.01) + ycyl(p.STUB["r"] - p.STUB["journal_clear"], -2.0 - pb["B"] + 0.1, -1.99)
+    stub = stub - ycyl(p.SPACER_INSERT["d_hole"] / 2, -2.0 - pb["B"] + 0.1 - 0.01, -2.0 - pb["B"] + 0.1 + p.SPACER_INSERT["depth"])
+    s = s + stub
+    return split(s, y0, y1, p.SPLIT["inner"], True)
 
 
-def crown_pocket():
-    """Lightening pocket in the crown between the cable channel and the ring inserts (world)."""
-    q = p.CROWN_POCKET
-    secs = []
-    for z in (p.Z_CAV_BOT + 1, -208.0, -213.0, -226.0, -236.0, p.Z_ELBOW + 20):
-        xb, xf, y1, _ = p.beam_station(z)
-        top = min(q["y"][1], y1 - q["inset"])
-        c = min(q["c"], (top - q["y"][0]) / 2 - 0.5)
-        secs.append([(u, v, z) for u, v in octagon(xb + q["inset"], xf - q["inset"], q["y"][0], top, c)])
-    return loft(secs) - elbow_to_world(occ.cyl(p.SADDLE_R + q["inset"], -10, 100))
+def outer_plate():
+    """Upper outer plate as (lower piece 203, upper piece 204)."""
+    y0, y1 = p.Y_UO
+    s = upper_plate(y0, y1)
+    cut = [ycyl(p.UO_HUB_CLEAR_R, y0 - 1, y1 + 1)]
+    for u, v in p.upper_spacers() + p.lap_screws("outer"):
+        cut.append(csk_hole(u, v, y1, y1 - y0, 3.0, -1))
+    for a in p.SH_M5_ANG:
+        u, v = p.polar(p.SH_M5_R, a)
+        cut.append(ycyl(5.5, y0 - 1, y1 + 1, u, p.L_UPPER + v))  # hex-key access to the shoulder m5 heads
+    return split(s - union(cut), y0, y1, p.SPLIT["outer"], False)
 
 
-def upper_elbow_half():
-    """Upper arm, elbow half: shell beam flaring into the crown, saddle over the actuator, rear ear for the pin."""
-    z0, z1 = p.EAR_Z
-    x0, x1, ytop = p.EAR_BOX
-    ear = occ.cyl(p.EAR_R, z0, z1) + occ.box(x0, x1, ytop, 0.0, z0, z1)
-    s = loft([beam_section(z) for z in p.BEAM_Z_LOW]) + elbow_to_world(ear)
-    s = s - loft([beam_section(z, True) for z in (p.Z_JOINT + 1, -196.0, p.Z_CAV_BOT)]) - crown_pocket()
-    ch = p.CHANNEL
-    s = s - occ.box(*ch["x"], *ch["y"], p.Z_ELBOW + ch["z_lo"], p.Z_CAV_BOT + 1)
-    cut = occ.cyl(p.SADDLE_R, z1, 100.0) + occ.cyl(p.PIN["spigot_r"], z0 - 1, z1 + 1)
-    cut = cut + holes(ep.INSERT["d_hole"] / 2, z0 - 0.01, z0 + ep.INSERT["depth"], p.PIN["screw_r"], p.PIN_SCREW_ANG)
-    cut = cut + occ.box(-p.GROOVE["w"] / 2, p.GROOVE["w"] / 2, ytop - 10, 0.0, z1 - p.GROOVE["d"], z1 + 0.5)
-    cut = cut + ring_outline(p.RING_Z0, p.RING_Z0 + 10, 0.2)
-    for x, y in p.RING_BOLTS:
-        cut = cut + occ.cyl(p.INSERT_M4["d_hole"] / 2, p.RING_Z0 - p.INSERT_M4["depth"], p.RING_Z0 + 0.1, x, y)
-    s = s - elbow_to_world(cut) + joint_collar(p.Z_JOINT - p.TAB_H_LOW, p.Z_JOINT)
-    bolts, dowels = joint_points()
-    for x, y in bolts:
-        s = s - occ.cyl(p.INSERT_M4["d_hole"] / 2, p.Z_JOINT - p.INSERT_M4["depth"], p.Z_JOINT + 1, x, y)
-    for x, y in dowels:
-        s = s - occ.cyl(p.DOWEL4["d"] / 2, p.Z_JOINT - p.DOWEL4["l"] / 2 - 0.5, p.Z_JOINT + 1, x, y)
+# ---------------------------------------------------------------- forearm
+def fore_plate(y0, y1):
+    """Forearm truss plate between world faces y0, y1."""
+    F = p.FORE
+    s = slab(fore_wire(), y0, y1)
+    _, _, bi, fi = p.fore_rims()
+    window = poly(bi + fi, y0 - 1, y1 + 1)
+    keep = [ycyl(F["r_lobe"], y0 - 2, y1 + 2), ybox(-BIG, BIG, -BIG, -228.0 + F["rim"], y0 - 2, y1 + 2)]
+    nodes = p.fore_nodes()
+    for a, b in zip(nodes[:-2], nodes[1:-1]):
+        keep.append(bar(a, b, F["bar"], y0 - 2, y1 + 2))
+    keep.append(bar(nodes[-2], nodes[-1], F["bar"], y0 - 2, y1 + 2))
+    for q in nodes:
+        keep.append(ycyl(p.FORE_SPACER["r"] + 2.0, y0 - 2, y1 + 2, *q))
+    return s - (window - union(keep))
+
+
+def wrist_screws():
+    """(u, v) of the two m3 screws per forearm plate into the wrist block."""
+    return [(-10.0, -225.0), (10.0, -225.0)]
+
+
+def fore_outer():
+    """Forearm outer plate 208 (bolted to the hub end face)."""
+    y0, y1 = p.Y_FO
+    s = fore_plate(y0, y1)
+    cut = [csk_hole(*p.polar(7.0, a), y1, y1 - y0, 3.0, -1) for a in (90.0, 210.0, 330.0)]
+    cut += [csk_hole(u, v, y1, y1 - y0, 3.0, -1) for u, v in p.fore_nodes() + wrist_screws()]
+    return s - union(cut)
+
+
+def fore_inner():
+    """Forearm inner plate 209: pivot boss with the o-ring bearing seat."""
+    y0, y1 = p.Y_FI
+    s = fore_plate(y0, y1) + ycyl(p.FORE["r_lobe"] - 0.5, p.FI_BOSS_Y0, y0 + 0.5)
+    yb = -2.0 - p.PIVOT_BRG["B"] / 2
+    cut = [ycyl(p.PIVOT_BORE_R, p.FI_BOSS_Y0 - 1, y1 + 1),
+           ytube(p.ORING["groove_r"], p.PIVOT_BORE_R - 0.5, yb - p.ORING["groove_w"] / 2, yb + p.ORING["groove_w"] / 2)]
+    cut += [csk_hole(u, v, y0, y1 - y0, 3.0, 1) for u, v in p.fore_nodes() + wrist_screws()]
+    return s - union(cut)
+
+
+def hub():
+    """Rotor hub 207: flange on the rotor face, tube through the outer plate, inserts for the forearm plate."""
+    y_r = p.Y_ROTOR
+    yf = y_r + p.HUB["flange_t"]
+    s = ycyl(p.HUB["flange_r"], y_r, yf) + ycyl(11.0, yf - 0.01, p.Y_FO[0])
+    cut = [ycyl(p.ROTOR["stub_r"], y_r - 1, p.Y_FO[0] + 1)]
+    cut += [csk_hole(*p.polar(p.ROTOR["pcd_r"], a), yf, p.HUB["flange_t"], 3.0, -1) for a in p.ROTOR["ang"]]
+    cut += [ycyl(p.SPACER_INSERT["d_hole"] / 2, p.Y_FO[0] - p.SPACER_INSERT["depth"], p.Y_FO[0] + 1, *p.polar(7.0, a)) for a in (90.0, 210.0, 330.0)]
+    return s - union(cut)
+
+
+def wrist_block():
+    """Wrist block 211 between the forearm plates; d20 spigot + 4 x m3 inserts for the future hand."""
+    W = p.WRIST
+    yc = (p.Y_FI[1] + p.Y_FO[0]) / 2
+    s = ybox(-W["u"], W["u"], W["v"][0], W["v"][1], p.Y_FI[1], p.Y_FO[0])
+    s = s + vcyl(W["spigot_r"], W["v"][0] - W["spigot_h"], W["v"][0] + 0.01, 0.0, yc)
+    cut = []
+    for u, v in wrist_screws():
+        cut.append(ycyl(2.0, p.Y_FI[1] - 1, p.Y_FI[1] + 6.7, u, v))
+        cut.append(ycyl(2.0, p.Y_FO[0] - 6.7, p.Y_FO[0] + 1, u, v))
+    for a in g.every(W["n"], W["ang0"]):
+        du, dy = p.polar(W["pcd_r"], a)
+        cut.append(vcyl(2.0, W["v"][0] - 1, W["v"][0] + 6.7, du, yc + dy))
+    return s - union(cut)
+
+
+def coupon():
+    """Fit coupon (own frame, z up). Row y 15: 6705 journals at -0.05 / -0.10 / -0.15 on radius.
+    Row y 50: 6705 seats at +0.20 / +0.30 / +0.40 radial float, each with the o-ring groove.
+    Right block: m3 / m4 / m5 / hub clearance holes, d9 and d8 sleeve stubs with insert holes, d39.8 spigot ring."""
+    pb = p.PIVOT_BRG
+    s = occ.box(0, 190, 0, 70, 0, 5)
+    for k in range(3):
+        x = 18 + 26 * k
+        s = s + occ.cyl(pb["d"] / 2 - 0.05 * (k + 1), 5, 9, x, 15) + occ.cyl(22.0, 5, 6, x, 50)
+    for k in range(3):
+        x = 18 + 26 * k
+        s = s - occ.cyl(pb["D"] / 2 + 0.20 + 0.10 * k, -1, 7, x, 50)
+        s = s - occ.tube(p.ORING["groove_r"], pb["D"] / 2, 2, 4).translate((x, 50, 0))
+    for x, y, r in [(95, 12, p.M3["clear_r"]), (105, 12, p.M4["clear_r"]), (117, 12, p.M5["hole_r"]), (133, 14, p.UO_HUB_CLEAR_R - 4.0)]:
+        s = s - occ.cyl(r, -1, 6, x, y)
+    for k, r in enumerate((p.UPPER_SPACER["r"], p.FORE_SPACER["r"])):
+        x = 100 + 14 * k
+        s = s + occ.cyl(r, 5, 15, x, 34) - occ.cyl(p.SPACER_INSERT["d_hole"] / 2, 15 - p.SPACER_INSERT["depth"], 16, x, 34)
+    s = s + occ.tube(p.SPIGOT["r"], p.SPIGOT["r"] - 3.0, 5, 5 + p.SPIGOT["h"]).translate((166, 35, 0))
     return s
-
-
-def front_ring():
-    """6061 front ring (elbow frame): holds the actuator cover flange to the crown, carries the stop pin."""
-    pin = p.polar(p.STOP_R, p.STOP_PSI)
-    s = ring_outline(p.RING_Z0, p.RING_Z1) + occ.cyl(p.STOP_BOSS["r"], p.RING_Z1 - 0.1, p.RING_Z1 + p.STOP_BOSS["h"], *pin)
-    s = s - occ.cyl(p.RING_ID_R, p.RING_Z0 - 1, p.RING_Z1 + 1)
-    s = s - holes(ep.D_M3_CLEAR / 2, p.RING_Z0 - 1, p.RING_Z1 + 1, ep.R_FLANGE_SCREW, flange_angles())
-    s = s - occ.cyl(p.STOP_PIN["d"] / 2, p.RING_Z0 - 1, p.RING_Z1 + p.STOP_BOSS["h"] + 1, *pin)
-    for x, y in p.RING_BOLTS:
-        s = s - g.csk_hole(x, y, p.RING_Z1, p.RING_T, 4.0, -1)
-    q, fl = p.RING_WIN, flange_angles()
-    for m in [(a + b) / 2 for a, b in zip(fl, fl[1:] + [fl[0] + 360.0])]:
-        if q["psi"][0] < m % 360.0 < q["psi"][1]:
-            s = s - arc_slot(q["r"], q["w"], m - q["half"], m + q["half"], p.RING_Z0 - 1, p.RING_Z1 + 1)
-    return s
-
-
-def flange_angles():
-    """Elbow flange screw angles in the elbow frame (actuator turned by E_ROT)."""
-    return [a + p.E_ROT for a in ep.ANG_FLANGE]
-
-
-def passive_pin():
-    """6061 passive pin (elbow frame): spigot in the ear, flange, 61804 journal, wire bore."""
-    q = p.PIN
-    s = occ.cyl(q["spigot_r"], q["z_flange"][1], q["z_spigot"]) + occ.cyl(q["flange_r"], *q["z_flange"])
-    s = s + occ.cyl(q["shoulder_r"], p.Z_P_IN1, q["z_flange"][0]) + occ.cyl(p.BRG_P["d"] / 2, q["z_end"], p.Z_P_IN1)
-    s = s - occ.cyl(q["bore_r"], q["z_end"] - 1, q["z_spigot"] + 1)
-    for a in p.PIN_SCREW_ANG:
-        s = s - g.csk_hole(*p.polar(q["screw_r"], a), q["z_flange"][0], q["z_flange"][1] - q["z_flange"][0], 3.0, 1)
-    return s - holes(ep.D_M25_MAJOR / 2, q["z_end"] - 0.01, q["z_end"] + p.PIN_TAP_DEPTH, q["tap_r"], p.PIN_TAP_ANG)
-
-
-def bracket():
-    """6061 encoder bracket (elbow frame): clamps the 61804 inner ring, carries the output pcb."""
-    b = p.BRACKET
-    zp0, zb1 = b["z_plate"][0], b["z_boss"][1]
-    s = occ.cyl(b["boss_r"], *b["z_boss"]) + occ.cyl(b["r"], *b["z_plate"]) - occ.cyl(b["hole_r"], zp0 - 1, zb1 + 1)
-    for a in p.PIN_TAP_ANG:
-        s = s - g.csk_hole(*p.polar(b["csk_r"], a), zp0, zb1 - zp0, 2.5, 1)
-    s = s - holes(ep.D_M25_MAJOR / 2, zp0 - 0.01, b["z_plate"][1] + 0.01, p.PCB_OUT["hole_r"], g.every(4, p.PCB_OUT["ang0"]))
-    w, length, d = b["groove"]
-    return s - occ.box(-w / 2, w / 2, -length, 0.0, zp0 - 0.01, zp0 + d)
-
-
-# ---------------------------------------------------------------- forearm (elbow frame)
-def fa_section(s, inner=False):
-    """Forearm octagon section at length s (outer skin, or the cavity when inner): trough walls to S_FULL, cage shell below."""
-    z0, z1 = p.fa_z(s)
-    x0, x1, c = p.FA_POST, p.fa_a(s), p.fa_c(s)
-    c1 = c
-    if inner:
-        cage = s > p.S_FULL
-        t = p.FA_CAGE["t"] if cage else p.FA_T
-        w = t if cage else p.CHEEK_A_Z[1] - p.CHEEK_A_Z[0]
-        c = c - t * (2 - math.sqrt(2))
-        x0, x1, z0, z1, c1 = x0 + t, x1 - t, z0 + t, z1 - w, c if cage else p.FA_ROOF_C
-    return [(u, s, v) for u, v in octagon(x0, x1, z0, z1, c, c1)]
-
-
-def gusset(ring):
-    """Anterior corner gussets that hold the roof of ring (s0, s1) to BRIDGE_MAX in print, 0.5 inside the ring faces (elbow frame)."""
-    tris = []
-    for sv in (ring[0] + 0.5, ring[1] - 0.5):
-        pts = fa_section(sv, True)
-        x1, z0, z1 = max(u for u, _, _ in pts), min(v for _, _, v in pts), max(v for _, _, v in pts)
-        c1 = min(v for u, _, v in pts if abs(u - x1) < 1e-9) - z0
-        g = c1 + max(0.0, (z1 - z0 - 2 * c1 - p.BRIDGE_MAX) / 2)
-        tris.append(([(x1 - g - 1, sv, z0 - 1), (x1 + 1, sv, z0 - 1), (x1 + 1, sv, z0 + g + 1)],
-                     [(x1 - g - 1, sv, z1 + 1), (x1 + 1, sv, z1 - g - 1), (x1 + 1, sv, z1 + 1)]))
-    return loft([tris[0][0], tris[1][0]]) + loft([tris[0][1], tris[1][1]])
-
-
-def cage_window(sa, sb, k):
-    """Window through cage face k (corners k -> k + 1) from sa to sb, inside the two corner bars, corners rounded (elbow frame)."""
-    q, secs = p.FA_CAGE, []
-    for sv in (sa, sb):
-        v = [np.array(c) for c in octagon(p.FA_POST, p.fa_a(sv), *p.fa_z(sv), p.fa_c(sv))]
-        a, b = v[k], v[(k + 1) % 8]
-        e = (b - a) / np.linalg.norm(b - a)
-        n = np.array([-e[1], e[0]])  # inward (ccw octagon)
-        ends = (a + q["bar"] / 2 * e, b - q["bar"] / 2 * e)
-        secs.append([(x, sv, z) for x, z in (ends[0] - n, ends[1] - n, ends[1] + (q["t"] + 0.3) * n, ends[0] + (q["t"] + 0.3) * n)])
-    s = loft(secs).s
-    through = [g for g in s.Edges() if abs(g.startPoint().y - g.endPoint().y) < 1e-6 and g.Length() < q["t"] + 1.4]
-    return occ.Solid(s.fillet(q["r"], through))
-
-
-def fa_window(s):
-    """Open-trough window at length s: removes the anterior wall between the chamfer lips."""
-    z0, z1 = p.fa_z(s)
-    x0 = p.fa_a(s) - p.FA_T - 0.5
-    return [(x0, s, z0 + p.FA_C), (60.0, s, z0 + p.FA_C), (60.0, s, z1 - p.FA_C), (x0, s, z1 - p.FA_C)]
-
-
-def cheek_plate(r, tip, z0, z1):
-    """Clevis cheek plate: disc r round the axis, flank tangent to the disc up to tip (x, s), flat posterior edge."""
-    tx, ty = tangent_point(*tip, r)
-    s = occ.cyl(r, z0, z1) + prism([(p.FA_POST, 0.0), (p.FA_POST, tip[1]), tip, (tx, ty), (0.0, 0.0)], z0, z1)
-    return s ^ occ.box(p.FA_POST, r + 1, p.CHEEK_A_TOP, tip[1] + 1, z0 - 1, z1 + 1)
-
-
-def slot_ends():
-    """Slot end-centre angles (forearm frame) where the o-rings touch at the hard stops."""
-    d = math.degrees((p.SLOT_W - p.ORING_OD) / 2 / p.STOP_R)
-    return p.STOP_PSI + p.THETA_MIN + d, p.STOP_PSI + p.THETA_MAX - d
-
-
-def forearm():
-    """Forearm + cheek A in one print: clevis trough, root ring, octagon cone of rings and 8 corner bars, wrist block, hub boss, stop slot."""
-    s1, bays = p.S_FULL + p.FA_ROOT, p.fa_bays()
-    outer = loft([fa_section(v) for v in (30.0, p.S_FULL, s1, p.S_END, p.L_FOREARM)])
-    za0, za1 = p.CHEEK_A_Z
-    s = outer + cheek_plate(p.CHEEK_A_R, p.CHEEK_A_TIP, za0, za1)
-    s = s - occ.cyl(p.FA_CUT_R, p.Z_CHEEK_B_IN - 1.5, za0)
-    rings = [(p.S_FULL, s1)] + [(a[1], b[0]) for a, b in zip(bays, bays[1:])]
-    cavity = loft([fa_section(v, True) for v in (40.0, p.S_FULL, s1, p.S_END)]) - occ.pattern(gusset, rings)
-    s = s - cavity - loft([fa_window(v) for v in (30.0, p.S_FULL)])
-    s = s - occ.pattern(lambda w: cage_window(*w), [(a, b, k) for a, b in bays for k in range(8)])
-    zf = p.BOSS_Z0 + p.BOSS_FACE
-    s = s + occ.cyl(p.BOSS_R, p.BOSS_Z0, zf + 0.1) + (teardrop(p.BOSS_R, 0, 0, zf, za0 + 0.5) ^ occ.cyl(p.BOSS_R_MAX, zf, za0 + 0.5))
-    bosses = occ.pattern(lambda q: teardrop(p.CHEEK_B_BOSS_R, *q, p.Z_CHEEK_B_IN, -3.0), p.CHEEK_B_JOINT)
-    s = s + (bosses ^ outer) + ycyl(p.WRIST["spigot_r"], p.L_FOREARM - 0.5, p.L_FOREARM + p.WRIST["spigot_h"], 0, p.FA_ZC)
-    hub_ang = [a + p.E_ROT for a in ep.ANG_HUB_INSERT]
-    s = s - holes(ep.D_M3_CLEAR / 2, p.BOSS_Z0 - 0.1, za1 + 0.1, ep.R_HUB_INSERT, hub_ang)
-    s = s - holes(p.HUB_CBORE["d"] / 2, za1 - p.HUB_CBORE["depth"], za1 + 0.1, ep.R_HUB_INSERT, hub_ang)
-    s = s - holes(ep.DOWEL_D / 2, p.BOSS_Z0 - 0.1, p.BOSS_Z0 + p.HUB_DOWEL["in_boss"], ep.R_HUB_INSERT, [a + p.E_ROT for a in ep.ANG_HUB_DOWEL])
-    s = s - arc_slot(p.STOP_R, p.SLOT_W, *slot_ends(), za0 - 0.1, za0 + p.SLOT_DEPTH)
-    r0, r1, d = p.CHEEK_GROOVE
-    s = s - occ.tube(r1, r0, za1 - d, za1 + 1)
-    for x, y in p.CHEEK_B_JOINT:
-        s = s - occ.cyl(p.INSERT_M4["d_hole"] / 2, p.Z_CHEEK_B_IN - 0.1, p.Z_CHEEK_B_IN + p.INSERT_M4["depth"], x, y)
-    for a in g.every(p.WRIST["n"], p.WRIST["ang0"]):
-        x, z = p.polar(p.WRIST["pcd_r"], a)
-        s = s - ycyl(ep.INSERT["d_hole"] / 2, p.L_FOREARM - ep.INSERT["depth"], p.L_FOREARM + 0.1, x, p.FA_ZC + z)
-    return s - ycyl(p.WRIST["bore_r"], p.S_END - 1, p.L_FOREARM + 3, 0, p.FA_ZC)
-
-
-def cheek_b():
-    """Cheek B (elbow frame): carries the 61804 outer ring (slip fit, floats), bolted to the forearm."""
-    z0, z1 = p.CHEEK_B_Z
-    s = cheek_plate(p.CHEEK_B_R, p.CHEEK_B_TIP, z0, z1)
-    s = s - occ.cyl(p.CHEEK_B_LIP["r"], p.CHEEK_B_LIP["z"] - 0.01, z1 + 0.1) - occ.cyl(p.BORE_P_R, z0 - 0.1, p.CHEEK_B_LIP["z"])
-    for x, y in p.CHEEK_B_JOINT:
-        s = s - occ.cyl(p.CHEEK_B_HOLE_R, z0 - 0.1, z1 + 0.1, x, y)
-    return s - holes(ep.INSERT["d_hole"] / 2, z0 - 0.1, z0 + ep.INSERT["depth"], p.COVER["boss_pcd_r"], p.COVER_ANG)
-
-
-def cover():
-    """Encoder cover (elbow frame): cup over the output pcb, magnet boss, 3 counterbored screw bosses."""
-    c = p.COVER
-    z0, z1 = c["z_end"], p.RETAINER["z"][0]
-    zw = z0 + 2.0
-    s = occ.tube(c["r"], c["ri"], zw, z1) + occ.cyl(c["r"], z0, zw) + occ.cyl(c["mag_boss_r"], zw, p.Z_MAG_OUT[1])
-    s = s + holes(c["boss_r"], z0, z1, c["boss_pcd_r"], p.COVER_ANG)
-    s = s - occ.cyl(ep.MAG["d"] / 2, zw, p.Z_MAG_OUT[1] + 0.1)
-    s = s - holes(ep.D_M3_CLEAR / 2, z0 - 0.1, z1 + 0.1, c["boss_pcd_r"], p.COVER_ANG)
-    return s - holes(p.HUB_CBORE["d"] / 2, z0 - 0.1, c["seat"], c["boss_pcd_r"], p.COVER_ANG)
 
 
 # ---------------------------------------------------------------- assembly
 def build_arm():
-    """Return list of (name, material, solid) for every arm part, in world, forearm at 0 deg."""
+    """Return list of (name, material, world solid) for every arm part, forearm at 0 deg."""
     parts = []
 
-    def add(name, mat, solid, frame=None):
-        parts.append((name, mat, frame(solid) if frame else solid))
+    def add(name, mat, solid):
+        parts.append((name, mat, to_world(solid)))
 
-    F, E = flange_to_world, elbow_to_world
-    # ---- shoulder interface
-    add("101 Adapter plate 6061-T6 (CNC)", "6061-T6", adapter())
+    lo, hi = inner_plate()
+    add("201 Upper inner plate, elbow piece (PETG)", "PETG", lo)
+    add("202 Upper inner plate, shoulder piece (PETG)", "PETG", hi)
+    lo, hi = outer_plate()
+    add("203 Upper outer plate, elbow piece (PETG)", "PETG", lo)
+    add("204 Upper outer plate, shoulder piece (PETG)", "PETG", hi)
+    a = math.radians(p.UPPER["heel_a"][1])
+    n = (-math.sin(a), math.cos(a))
+    q1, q2 = p.polar(p.HEEL_PAD["r"][0], p.UPPER["heel_a"][1]), p.polar(p.HEEL_PAD["r"][1], p.UPPER["heel_a"][1])
+    pad = [q1, q2, (q2[0] + p.HEEL_PAD["t"] * n[0], q2[1] + p.HEEL_PAD["t"] * n[1]), (q1[0] + p.HEEL_PAD["t"] * n[0], q1[1] + p.HEEL_PAD["t"] * n[1])]
+    add("218.1 Rubber pad 3 mm, heel, inner plate", "Silicone", poly(pad, *p.Y_UI))
+    add("218.2 Rubber pad 3 mm, heel, outer plate", "Silicone", poly(pad, *p.Y_UO))
+    ya, yb = p.Y_UI[1], p.Y_UO[0]
+    for i, (u, v) in enumerate(p.upper_spacers()):
+        sl = ycyl(p.UPPER_SPACER["r"], ya, yb, u, v) - ycyl(2.0, ya - 1, ya + p.SPACER_INSERT["depth"], u, v) - ycyl(2.0, yb - p.SPACER_INSERT["depth"], yb + 1, u, v)
+        add(f"205.{i + 1} Upper spacer sleeve D9 (PETG)", "PETG", sl)
+        add(f"230.{i + 1} Insert M3x5.7 upper spacer, inner end", "Brass insert", insert(u, v, ya, 1))
+        add(f"231.{i + 1} Insert M3x5.7 upper spacer, outer end", "Brass insert", insert(u, v, yb, -1))
+        add(f"232.{i + 1} Screw M3x10 ISO 10642 inner plate->spacer", "Steel 12.9 fastener", csk(u, v, p.Y_UI[0], 10.0, 3.0, 1))
+        add(f"233.{i + 1} Screw M3x10 ISO 10642 outer plate->spacer", "Steel 12.9 fastener", csk(u, v, p.Y_UO[1], 10.0, 3.0, -1))
+    for i, (u, v) in enumerate(p.lap_screws("inner")):
+        add(f"234.{i + 1} Screw M3x10 ISO 10642 inner lap", "Steel 12.9 fastener", csk(u, v, p.Y_UI[0], 10.0, 3.0, 1))
+    for i, (u, v) in enumerate(p.lap_screws("outer")):
+        add(f"235.{i + 1} Screw M3x10 ISO 10642 outer lap", "Steel 12.9 fastener", csk(u, v, p.Y_UO[1], 10.0, 3.0, -1))
+    # motor, standoffs, encoder
+    for i, a in enumerate(p.MOTOR_BASE["ang"]):
+        u, v = p.polar(p.MOTOR_BASE["pcd_r"], a)
+        add(f"206.{i + 1} Motor standoff (PETG)", "PETG", ytube(p.STANDOFF["ro"], p.STANDOFF["ri"], p.Y_UI[1], p.Y_MOUNT, u, v))
+        add(f"236.{i + 1} Screw M4x16 ISO 10642 motor->inner plate", "Steel 12.9 fastener", csk(u, v, p.Y_UI[0], 16.0, 4.0, 1))
+    motor = ycyl(p.MOTOR["r"], p.Y_MOUNT, p.Y_ROTOR) + ycyl(1.45, p.Y_ROTOR - 0.01, p.Y_ROTOR + 8.9)
+    add("240 Motor LA8308 KV90 (envelope)", "Motor envelope", motor)
+    add("212 Magnet holder (resin, bonded in the rear cap)", "Resin", ycyl(5.0, p.Y_MAG + 2.5, p.Y_MOUNT))
+    add("241 Encoder magnet D6x2.5 diametric", "NdFeB magnet", ycyl(3.0, p.Y_MAG, p.Y_MAG + 2.5))
+    pcb = ybox(-15, 15, -15, 15, *p.Y_PCB) - union([ycyl(1.35, p.Y_PCB[0] - 1, p.Y_PCB[1] + 1, *p.polar(p.PCB["hole_r"], a)) for a in g.every(4, p.PCB["ang0"])])
+    add("242 Encoder PCB 30x30 AS5047P (shoulder P12)", "Electronics", pcb)
+    add("243 AS5047P TSSOP-14 (envelope)", "Electronics", ybox(-2.5, 2.5, -2.2, 2.2, p.Y_PCB[1], p.Y_IC_TOP))
+    for i, a in enumerate(g.every(4, p.PCB["ang0"])):
+        add(f"244.{i + 1} Screw M2.5x6 ISO 10642 pcb (nut on the pcb)", "Steel 12.9 fastener", csk(*p.polar(p.PCB["hole_r"], a), p.Y_UI[0], 6.0, 2.5, 1))
+    # shoulder bolts
     for i, a in enumerate(p.SH_M5_ANG):
-        x, y = p.polar(p.SH_M5_R, a)
-        add(f"102.{i + 1} Screw M5x12 ISO 4762 12.9 adapter->shoulder", "Steel 12.9 fastener",
-            g.shcs(x, y, p.AD_T + p.WASHER_M5["t"], p.M5_SCREW_L, 5.0, -1), F)
-        add(f"103.{i + 1} Washer M5 ISO 7089", "Steel 12.9 fastener", washer(p.WASHER_M5, p.AD_T, x, y), F)
-    add("104 Upper arm, shoulder half (ASA)", "ASA", upper_shoulder_half())
-    for i, a in enumerate(p.AD_M4_ANG):
-        x, y = p.polar(p.AD_M4_R, a)
-        add(f"105.{i + 1} Screw M4x16 ISO 4762 hub->adapter", "Steel 12.9 fastener",
-            g.shcs(x, y, p.HUB_Y1 + p.WASHER_M4L["t"], p.M4_HUB_L, 4.0, -1), F)
-        add(f"106.{i + 1} Washer M4 DIN 9021 hub", "Steel 12.9 fastener", washer(p.WASHER_M4L, p.HUB_Y1, x, y), F)
-    for i, a in enumerate(p.CAP_SCREW_ANG):
-        x, y = p.polar(p.CAP_SCREW_R, a)
-        add(f"107.{i + 1} Insert RX-M3x5.7 cap", "Brass insert", insert(ep.INSERT["d_hole"], 3.0, p.DRUM_Y1, ep.INSERT["length"], -1, x, y), F)
-        add(f"109.{i + 1} Screw M3x8 ISO 10642 cap", "Steel 12.9 fastener", g.csk(x, y, p.DRUM_Y1 + p.CAP_T, 8.0, 3.0, -1), F)
-    add("108 Shoulder cap (ASA)", "ASA", cap())
-    # ---- mid-span joint
-    add("110 Upper arm, elbow half (ASA)", "ASA", upper_elbow_half())
-    bolts, dowels = joint_points()
-    z_top = p.Z_JOINT + p.TAB_H_UP
-    for i, (x, y) in enumerate(bolts):
-        add(f"111.{i + 1} Insert RX-M4x8.1 joint", "Brass insert", insert(p.INSERT_M4["d_hole"], 4.0, p.Z_JOINT, p.INSERT_M4["length"], -1, x, y))
-        add(f"112.{i + 1} Screw M4x16 ISO 4762 joint", "Steel 12.9 fastener", g.shcs(x, y, z_top + p.WASHER_M4L["t"], p.M4_TAB_L, 4.0, -1))
-        add(f"113.{i + 1} Washer M4 DIN 9021 joint", "Steel 12.9 fastener", washer(p.WASHER_M4L, z_top, x, y))
-    for i, (x, y) in enumerate(dowels):
-        add(f"114.{i + 1} Dowel D4x16 ISO 8734 joint", "52100 bearing steel", occ.cyl(2.0, p.Z_JOINT - 8.0, p.Z_JOINT + 8.0, x, y))
-    # ---- front ring + hard stop
-    add("115 Front ring 6061-T6 (CNC 4 mm)", "6061-T6", front_ring(), E)
-    for i, a in enumerate(flange_angles()):
-        x, y = p.polar(ep.R_FLANGE_SCREW, a)
-        add(f"116.{i + 1} Screw M3x16 DIN 912 ring+cover->housing", "Steel 12.9 fastener",
-            g.shcs(x, y, p.RING_Z1 + ep.WASHER_M3["t"], p.FLANGE_SCREW_L, 3.0, -1), E)
-        add(f"117.{i + 1} Washer M3 ISO 7089 ring", "Steel 12.9 fastener", washer(ep.WASHER_M3, p.RING_Z1, x, y), E)
-    for i, (x, y) in enumerate(p.RING_BOLTS):
-        add(f"118.{i + 1} Insert RX-M4x8.1 crown", "Brass insert", insert(p.INSERT_M4["d_hole"], 4.0, p.RING_Z0, p.INSERT_M4["length"], -1, x, y), E)
-        add(f"119.{i + 1} Screw M4x12 ISO 10642 ring->crown", "Steel 12.9 fastener", g.csk(x, y, p.RING_Z1, p.M4_RING_L, 4.0, -1), E)
-    px, py = p.polar(p.STOP_R, p.STOP_PSI)
-    add(f"120 Stop pin D5x{p.STOP_PIN['l']:.0f} ISO 8734", "52100 bearing steel", occ.cyl(p.STOP_PIN["d"] / 2, p.RING_Z0, p.RING_Z0 + p.STOP_PIN["l"], px, py), E)
-    cs, rc = p.ORING["cs"], p.STOP_PIN["d"] / 2 + p.ORING["cs"] / 2
-    for i in range(p.ORING["n"]):
-        zc = p.RING_Z0 + p.STOP_PIN["l"] - cs * (i + 0.5)
-        add(f"121.{i + 1} O-ring 4.5x1.5 NBR 70 stop", "NBR O-ring",
-            occ.Solid(cq.Solid.makeTorus(rc, cs / 2, cq.Vector(px, py, zc), cq.Vector(0, 0, 1))), E)
-    # ---- passive pin
-    add("122 Passive pin 6061-T6 (turned)", "6061-T6", passive_pin(), E)
-    q = p.PIN
-    for i, a in enumerate(p.PIN_SCREW_ANG):
-        x, y = p.polar(q["screw_r"], a)
-        add(f"123.{i + 1} Insert RX-M3x5.7 ear", "Brass insert", insert(ep.INSERT["d_hole"], 3.0, p.EAR_Z[0], ep.INSERT["length"], 1, x, y), E)
-        add(f"124.{i + 1} Screw M3x8 ISO 10642 pin->ear", "Steel 12.9 fastener", g.csk(x, y, q["z_flange"][0], p.L_PIN_SCREW, 3.0, 1), E)
-    # ---- forearm + cheek A
-    add("125 Forearm + cheek A (ASA)", "ASA", forearm(), E)
-    za1 = p.CHEEK_A_Z[1]
-    for i, a in enumerate(ep.ANG_HUB_INSERT):
-        x, y = p.polar(ep.R_HUB_INSERT, a + p.E_ROT)
-        add(f"126.{i + 1} Screw M3x16 DIN 912 cheek A->hub", "Steel 12.9 fastener",
-            g.shcs(x, y, za1 - p.HUB_CBORE["depth"], p.HUB_SCREW_L, 3.0, -1), E)
-    for i, a in enumerate(ep.ANG_HUB_DOWEL):
-        z0 = p.BOSS_Z0 + p.HUB_DOWEL["in_boss"] - p.HUB_DOWEL["l"]
-        add(f"127.{i + 1} Dowel D3x{p.HUB_DOWEL['l']:.0f} ISO 8734 cheek A/hub", "52100 bearing steel",
-            occ.cyl(ep.DOWEL_D / 2, z0, z0 + p.HUB_DOWEL["l"], *p.polar(ep.R_HUB_INSERT, a + p.E_ROT)), E)
-    # ---- cheek B + passive bearing
-    add("128 Cheek B (ASA)", "ASA", cheek_b(), E)
-    zb0 = p.CHEEK_B_Z[0]
-    for i, (x, y) in enumerate(p.CHEEK_B_JOINT):
-        add(f"129.{i + 1} Insert RX-M4x8.1 forearm", "Brass insert", insert(p.INSERT_M4["d_hole"], 4.0, p.Z_CHEEK_B_IN, p.INSERT_M4["length"], 1, x, y), E)
-        add(f"130.{i + 1} Screw M4x16 ISO 4762 cheek B->forearm", "Steel 12.9 fastener",
-            g.shcs(x, y, zb0 - p.WASHER_M4L["t"], p.M4_CHEEK_B_L, 4.0, 1), E)
-        add(f"131.{i + 1} Washer M4 DIN 9021 cheek B", "Steel 12.9 fastener", washer(p.WASHER_M4L, zb0 - p.WASHER_M4L["t"], x, y), E)
-    for k, v in occ.ball_bearing(z0=p.Z_P_IN0, seals=True, **p.BRG_P).items():
-        add(f"132 61804-2RS1 passive {k}", "Bearing (purchased)", v, E)
-    r = p.RETAINER
-    add("133 Bearing retainer (ASA)", "ASA", occ.tube(r["r1"], r["r0"], *r["z"]) - holes(ep.D_M3_CLEAR / 2, r["z"][0] - 0.1, r["z"][1] + 0.1, p.COVER["boss_pcd_r"], p.COVER_ANG), E)
-    # ---- output encoder
-    add("134 Encoder bracket 6061-T6 (turned)", "6061-T6", bracket(), E)
-    b = p.BRACKET
-    for i, a in enumerate(p.PIN_TAP_ANG):
-        add(f"135.{i + 1} Screw M2.5x10 ISO 10642 bracket->pin", "Steel 12.9 fastener",
-            g.csk(*p.polar(b["csk_r"], a), b["z_plate"][0], p.L_BRACKET_SCREW, 2.5, 1), E)
-    pcb = occ.box(-15, 15, -15, 15, *p.Z_PCB_OUT) - holes(ep.PCB["hole_d"] / 2, p.Z_PCB_OUT[0] - 1, p.Z_PCB_OUT[1] + 1, p.PCB_OUT["hole_r"], g.every(4, p.PCB_OUT["ang0"]))
-    add("136 Output encoder PCB 30x30x1.6 (shoulder P12)", "Electronics", pcb, E)
-    add("137 AS5047P TSSOP-14 output (envelope)", "Electronics",
-        occ.box(-ep.IC["l"] / 2, ep.IC["l"] / 2, -ep.IC["w"] / 2, ep.IC["w"] / 2, *p.Z_IC_OUT), E)
-    for i, a in enumerate(g.every(4, p.PCB_OUT["ang0"])):
-        add(f"138.{i + 1} Screw M2.5x4 DIN 912 pcb->bracket", "Steel 12.9 fastener",
-            g.shcs(*p.polar(p.PCB_OUT["hole_r"], a), p.Z_PCB_OUT[0], p.L_PCB_SCREW, 2.5, 1), E)
-    add("139 Output magnet D6x2.5 diametric", "NdFeB magnet", occ.cyl(ep.MAG["d"] / 2, *p.Z_MAG_OUT), E)
-    add("140 Encoder cover (ASA)", "ASA", cover(), E)
-    for i, a in enumerate(p.COVER_ANG):
-        x, y = p.polar(p.COVER["boss_pcd_r"], a)
-        add(f"141.{i + 1} Insert RX-M3x5.7 cheek B", "Brass insert", insert(ep.INSERT["d_hole"], 3.0, zb0, ep.INSERT["length"], 1, x, y), E)
-        add(f"142.{i + 1} Screw M3x12 DIN 912 cover->cheek B", "Steel 12.9 fastener", g.shcs(x, y, p.COVER["seat"], p.L_COVER_SCREW, 3.0, 1), E)
-    # ---- wrist interface (future hand)
-    for i, a in enumerate(g.every(p.WRIST["n"], p.WRIST["ang0"])):
-        x, z = p.polar(p.WRIST["pcd_r"], a)
-        ins = occ.tube(ep.INSERT["d_hole"] / 2, 1.5, p.L_FOREARM - ep.INSERT["length"], p.L_FOREARM)
-        add(f"143.{i + 1} Insert RX-M3x5.7 wrist", "Brass insert", along_y(ins, x, p.FA_ZC + z), E)
+        u, v = p.polar(p.SH_M5_R, a)
+        wsh = p.M5["washer"]
+        add(f"237.{i + 1} Washer M5 ISO 7089 shoulder", "Steel 12.9 fastener", ytube(wsh["od"] / 2, wsh["id"] / 2, p.Y_UI[1], p.Y_UI[1] + wsh["t"], u, p.L_UPPER + v))
+        add(f"238.{i + 1} Screw M5x12 ISO 4762 inner plate->shoulder", "Steel 12.9 fastener", shcs(u, p.L_UPPER + v, p.Y_UI[1] + wsh["t"], p.M5["screw_l"], 5.0, -1))
+    # pivot
+    for k, s in occ.ball_bearing(z0=2.0, seals=True, **p.PIVOT_BRG).items():
+        add(f"250 6705-2RS pivot {k}", "Bearing (purchased)", s)
+    rc = (p.PIVOT_BRG["D"] / 2 + p.ORING["groove_r"]) / 2
+    add("251 O-ring 31.5x1.5 NBR 70 pivot", "NBR O-ring", occ.Solid(cq.Solid.makeTorus(rc, 0.55, cq.Vector(0, 0, 2.0 + p.PIVOT_BRG["B"] / 2), cq.Vector(0, 0, 1))))
+    y_end, y_brg = -2.0 - p.PIVOT_BRG["B"] + 0.1, -2.0 - p.PIVOT_BRG["B"]
+    add("252 Insert M3x5.7 stub", "Brass insert", insert(0.0, 0.0, y_end, 1))
+    add("253 Washer 26/3.2x1 stub (PETG)", "PETG", ytube(13.0, 1.7, y_brg - 1.0, y_brg))
+    add("254 Screw M3x6 ISO 4762 stub", "Steel 12.9 fastener", shcs(0.0, 0.0, y_brg - 1.0, 6.0, 3.0, 1))
+    # forearm group
+    add("207 Rotor hub (PETG)", "PETG forearm", hub())
+    for i, a in enumerate(p.ROTOR["ang"]):
+        add(f"220.{i + 1} Screw M3x10 ISO 10642 hub->rotor", "Steel 12.9 fastener", csk(*p.polar(p.ROTOR["pcd_r"], a), p.Y_ROTOR + p.HUB["flange_t"], 10.0, 3.0, -1))
+    for i, a in enumerate((90.0, 210.0, 330.0)):
+        u, v = p.polar(7.0, a)
+        add(f"221.{i + 1} Insert M3x5.7 hub", "Brass insert", insert(u, v, p.Y_FO[0], -1))
+        add(f"222.{i + 1} Screw M3x8 ISO 10642 forearm plate->hub", "Steel 12.9 fastener", csk(u, v, p.Y_FO[1], 8.0, 3.0, -1))
+    add("208 Forearm outer plate (PETG)", "PETG forearm", fore_outer())
+    add("209 Forearm inner plate (PETG)", "PETG forearm", fore_inner())
+    ya, yb = p.Y_FI[1], p.Y_FO[0]
+    for i, (u, v) in enumerate(p.fore_nodes()):
+        sl = ycyl(p.FORE_SPACER["r"], ya, yb, u, v) - ycyl(2.0, ya - 1, ya + p.SPACER_INSERT["depth"], u, v) - ycyl(2.0, yb - p.SPACER_INSERT["depth"], yb + 1, u, v)
+        add(f"210.{i + 1} Forearm spacer sleeve D8 (PETG)", "PETG forearm", sl)
+        add(f"223.{i + 1} Insert M3x5.7 forearm spacer, ends", "Brass insert", insert(u, v, ya, 1) + insert(u, v, yb, -1))
+        add(f"224.{i + 1} Screws 2 x M3x10 ISO 10642 forearm spacer", "Steel 12.9 fastener",
+            csk(u, v, p.Y_FI[0], 10.0, 3.0, 1) + csk(u, v, p.Y_FO[1], 10.0, 3.0, -1))
+        if i in (p.STOP_EXT, p.STOP_FLEX):
+            name = "extension" if i == p.STOP_EXT else "flexion"
+            add(f"217.{i + 1} Silicone tube 8x10 stop sleeve, {name}", "Silicone",
+                ytube(p.FORE_SPACER["sleeve_r"], p.FORE_SPACER["r"], ya + 0.5, yb - 0.5, u, v))
+    add("211 Wrist block (PETG)", "PETG forearm", wrist_block())
+    for i, (u, v) in enumerate(wrist_screws()):
+        add(f"225.{i + 1} Screws 2 x M3x10 ISO 10642 wrist block (inserts in the block)", "Steel 12.9 fastener",
+            csk(u, v, p.Y_FI[0], 10.0, 3.0, 1) + csk(u, v, p.Y_FO[1], 10.0, 3.0, -1))
     return parts
-
-
-def build_elbow():
-    """Elbow actuator parts placed in the arm (turned by E_ROT), arm-replaced fasteners dropped."""
-    return [("E" + n, m, elbow_to_world(s.rotate((0, 0, p.E_ROT)))) for n, m, s in el.build() if not n.startswith(ELBOW_SKIP)]
 
 
 def build_shoulder():
@@ -580,7 +446,7 @@ def apart(a, b, margin):
 
 
 def interferences(arm, others):
-    """Overlap volume of every arm part against the arm, elbow and shoulder parts (forearm at 0 deg)."""
+    """Overlap volume of every arm part against the arm and shoulder parts (forearm at 0 deg)."""
     allp = arm + others
     boxes = [s.bounding_box() for _, _, s in allp]
     hits = []
@@ -599,47 +465,33 @@ def interferences(arm, others):
 
 
 def sweep(moving, stationary):
-    """Worst gap of each moving/stationary pair over the flexion range (negative = overlap mm3)."""
+    """Closest moving/stationary pairs over the flexion range; stop sleeves reported separately."""
     sb = [s.bounding_box() for _, _, s in stationary]
-    worst, oring, frame = {}, [], {}
+    worst, stops = {}, []
     for th in p.SWEEP:
         for nm, _, sm in moving:
             m = flex(sm, th)
             bm = m.bounding_box()
             for (ns, _, ss), bs in zip(stationary, sb):
-                if apart(bm, bs, 10.0 if ns.startswith(("104 ", "110 ", "115 ")) else 3.0):
+                if apart(bm, bs, 3.0):
                     continue
                 v = (m ^ ss).volume()
                 gap = -v if v > 1e-3 else m.min_gap(ss, 1.0)
-                if ns.startswith("121.") and nm.startswith("125 "):
-                    oring.append((th, ns, gap))
+                if nm.startswith("217."):
+                    stops.append((th, nm, ns, gap))
                     continue
                 if (nm, ns) not in worst or gap < worst[(nm, ns)][0]:
                     worst[(nm, ns)] = (gap, th)
-                if ns.startswith(("104 ", "110 ", "115 ")) and gap < frame.get(th, (1e9,))[0]:
-                    frame[th] = (gap, nm, ns)
-    print(f"flexion sweep {p.SWEEP[0]:.0f}..{p.SWEEP[-1]:.0f} deg, closest moving/stationary pairs (mm, deg):")
-    for (nm, ns), (gap, th) in sorted(worst.items(), key=lambda kv: kv[1][0])[:25]:
+    print(f"flexion sweep {p.SWEEP[0]:.0f}..{p.SWEEP[-1]:.0f} deg, closest moving/stationary pairs (mm, negative = overlap mm3):")
+    for (nm, ns), (gap, th) in sorted(worst.items(), key=lambda kv: kv[1][0])[:20]:
         print(f"  {gap:7.3f} at {th:6.1f}  {nm}  <->  {ns}")
-    print("forearm side to upper-arm prints / front ring, closest per angle (10.0 = nothing within 10 mm):")
+    print("stop sleeves (contact expected only at the stops):")
     for th in p.SWEEP:
-        gap, nm, ns = frame.get(th, (10.0, "-", "-"))
-        print(f"  {th:6.1f} deg  {gap:7.3f}  {nm}  <->  {ns}")
-    print("stop o-ring to cheek A slot (contact expected only at the hard stops):")
-    for th in p.SWEEP:
-        gaps = [gp for t, _, gp in oring if t == th]
-        print(f"  {th:6.1f} deg  {min(gaps) if gaps else float('nan'):7.3f}")
+        row = [(gap, nm, ns) for t, nm, ns, gap in stops if t == th]
+        if row:
+            gap, nm, ns = min(row)
+            print(f"  {th:6.1f} deg  {gap:7.3f}  {nm[:40]}  <->  {ns[:40]}")
     return worst
-
-
-def encoder_spacing():
-    """Print magnet / ic spacings between the motor encoder and the output encoder (elbow z)."""
-    d1 = ep.Z_PCB1 - p.Z_MAG_OUT[1]
-    d2 = ep.Z_MAG - p.Z_IC_OUT[1]
-    d3 = ep.Z_MAG - p.Z_MAG_OUT[1]
-    print(f"encoder spacing: motor ic <-> output magnet {d1:.1f}, output ic <-> motor magnet {d2:.1f}, "
-          f"magnet <-> magnet {d3:.1f} mm (min {p.MAG_SPACING_MIN:.0f})")
-    assert min(d1, d2, d3) >= p.MAG_SPACING_MIN
 
 
 def print_pose(solid, rot):
@@ -657,54 +509,53 @@ def print_pose(solid, rot):
 
 def bed_check(arm):
     """Print the bed footprint of every printed part and return them posed on the bed."""
-    posed = []
+    posed, seen = [], set()
     print(f"print fit (bed {p.BED:.0f} x {p.BED:.0f} x {p.BED:.0f}):")
     for n, m, s in arm:
-        rot = PRINT.get(g.part_no(n))
+        num = g.part_no(n)
+        rot = PRINT.get(num)
         if rot is None:
             continue
         sp, size, az = print_pose(s, rot)
         ok = max(size) <= p.BED
-        print(f"  {'ok ' if ok else 'BIG'} {size[0]:6.1f} x {size[1]:6.1f} x {size[2]:6.1f}  turn {az:2d}  {n}")
+        if num not in seen or not ok:
+            print(f"  {'ok ' if ok else 'BIG'} {size[0]:6.1f} x {size[1]:6.1f} x {size[2]:6.1f}  turn {az:2d}  {n}")
+        seen.add(num)
         posed.append((n, m, sp))
     return posed
 
 
-def masses(arm, elbow):
+def masses(arm):
     """Write mass.txt: per-part masses, printed-mass estimates and group centres of mass."""
     lines, groups = [], {"upper": [0.0, np.zeros(3)], "fore": [0.0, np.zeros(3)]}
-    for n, m, s in arm + elbow:
+    for n, m, s in arm:
         rho = g.MATERIALS[m][1]
         mass = s.volume() / 1000 * rho
         c = s.s.Center()
         c = np.array([c.x, c.y, c.z])
         est = ""
-        if not n.startswith("E") and g.part_no(n) in PRINT:
-            # walls + top/bottom skins solid, the rest at the infill fraction
-            shell = min(s.volume(), s.s.Area() * p.PRINT_SKIN.get(g.part_no(n), 1.7))
+        if g.part_no(n) in PRINT:
+            shell = min(s.volume(), s.s.Area() * p.PRINT_SKIN)
             printed = (shell + (s.volume() - shell) * 0.40) / 1000 * rho
             est = f"   print est {printed:7.1f} g"
         else:
             printed = mass
-        key = "fore" if not n.startswith(("E", "S")) and g.part_no(n) in MOVING else "upper"
+        key = "fore" if g.part_no(n) in MOVING else "upper"
         groups[key][0] += printed
         groups[key][1] += printed * c
-        if not n.startswith("E"):
-            lines.append(f"{n:58s} {mass:8.1f} g{est}")
-    motor = el.p.MOTOR_MASS_G
-    c_motor = np.array([0.0, p.Y_E0 + ep.Z_M0 + 14.0, p.Z_ELBOW])
-    groups["upper"][0] += motor
-    groups["upper"][1] += motor * c_motor
-    m_elbow = sum(s.volume() / 1000 * g.MATERIALS[m][1] for _, m, s in elbow) + motor
+        lines.append(f"{n:58s} {mass:8.1f} g{est}")
+    c_motor = np.array([0.0, (p.Y_MOUNT + p.Y_ROTOR) / 2, p.Z_ELBOW])
+    groups["upper"][0] += p.MOTOR["mass"]
+    groups["upper"][1] += p.MOTOR["mass"] * c_motor
     out = ["# arm masses, solid material (g); groups use the print estimate for printed parts;",
-           "# centres of mass in world mm at 0 deg (y outboard, z up)", *lines, ""]
+           "# centres of mass in world mm at 0 deg (y outboard, z up); the motor (336 g) is in the upper group", *lines, ""]
     for k, (mass, mc) in groups.items():
         c = mc / mass
         out += [f"m_{k} = {mass:.1f}", f"com_{k}_x = {c[0]:.1f}", f"com_{k}_y = {c[1]:.1f}", f"com_{k}_z = {c[2]:.1f}"]
-    out += [f"m_elbow = {m_elbow:.1f}", f"m_arm = {groups['upper'][0] + groups['fore'][0]:.1f}"]
+    out += [f"m_motor = {p.MOTOR['mass']:.1f}", f"m_arm = {groups['upper'][0] + groups['fore'][0]:.1f}"]
     with open(os.path.join(HERE, "mass.txt"), "w", encoding="utf-8") as f:
         f.write("\n".join(out) + "\n")
-    print(f"mass: upper arm + elbow {groups['upper'][0]:.0f} g, forearm {groups['fore'][0]:.0f} g, elbow actuator {m_elbow:.0f} g")
+    print(f"mass: upper arm + motor {groups['upper'][0]:.0f} g, forearm {groups['fore'][0]:.0f} g")
 
 
 def preview(groups, path):
@@ -740,29 +591,33 @@ def preview(groups, path):
     print(f"wrote {path}")
 
 
+def encoder_check():
+    """Print the motor magnet / ic gap (ams allows 0.5..3.0 mm)."""
+    gap = p.Y_MAG - p.Y_IC_TOP
+    print(f"encoder: magnet face y {p.Y_MAG:.2f}, ic top y {p.Y_IC_TOP:.2f} -> gap {gap:.2f} mm (0.5..3.0)")
+    assert 0.5 <= gap <= 3.0
+
+
 if __name__ == "__main__":
     t0 = time.time()
     occ.use_occ_kernel()
     arm = build_arm()
     print(f"built {len(arm)} arm solids in {time.time() - t0:.0f} s")
-    elbow = build_elbow()
     shoulder = build_shoulder()
-    print(f"placed elbow ({len(elbow)}) + shoulder ({len(shoulder)}) in {time.time() - t0:.0f} s")
-    encoder_spacing()
-    interferences(arm, elbow + shoulder)
+    print(f"placed shoulder ({len(shoulder)}) in {time.time() - t0:.0f} s")
+    encoder_check()
+    interferences(arm, shoulder)
     num = {n: g.part_no(n) for n, _, _ in arm}
     moving = [q for q in arm if num[q[0]] in MOVING]
-    outside = ("E01 ", "E10 ", "E26 ", "E28 ", "E27 61807-2RS1 output outer ring", "E27 61807-2RS1 output seal")
-    stationary = [q for q in arm if num[q[0]] not in MOVING and num[q[0]] != 132] + [q for q in elbow if q[0].startswith(outside)]
-    sweep(moving, stationary)
+    stationary = [q for q in arm if num[q[0]] not in MOVING and num[q[0]] not in (250, 251)]
+    sweep([q for q in moving if num[q[0]] not in (207, 220, 221, 222)], stationary)  # the hub group is coaxial with the turn
     posed = bed_check(arm)
-    masses(arm, elbow)
+    masses(arm)
     show_s = [q for q in shoulder if g.part_no(q[0][1:]) in {8, 15, 33, 42, 45}]
-    show_e = [q for q in elbow if q[0].startswith(outside)]
-    views = [(f"{th:.0f} deg", show_s + show_e + [(n, m, flex(s, th) if num[n] in MOVING else s) for n, m, s in arm]) for th in (0.0, 90.0, 140.0)]
+    views = [(f"{th:.0f} deg", show_s + [(n, m, flex(s, th) if num[n] in MOVING else s) for n, m, s in arm]) for th in (0.0, 90.0, 138.0)]
     preview(views, OUT + "_preview.png")
-    occ.write_step(arm + elbow + shoulder, OUT + ".step", f"VAYN_Arm_Rev{REV}")
-    g.write_3mf(arm + elbow + shoulder, OUT + ".3mf", f"VAYN Arm Rev {REV}")
+    occ.write_step(arm + shoulder, OUT + ".step", f"VAYN_Arm_Rev{REV}")
+    g.write_3mf(arm + shoulder, OUT + ".3mf", f"VAYN Arm Rev {REV}")
     g.write_stl_zip(arm, OUT + "_stl.zip")
-    g.write_stl_zip(posed, OUT + "_print.zip")
+    g.write_stl_zip(posed + [("299 Fit coupon (PETG)", "PETG", coupon())], OUT + "_print.zip")
     print(f"total {time.time() - t0:.0f} s")

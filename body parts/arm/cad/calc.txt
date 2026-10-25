@@ -1,79 +1,76 @@
 
-=== 1 mass, gravity, inertia (mass.txt: printed parts at the print estimate) 
-upper arm + elbow actuator 1.153 kg at 202 mm   forearm 0.261 kg at 382 mm (no hand in v0)   arm 1.414 kg vs research budget 1.18 kg (+20%)
-shoulder, arm horizontal: gravity 3.26 N*m, + 12.57 rad/s2 (point-mass J 0.0849) 4.33 N*m vs 30 N*m continuous (SF 6.9)
-elbow, forearm horizontal: gravity 0.21 N*m (com 84 mm) vs 3.47 static / 4.93 continuous rating; load J 0.0250 + reflected rotor 0.0160 kg*m2
+=== 1 motor and driver (LA8308 KV90, ODESC 3.6, 20 V bench) =====
+Kt 8.27/KV = 0.0919 N*m/A   R_phase 84.6 mOhm (measured)   Km 0.258 N*m/sqrt(W) cold
+motor 22 A cont (prop airflow rating) -> 2.02 N*m; 40 A peak -> 3.68 N*m; ODESC 40 A cont still air, 120 A peak
+no-load joint speed at 20 V x 0.7 modulation: 7560 deg/s -> vel_limit is a safety setting, not a capability limit
+electrical time constant L/R 0.44 ms; lumped heat capacity 194 J/K (estimate)
 
-=== 2 load cases (arm never weaker than the shoulder: 50 N*m proof, 50 N*m tilt proof) 
-LC1 shoulder proof as a force at the elbow: 167.8 N
-LC2 envelope: in-plane moment 50 N*m at the shoulder -> 8.23 N*m (elbow proof) at the elbow
-LC3 tilt proof as a lateral force at the wrist (forearm straight, 532 mm): 94.0 N; at the palm edge (40 mm) it also twists the forearm 3.76 N*m
-LC4 tilt proof as a lateral force at the future hand centre, forearm at 90 deg (320.5 mm out, lever 437.6): 114.3 N -> upper-arm torsion 36.62 N*m, clevis couple 407 N on 89.9 mm bearing span
-LC5 hard stop: elbow current limit 8.23 N*m x 1.5 = 12.35 N*m (impact: section 7)
-allowables (mean - 1 sd / 2.0): ASA in-layer 17.0, across layers 13.5, interlayer shear 7.8 MPa; 6061-T6 138 MPa
+=== 2 elbow loads, direct drive (joint torque = motor torque) ===
+forearm structure (CAD print estimate) 156 g at 122 mm; dummy hand 150 g at 296 mm
 
-=== 3 upper-arm sections (exact slices; bending sums both axes at the extreme fibres) 
-    z   part    A mm2   Iy(x2) cm4  Ix(y2) cm4  Ixy/Ixx   LC2 sig  LC3 sig  LC4 sig/tau   LC2+LC4 vm   limit  (p = plates only)
- -46.0p  104      605      18.58      45.70    0.000     7.47     3.00    1.89/1.14        9.56   OK
- -95.0p  104      600      18.10      45.30    0.000     6.40     2.72    1.54/1.15        8.18   OK
--141.0   104     1139      60.06      58.94    0.000     1.58     2.03    0.99/1.45        3.59   OK
--165.0   110      503      25.11      23.76    0.000     3.34     4.35    1.92/2.41        6.72   OK
--196.0   110      501      24.72      23.61    0.000     2.82     4.01    1.48/2.43        6.02   OK
--220.0   110     2133      76.64     132.53    0.042     0.73     0.91    0.28/1.57        2.90   OK
--236.0   110     1785      47.37     123.39    0.015     0.84     0.95    0.24/1.77        3.25   OK
-torsion: bredt on the octagon midline (104: plates 5 / walls 4, 110: wall 2.5, 3.0 pocket inset in the crown); below z -236 the LC4 couple enters through the ring bolts and the ear (section 6)
-x-braced front / back walls: 2 bays 43.0 x 50 mm per face between 6 mm posts, LC4 torsion 36.6 N*m + lateral 114 N:
-  x-bars (vertical walls)            V   370 N at 49.3 deg -> bar 8 x 4 mm:  244 N,  7.62 MPa (limit 13.5); buckling  22.5 MPa over 33.0 mm (SF  3.0)   OK
-  print (inboard plate on the bed): top-triangle bridge 32.4 mm, cavity roof 31.8 mm (max 33); diagonals 49.3 deg from the bed
+no hand: static 0.19  continuous 0.23  proof 0.38 N*m   J 0.0033 kg*m2 (rotor 7.3 %)
+   hold         2.0 A    0.6 W   steady rise 1, 2, 2 K for R_th (2.0, 3.0, 4.0)
+   continuous   2.5 A    0.9 W   steady rise 2, 3, 4 K for R_th (2.0, 3.0, 4.0)
+   proof        4.2 A    2.5 W   steady rise 5, 7, 10 K for R_th (2.0, 3.0, 4.0)
 
-=== 4 forearm sections (forearm at 90 deg; LC4 + elbow proof + LC3 palm-edge twist together) 
-     s    A mm2   Iy(x2) cm4  Ix(y2) cm4   in-plane  lateral  tau    vm    limit  (trough open, root ring closed)
-  45.0      731      26.00      62.83      1.06     4.10   4.96  10.02   OK
-  75.0     1012      30.63     168.99      0.63     1.06   3.28   5.93   OK
-  84.0     2082      59.36     263.07      0.31     0.53   0.07   0.85   OK
-cone cage: 4 bays, 8 corner bars 10 wide x 6 shell, rings 7; bars fixed in rigid rings (vierendeel) carry shear 25.7 / 114.3 N + twist 3.76 N*m, axial from the bending at the bay top:
-  bay s  88.0..117.1: vierendeel  9.24 + axial  3.56 = 12.79 MPa (limit 17.0); narrowest window 9.5 mm   OK
-  bay s 124.1..153.2: vierendeel  9.86 + axial  3.42 = 13.28 MPa (limit 17.0); narrowest window 9.1 mm   OK
-  bay s 160.2..189.4: vierendeel 10.68 + axial  3.26 = 13.94 MPa (limit 17.0); narrowest window 8.7 mm   OK
-  bay s 196.4..225.5: vierendeel 11.79 + axial  3.06 = 14.85 MPa (limit 17.0); narrowest window 8.2 mm   OK
-  ring nodes (7 x 6, bending + twist from both bays): vm 9.77 MPa (limit across layers 13.5)   OK
-  print (posterior face on the bed): bars bridge 29.1 mm between rings, ring roofs held to 33 mm by the anterior corner gussets (max 33)
+dummy hand: static 0.62  continuous 0.83  proof 1.39 N*m   J 0.0165 kg*m2 (rotor 1.5 %)
+   hold         6.8 A    6.6 W   steady rise 13, 20, 27 K for R_th (2.0, 3.0, 4.0)
+   continuous   9.0 A   11.8 W   steady rise 24, 35, 47 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 45.3 min (R_th 3)
+   proof       15.1 A   32.8 W   steady rise 66, 99, 131 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 4.2 min (R_th 3)
 
-=== 5 bolted joints (12.9 screws, preload vdi 2230 table mu 0.12; joint friction mu 0.15 metal, 0.30 printed) 
-adapter -> shoulder flange         6 x M5 @ 8.0 N*m: FM  9920 N  slip  232.1 N*m (load 50.0, SF 4.64)  separation 732.9 N*m (load 50.0, SF 14.7)
-hub plate -> adapter (ASA on 6061) 6 x M4 @ 1.0 N*m: FM  1490 N  slip   91.2 N*m (load 50.0, SF 1.82)  separation  98.2 N*m (load 50.0, SF  2.0)
-  DIN 9021 washer on ASA 15.1 MPa (compression, limit 17.0); thread in 6061 6 mm = 9 pitches
-  adapter hub face after the r15..20 groove and 6 x D7 pockets: contact 2837 mm2, 3.2 MPa on the hub (limit 17.0); floor under the groove 4.8 mm with the spigot
-  hex key (backup, all 50 N*m, best-case triangular contact over half of each flat): 677 N per flat, peak 14.6 MPa on 5 mm of pocket (limit 17.0)
-mid-span joint 4 x M4 @ 1.0: in-plane 29.0 N*m / lateral 35.9 N*m -> 374 N per bolt vs FM 1490 (no separation, SF 4.0); bolt <= FM + load 1864 N vs insert pull-out ~2785 N (SF 1.5)
-  torsion LC4 36.6 N*m vs friction 80.8 N*m (SF 2.2); dowels 2 x D4 backup 478 N each, bearing 15.0 MPa (limit 17.0)
-front ring -> crown 4 x M4 csk @ 1.0: friction 107 N*m vs stop + housing reaction 21.0 N*m (SF 5.1), plus the 1.5 mm pocket key
-  front ring slots (w 11.5): net band 25.6 mm2; LC5 stop + 61807 proof load all through one band 849 N -> 33 MPa (6061 limit 138); slot ends 2.0 mm clear of the washers
-ring + cover -> housing 7 x M3x16 @ 0.2: ring/cover friction 29.5 N*m vs housing reaction 8.64; insert engagement 4.5 of 5.7, tip 2.2 above the hole floor
-cheek A -> elbow hub (mu 0.20 as elbow) 6 x M3 @ 0.2 N*m: FM   396 N  slip    6.2 N*m (load 8.2, SF 0.75)
-  dowels 2 x D3x16 (backup, full proof): 317 N each, ASA bearing 9.6 MPa over 11 mm (limit across layers 13.5, SF 2.8 on strength)
-  hub screw M3x16: engagement 4.5 of 5.7, tip 2.2 above the hole floor
-cheek B -> forearm 4 x M4 @ 1.0: friction 1788 N vs LC4 bearing force 407 N (SF 4.4); holes float 0.4 mm radial for alignment to the pin
-pin -> ear 3 x M3 csk @ 0.4: LC4 pin moment -> 156 N on the worst screw vs FM 793 (no separation, SF 5.1); insert pull-out ~1400 N (SF 1.5)
+dummy hand + 0.10 kg payload: static 0.91  continuous 1.23  proof 2.06 N*m   J 0.0252 kg*m2 (rotor 1.0 %)
+   hold         9.9 A   14.3 W   steady rise 29, 43, 57 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 16.4 min (R_th 3)
+   continuous  13.4 A   25.9 W   steady rise 52, 78, 104 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 5.8 min (R_th 3)
+   proof       22.4 A   72.2 W   steady rise 144, 217, 289 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 1.7 min (R_th 3)
 
-=== 6 clevis: bearings, pin, ear (LC4 couple + LC3 / elbow internal loads) 
-61804 passive: Fr 407 N  s0 5.7 (need 1.0)  outer ring slip fit, axial float 0.40 / 0.35 mm
-61807 output: Fr 407 + 94 (elbow internal, proof) = 501 N, Fa 114 N -> P0 501 N  s0 6.4 (need 1.0)
-passive pin: bending at the flange 2.0 MPa (6061 limit 138); spigot D16 x 6 in the ear: bearing 4.2 MPa (ASA in-layer 17.0)
-ear below the crown (z -279, 45 x 8, A 339): in-plane bending 3.0 MPa, twist from the 12.5 mm bearing offset 6.0 MPa -> vm 10.8 (limit in-layer 17.0)
+=== 2b continuous rating and payload (stator 70 C at 35 C ambient) 
+R_th 2 K/W: 17.5 W -> 0.99 N*m continuous (10.8 A); payload at the hand centre with the dummy hand 0.12 kg
+R_th 3 K/W: 11.7 W -> 0.81 N*m continuous ( 8.8 A); payload at the hand centre with the dummy hand 0.06 kg
+R_th 4 K/W:  8.8 W -> 0.70 N*m continuous ( 7.7 A); payload at the hand centre with the dummy hand 0.03 kg
 
-=== 7 hard stop (pin in the ring, 3 o-rings, slot in cheek A) ===
-stall at the current limit    8.23 N*m ->  232 N: pin bending   90 MPa, ring+boss bearing   34 MPa, slot (o-ring OD x 4.5)  6.4 MPa
-LC5 (x 1.5)                  12.35 N*m ->  348 N: pin bending  135 MPa, ring+boss bearing   50 MPa, slot (o-ring OD x 4.5)  9.7 MPa
-capacity: pin 2584 N, boss 952 N, slot 486 N -> 17.3 N*m at the stop
-impact at 180 deg/s: J 0.0410 kg*m2, energy 0.202 J; o-ring squeeze 0.375 mm (25 % of 1.5), hardening rubber absorbs F*d/3
-  motor at the current limit            : stop may absorb 0.000 J -> safe approach speed   0.0 deg/s
-  motor current cut past the soft limit : stop may absorb 0.061 J -> safe approach speed  98.6 deg/s
-  gearbox share of the stop torque = J_rotor / J (0.39); with the motor at the limit any impact overloads the gearbox past 8.23 N*m -> firmware: current to 0 beyond 0/135 deg
-slot ends at the stops: o-ring touches at -5 and 140 deg (gen.log sweep); slot 8.6 wide for a 8.0 o-ring, depth 6.0, floor 2.0
+=== 3 ODESC axis 1 settings =====================================
+pole_pairs 20, torque_constant 0.0919, current_lim 20 A (1.84 N*m, 1.33 x the dummy-hand proof current)
+vel_limit 0.5 turn/s (180 deg/s), motor thermistor 10k NTC: limit 70 C, abort 80 C
+soft limits -3 .. 135 deg (encoder on the motor = joint angle, absolute at power-up, no homing)
+direction: set so flexion is positive; output resolution 14 bit = 0.022 deg = 0.12 mm at 0.30 m
 
-=== 8 output encoder ============================================
-stray field of the other D6x2.5 N35 magnet at 30.0 mm (on-axis dipole, Br 1.2 T): 0.50 mT vs AS5047P working range 35..70 mT (1.4%), uniform part rejected by the differential hall array
-stray field of the other D6x2.5 N35 magnet at 33.1 mm (on-axis dipole, Br 1.2 T): 0.37 mT vs AS5047P working range 35..70 mT (1.1%), uniform part rejected by the differential hall array
-stray field of the other D6x2.5 N35 magnet at 35.0 mm (on-axis dipole, Br 1.2 T): 0.31 mT vs AS5047P working range 35..70 mT (0.9%), uniform part rejected by the differential hall array
-output magnet to ic 1.00 mm (0.5..3.0); magnet turns with the forearm (cover), ic on the stationary pin bracket
+=== 4 stops and falls ===========================================
+unpowered fall horizontal -> straight: 0.62 J, 8.7 rad/s (2.6 m/s at the hand); ODESC idle = open phases, no braking (shorted phases would give only 0.067 N*m*s/rad)
+  extension stop (heel tab): sleeve at r 64 mm; absorbing 0.62 J in 1 mm -> average 623 N (312 N per plate edge)
+  extension stop (heel tab): sleeve at r 64 mm; absorbing 0.62 J in 3 mm -> average 208 N (104 N per plate edge)
+  flexion stop (front edge): sleeve at r 83 mm; absorbing 0.62 J in 1 mm -> average 623 N (312 N per plate edge)
+  flexion stop (front edge): sleeve at r 83 mm; absorbing 0.62 J in 3 mm -> average 208 N (104 N per plate edge)
+driven into a stop at the 180 deg/s cap: 0.081 J kinetic + current limit 1.84 N*m -> 22 N static at the flexion sleeve
+result: a powered stall is harmless; for an unpowered fall the 3 mm rubber pad on the heel face (part 218) gives the 3 mm travel (~200 N); keep the arm hanging (0 deg) whenever the ODESC is idle
+
+=== 5 shoulder ==================================================
+upper arm + motor 742 g at 218 mm, forearm 156 g, dummy hand 150 g
+arm horizontal: gravity 3.10 N*m, + 12.57 rad/s2 (J 0.116) -> 4.55 N*m vs 30 N*m continuous (SF 6.6)
+
+=== 6 upper-arm plates and half-laps ============================
+half-lap 30 long x 54 wide, 4 x M3 csk (+-10, +-9), half thickness 2.5: screws alone carry 12.1 N*m on the link at 15 MPa bearing; epoxy alone 67.7 N*m at 2 MPa
+-> shoulder current limit for the printed arm: 10 N*m output (dummy-hand demand 4.6 N*m)
+  v    40: plate width  83.1: shoulder 10 N*m on the link ->  0.87 MPa (allow 15)
+  v    80: plate width  64.9 (slot 12): shoulder 10 N*m on the link ->  1.44 MPa (allow 15)
+  v   120: plate width  54.5: shoulder 10 N*m on the link ->  2.02 MPa (allow 15)
+  v   155: plate width  51.0: shoulder 10 N*m on the link ->  2.31 MPa (allow 15)
+  v   220: plate width  56.8 (slot 12): shoulder 10 N*m on the link ->  1.88 MPa (allow 15)
+  v   260: plate width  70.0: shoulder 10 N*m on the link ->  1.22 MPa (allow 15)
+shoulder flange 6 x M5 in close-fit holes: 64 N each at 10 N*m -> 2.6 MPa bearing in the plate; 6 x M5 at 2 N*m preload 2000 N each (petg creep: re-torque after the first week)
+
+=== 7 elbow joint: hub, pivot, standoffs ========================
+current limit 1.84 N*m: 4 x M3 hub->rotor 30 N each (2.5 MPa in the flange); 3 x M3 plate->hub 88 N each (7.3 MPa in the 4 mm plate, allow 15); tube shear 0.9 MPa
+motor 40 A peak 3.68 N*m: 4 x M3 hub->rotor 59 N each (4.9 MPa in the flange); 3 x M3 plate->hub 175 N each (14.6 MPa in the 4 mm plate, allow 15); tube shear 1.8 MPa
+side push 20 N at the hand: 5.9 N*m out of plane -> 100 N couple between the hub (motor bearings) and the 6705 pivot (60 mm apart); 6705 static capacity >= 1.0 kN gives s0 >= 10.0
+side push 50 N at the hand: 14.8 N*m out of plane -> 249 N couple between the hub (motor bearings) and the 6705 pivot (60 mm apart); 6705 static capacity >= 1.0 kN gives s0 >= 4.0
+motor standoffs: M4 at 0.5 N*m -> 625 N on 79 mm2 = 7.9 MPa in petg near the stator (hdt test 1.8 MPa at 62 C): use 0.5 N*m + Loctite 243, re-check torque after the thermal test
+motor torque reaction: 3.68 N*m peak on 4 x M4 at r 20 -> 46 N each in shear (bearing 2.3 MPa)
+
+=== 8 forearm truss plates ======================================
+v   -60: rims 7 x 4 at +-22.7 mm, two plates: elbow current limit 1.84 N*m -> 0.83 MPa
+v  -120: rims 7 x 4 at +-20.7 mm, two plates: elbow current limit 1.84 N*m -> 0.92 MPa
+v  -200: rims 7 x 4 at +-17.3 mm, two plates: elbow current limit 1.84 N*m -> 1.12 MPa
+stop sleeve load at the current limit: 22 N on the d8 sleeve near the plates (short lever), 0.7 MPa edge contact per plate
+
+=== 9 mass ======================================================
+arm total 897 g (upper arm + motor 742, forearm 156); Rev 1 had a 508 g elbow actuator alone

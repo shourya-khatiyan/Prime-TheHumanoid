@@ -1,0 +1,143 @@
+# Handoff: VAYN ODrive bench GUI, Oct 17–18, 2026
+
+**Where things stand:** every software fix from this chat is committed. The board's two open problems are hardware: a motor phase fault (the motor can't run until it's fixed) and an SPI encoder that isn't communicating. The fix lists below cover what changed in the code.
+
+## 1. Setup and hardware
+
+**The project**
+- `odrive/` in `F:\Projects\Prime-TheHumanoid` is a bench GUI for an ODESC 3.6 56V board (an ODrive v3.6 clone, firmware 0.5.1) driving the VAYN shoulder actuator.
+- The backend is FastAPI in `odrive/backend` (`run.py`, port 8765). Every device write goes through the safety layer in `app/safety.py`, and long tests run as jobs in `app/jobs/`.
+- The frontend is React + Vite in `odrive/frontend` (port 5173).
+- `./dev.sh` starts both. `backend/.env` sets `ODRV_MODE=auto`, which tries native USB and falls back to the ASCII serial port (COM7).
+- Backend tests are `pytest`. They write into the real `backend/data/` folder (profile, audit log), so run them from a temporary copy of the backend.
+
+**The hardware**
+- **Motor:** 90 KV, 20 pole pairs, R about 84.6 mΩ, L about 37 µH, Kt 0.0919 Nm/A, axis 0.
+- **Gearbox:** 30:1 planetary. **Bench supply:** about 20 V.
+- **Encoder:** AS5047P on a Meukron board. Its A/B/I outputs are wired to ODrive M0 A/B/Z, and on Oct 18 the user also wired its SPI pins.
+- **Brake resistor:** 2 Ω. The supply can't sink current (`dc_max_negative_current = -0.01`).
+- **Runtime profile** (`backend/data/profile.yaml`): pos limits ±10 motor turns, vel max 60 turn/s, peak 30 A, continuous 12 A. The shipped default is `backend/profiles/vayn_shoulder.yaml`.
+
+**Throwaway test scripts** are in `%TEMP%\odrv_probe\`; they're not part of the repo. `rpc.py` is a websocket client that automatically confirms prompts. The `p*.py` scripts are the experiments referenced below.
+
+## 2. Request 1: closed loop fails, and "index not found yet"
+
+The user reported `MOTOR_FAILED` / `CURRENT_LIMIT_VIOLATION` in closed loop, and `INDEX_NOT_FOUND_YET` during index calibration.
+
+**Findings, all measured on the board:**
+- **Index:** the "encoder offset" button went straight to offset calibration (state 7). With `use_index=True`, ODrive refuses that until an index search (state 6) has crossed Z. The Z wiring was fine: a firmware index search found it in about 3.5 s and stopped at the same spot every time.
+- **CPR:** set to 4096, but the AS5047P's incremental output defaults to 4000. An open-loop spin at 8 A and 0.25 turn/s measured 4001.5 counts per turn.
+  - With 20 pole pairs, that 2.4% error shifts commutation about 170° electrical per turn, which explains the current-limit trips.
+  - The user had widened `calib_range` to 0.15, which hid the mismatch during calibration.
+- **Pole slipping:** open-loop at 5 A / 0.5 turn/s slips poles, so the count reads low. 8 A at 0.25 turn/s is reliable.
+- **After the CPR fix:** position, velocity, torque and every input mode (position filter, trapezoidal trajectory, velocity ramp) worked in closed loop.
+- **Encoder miscounting at high current:** some runs still failed intermittently, and the index check showed the count drifting only after high-current events:
+
+| Activity before the index check | Count error at index |
+|---|---|
+| Nothing (repeat check) | ±7 |
+| Fast moves under 1 A | +12 |
+| Torque reversals at 5 A | −31 |
+| Runaways at 12 A | +414 |
+
+That pattern points to electrical noise on the A/B wires. Recommended fixes: twisted or shielded A/B/Z wires paired with GND, routed away from the phase wires, a rigidly mounted encoder PCB, and 22–47 nF from A, B and Z to GND at the ODrive.
+
+**Waveform generator backlog:** it fired a setpoint every 20 ms, but the backend completes only about 41 per second over ASCII, because each setpoint costs two serial round trips. Latency climbed from 0.46 s to 1.46 s within 8 s, so commands (including "idle") ran seconds late.
+
+**Fixes:**
+- `jobs/commissioning.py`:
+  - The `calibrate` job has a new kind, `index` (state 6). Kind `encoder` now runs the index search first when `use_index` is on and the index hasn't been seen.
+  - The `open_loop` job reports counts per turn against CPR and warns if they differ by more than 1.5%.
+- `Control.tsx`:
+  - The generator skips a tick while the previous setpoint is unanswered.
+  - New "index search" button and `INDEX` chip.
+  - The open-loop tab no longer shows a "restore spi encoder" button or a "spi mode 257" tag on an ABZ setup (that button would have switched to SPI, saved and rebooted).
+  - New "counts / turn" cell in the open-loop panel.
+- `meta.ts`:
+  - Alarm summaries now take the first sentence instead of the first line, which fixes the truncated "…index pulse. If" text.
+  - New `INDEX_NOT_FOUND_YET` guide.
+  - The `CURRENT_LIMIT_VIOLATION`, `CPR_POLEPAIRS_MISMATCH` and `NO_RESPONSE` guides now mention CPR and wiring mode.
+- `mock.py`: the simulator supports state 6, `index_found`, and the firmware's `INDEX_NOT_FOUND_YET` behaviour. Added test `test_abz_index_search_then_offset_and_cpr_check`.
+- Docs: added an "Incremental (ABZ) bring-up" section to `docs/COMMISSIONING.md` (CPR 4000, index after every boot, noise mitigation) and updated `docs/FEATURES.md`.
+- Board: saved incremental mode, CPR 4000 and `use_index=True` through the encoder setup job.
+
+## 3. Request 2: a faulted setpoint can't be changed
+
+**Problem:** after a fault, the old `input_vel` / `input_torque` stays on the ODrive (the user had `input_torque = 1.0` Nm and `input_vel = −32`), and closed-loop entry re-applied it at once. Separately, a fault had disarmed the brake resistor. Fw 0.5.1 only re-arms it at boot, so every closed-loop attempt failed with `BRAKE_RESISTOR_DISARMED`, and "clear errors" couldn't fix it.
+
+**Fixes:**
+- `Safety._reset_setpoints`: on every closed-loop entry it holds the current position and zeroes velocity, torque and the integrator. Added alias `vel_integ`; removed the duplicate reset from `tuning.enter_closed_loop`.
+- `op_clear_errors`: if `BRAKE_RESISTOR_DISARMED` is set and the firmware has no device-level `clear_errors`, it asks for confirmation (action `rearm_brake`) and reboots.
+- Also: `BRAKE_RESISTOR_DISARMED` alarm guide, updated hint text on the Control page, `docs/SAFETY.md`, and test `test_closed_loop_entry_drops_stale_setpoints`.
+- Verified on the board: the reboot re-armed the brake resistor, and a stale 1 turn/s setpoint was not re-applied.
+
+## 4. Request 3: verify torque mode and the tests, and build an angle mode for the scale test
+
+**Explanation given:** torque mode sets torque, not speed. On an unloaded rotor, 1 A (0.09 Nm) accelerates until the speed cap stops it, and `vel_limit` was 30 turn/s. With a 2 turn/s cap it held about 1.9 turn/s.
+
+**Real bugs found:**
+- **Absolute position clamp (dangerous).** After torque spins the motor was at about 217 turns, and the step and sine tests' targets were clamped to the +10 limit. That commanded a 207-turn full-speed move that tripped on current (`clamped 217.251 -> 10`, four times in the audit).
+  - **Fix:** a per-axis zero (`Safety.origin`) set with "set zero here" (op `set_origin`), which resets on reconnect. The position window is now measured from that zero. If the motor is already outside the window, position commands are refused with a message instead of clamped. The window check in the position monitor uses the same zero.
+- **Mode switch.** Changing `control_mode` while in closed loop jumped to a stale target. It now calls `_reset_setpoints` first, so switches are bumpless.
+- **Gain sweep scoring.** A gain whose response never reached 90% (rise time None) scored as "best". It's now ranked last.
+- **Velocity step default.** 0.1 turn/s is too small to measure. Velocity mode now defaults to 1 turn/s.
+- **Torque panel:** added a "speed cap (vel_limit)" field with an explanation.
+
+**New "02 angle & push" tab** (`frontend/src/views/AnglePush.tsx`):
+- **Move to angle:**
+  - Angles are joint degrees at the output, measured from the zero.
+  - Path: shortest, "+ only (cw)", "− only (ccw)" or absolute, computed by `angleDelta` in the app. ODrive's trajectory can't be combined with its wrap-around mode.
+  - Settings: joint speed (°/s), acceleration (°/s²) and current limit.
+  - Moves use the trapezoidal trajectory with accel equal to decel, which avoids a known firmware oscillation.
+- **Push test** (`push_test` job in `jobs/characterize.py`), modelled on SMC and IAI push modes:
+  1. Torque mode with a speed cap at the approach speed, force ramped up with TORQUE_RAMP for each current in the list.
+  2. Contact is a stall (speed below 15% of the approach speed for 0.3 s). If the joint passes the maximum travel first, it aborts with "no contact".
+  3. It asks for each scale reading in kg, then reports estimated and measured joint torque, efficiency and output Kt, saves a report, and returns to the start angle on a trajectory.
+
+**Verified on the board:**
+- Position step 0.1 turn: rise 0.11 s, 0% overshoot. Velocity step 1 turn/s: rise 38 ms, 9% overshoot. The sweep ranked 0.16 best. Sine response values are plausible.
+- All angle moves landed within 0.05°.
+- With no load, the push test aborted after 20° and returned to the start.
+- Tests added for the zero-relative window, bumpless switching and the push abort. 15 backend tests and the TypeScript check pass, and `docs/SAFETY.md` / `docs/FEATURES.md` are updated.
+
+## 5. Request 4: the motor vibrates during index search (Oct 18)
+
+The user had taken the motor out of the actuator.
+
+**Findings:**
+- The configuration was fine.
+- A full calibration at about 19:20 passed. After that, every powered move failed: open-loop at 3 A peaked at 10–15 A while the encoder counted 0, and index searches tripped `CURRENT_LIMIT_VIOLATION`.
+- Motor calibration now fails with `PHASE_RESISTANCE_OUT_OF_RANGE`: even at the 4 V limit it can't reach 5 A, where a healthy connection needs about 0.6 V. A phase lead is open or poorly connected.
+- The board itself looks fine: no gate-driver fault, normal current-sensor readings at idle.
+
+**Fixes:**
+- The calibration log no longer prints "PASS R = 84.6 mΩ" after a failed calibration; it marks FAIL and says the value is stale.
+- New `JobCtx.restore()` (in `jobs/__init__.py`), which writes a setting back even after an abort. The push test now restores its settings through it.
+- An aborted push test had left `vel_limit` at 0.833 turn/s, and the user had saved that to flash. I set it back to 30 live; the next save made it permanent.
+
+## 6. Request 5: run open loop with the encoder now on SPI (Oct 18, last)
+
+- Motor calibration still fails with `PHASE_RESISTANCE_OUT_OF_RANGE`, so I didn't run open loop. The user's own open-loop runs showed 13–17 A current peaks.
+- **SPI isn't communicating.** With mode 257, CPR 16384 and chip-select on GPIO 4 active after a reboot, the board reports `ABS_SPI_COM_FAIL` with 83–100% bad frames, and the angle stays at 0. The AS5047P isn't answering.
+- Restored SPI mode with the encoder setup job (saved and rebooted), because the motor-calibration bypass had switched it back to incremental and saved that.
+
+## 7. Current state and next steps
+
+**Board as left:**
+- Encoder: SPI absolute mode, CPR 16384, chip-select GPIO 4, `use_index` off.
+- `vel_limit` 30 turn/s, brake resistor armed.
+- The motor error from the last calibration check may still be set; "clear errors" resets it.
+
+**Code:** the git working tree is clean, so all fixes above are committed (latest odrive commit `d6362fa`). If the backend is still running from before the Oct 18 evening fixes, restart `dev.sh` to load them.
+
+**Next steps for the user:**
+1. **Fix the motor phase wiring.** With power off, check the M0 terminal screws and any connectors or solder joints. Measure resistance between each pair of motor leads (A–B, B–C, A–C): all three should match at about 0.17–0.19 Ω. Then "motor R/L" should pass with R around 85 mΩ.
+2. **Fix the SPI wiring.** CS to GPIO 4 (or tell me the pin), CLK to SCK, MISO to MISO, MOSI to MOSI (it must not float), plus power and a shared GND. When it works, the angle changes when you turn the shaft by hand and the error rate is about 0.
+3. **Recalibrate:** "encoder offset" (SPI needs no index search), then open loop, then closed loop. Press "set zero here" before angle moves or the push test.
+4. **If you go back to incremental ABZ:** use CPR 4000 with `use_index` on, and fix the A/B wiring noise first.
+
+**Known limitations:**
+- Contact detection in the push test hasn't been tried against a real stick and scale; it may need a longer settle time.
+- Over ASCII, telemetry runs at about 60 Hz.
+- The zero resets whenever the board reconnects.
+- On fw 0.5.1, encoder mode and pin changes only take effect after save and reboot.

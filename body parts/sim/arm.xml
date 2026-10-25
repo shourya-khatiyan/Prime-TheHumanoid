@@ -1,6 +1,6 @@
-<mujoco model="vayn_arm_v0">
+<mujoco model="vayn_arm_rev2">
   <!-- planar arm. q=0 hangs along -z. shoulder -90 deg reaches forward (+x).
-       numbers from arm/cad/mass.txt and arm/cad/calc.txt. links are rigid.
+       numbers from arm/cad/mass.txt and arm/cad/calc.txt (rev 2, direct-drive elbow). links are rigid.
        angle is radian. the default is degree, which silently shrinks joint limits. -->
   <compiler angle="radian"/>
   <option gravity="0 0 -9.81" timestep="0.001"/>
@@ -13,13 +13,13 @@
     <geom name="floor" type="plane" size="1 1 0.01" pos="0 0 -0.85" rgba="0.9 0.9 0.9 1"/>
     <body name="upper" pos="0 0 0">
       <joint name="shoulder" type="hinge" axis="0 1 0" range="-2.2 3.2"/>
-      <inertial pos="-0.0012 0.0394 -0.2017" mass="1.1535" diaginertia="0.001 0.001 0.001"/>
-      <geom type="capsule" fromto="0 0.039 0 0 0.039 -0.298" size="0.028"/>
+      <inertial pos="-0.0007 0.0245 -0.2173" mass="0.7407" diaginertia="0.001 0.001 0.001"/>
+      <geom type="capsule" fromto="0 0.026 0 0 0.026 -0.298" size="0.028"/>
       <body name="fore" pos="0 0 -0.298">
-        <joint name="elbow" type="hinge" axis="0 1 0" range="0 2.35619449"/>
-        <inertial pos="0.0025 0.0448 -0.0838" mass="0.2606" diaginertia="0.001 0.001 0.001"/>
-        <geom type="capsule" fromto="0 0.045 0 0 0.045 -0.234" size="0.02"/>
-        <body name="payload" pos="0 0.045 -0.3205">
+        <joint name="elbow" type="hinge" axis="0 1 0" range="-0.0524 2.3562"/>
+        <inertial pos="-0.0008 0.0283 -0.1221" mass="0.1567" diaginertia="0.001 0.001 0.001"/>
+        <geom type="capsule" fromto="0 0.026 0 0 0.026 -0.234" size="0.02"/>
+        <body name="payload" pos="0 0.026 -0.3205">
           <inertial pos="0 0 0" mass="0.001" diaginertia="1e-6 1e-6 1e-6"/>
           <geom type="sphere" size="0.025" rgba="0.85 0.35 0.2 1"/>
         </body>
@@ -27,8 +27,8 @@
     </body>
   </worldbody>
   <actuator>
-    <!-- joint output torque. gearbox efficiency is already inside these numbers. -->
-    <motor name="shoulder" joint="shoulder" gear="1" ctrlrange="-50 50" forcerange="-50 50"/>
-    <motor name="elbow" joint="elbow" gear="1" ctrlrange="-8.27 8.27" forcerange="-8.27 8.27"/>
+    <!-- joint output torque. shoulder: printed-arm limit 10 n*m. elbow: direct drive, odesc current_lim 20 a. -->
+    <motor name="shoulder" joint="shoulder" gear="1" ctrlrange="-10 10" forcerange="-10 10"/>
+    <motor name="elbow" joint="elbow" gear="1" ctrlrange="-1.84 1.84" forcerange="-1.84 1.84"/>
   </actuator>
 </mujoco>

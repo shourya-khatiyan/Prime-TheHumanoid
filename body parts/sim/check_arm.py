@@ -1,4 +1,4 @@
-"""Torque check for the v0 arm.
+"""Torque check for the Rev 2 arm (direct-drive elbow).
 
 The links are rigid. This reports the joint torque gravity and a design
 acceleration demand, then the heaviest mass those torques can hold.
@@ -14,17 +14,17 @@ import numpy as np
 
 XML = Path(__file__).with_name("arm.xml")
 
-# output torques, n*m. elbow: params.py. shoulder: calc.txt l1 / l2.
-ELBOW_CONTINUOUS = 4.93
-ELBOW_LIMIT = 8.27  # odesc 10 a, after the 20:1 cycloid
-SHOULDER_CONTINUOUS = 30.0
-SHOULDER_PROOF = 50.0
+# output torques, n*m. elbow: arm/cad/calc.txt s2b / s3. shoulder: shoulder calc l1, printed-arm limit calc.txt s6.
+ELBOW_CONTINUOUS = 0.81  # direct drive, stator 70 c at 35 c ambient, r_th 3 k/w estimate (bench test pending)
+ELBOW_LIMIT = 1.84  # odesc current_lim 20 a
+SHOULDER_CONTINUOUS = 10.0  # the printed arm caps the shoulder (actuator itself: 30)
+SHOULDER_PROOF = 10.0
 # arm/cad/calc.txt: 180 deg/s in 0.25 s
 ALPHA = 12.57  # rad/s^2
 
-# calc.txt gravity, arm horizontal, no hand
-EXPECT_SHOULDER = 3.26
-EXPECT_ELBOW = 0.21
+# mass.txt gravity, arm horizontal, no hand
+EXPECT_SHOULDER = 2.22
+EXPECT_ELBOW = 0.19
 
 STRAIGHT = np.array([-np.pi / 2, 0.0])  # both links forward
 BENT = np.array([-np.pi / 2, np.pi / 2])  # forearm hanging

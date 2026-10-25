@@ -1,6 +1,6 @@
 # Arm simulation
 
-Rigid-body check of the v0 arm (shoulder pitch + elbow pitch, no hand).
+Rigid-body check of the Rev 2 arm (shoulder pitch + direct-drive elbow pitch, no hand).
 It answers whether the motors can hold or lift a mass. It does not answer
 whether a printed part breaks. That stays in `arm/cad/calc.py`.
 
@@ -15,21 +15,20 @@ sim/.venv/Scripts/python sim/check_arm.py
 A window of the same model:
 
 ```bash
-sim/.venv/Scripts/python sim/check_arm.py --view --mass 1.0
+sim/.venv/Scripts/python sim/check_arm.py --view --mass 0.15
 ```
 
 ## What the model uses
 
 | Item | Value | Source |
 |---|---|---|
-| Upper arm | 1.1535 kg, centre 202 mm from the shoulder | `arm/cad/mass.txt` |
-| Forearm | 0.2606 kg, centre 84 mm from the elbow | `arm/cad/mass.txt` |
-| Payload point | 320.5 mm from the elbow (future hand centre) | `arm/parts.md` |
-| Shoulder | 30 N·m continuous, 50 N·m proof | `shoulder` calc, L1 / L2 |
-| Elbow | 4.93 N·m continuous, 8.27 N·m at the 10 A cap | `elbow/cad/params.py` |
+| Upper arm + elbow motor | 0.741 kg, centre 217 mm from the shoulder | `arm/cad/mass.txt` |
+| Forearm | 0.157 kg, centre 122 mm from the elbow | `arm/cad/mass.txt` |
+| Payload point | 320.5 mm from the elbow (hand centre) | `arm/parts.md` |
+| Shoulder | 10 N·m (printed-arm limit; the actuator itself is 30 N·m continuous) | `arm/cad/calc.txt` §6 |
+| Elbow | 0.81 N·m continuous (thermal estimate), 1.84 N·m at the 20 A limit | `arm/cad/calc.txt` §2b, §3 |
 | Lift rate | 12.57 rad/s² | `arm/cad/calc.txt` |
 
-Link spin inertia is the point-mass model used in `calc.txt`. Real mesh
-inertia comes later, from the STEP file. Joint friction is zero until a
-motor is measured. The torque numbers are already gearbox output, so
-efficiency is not applied again.
+Link spin inertia is the point-mass model used in `calc.txt`. Joint friction
+is zero until a motor is measured. The elbow is direct drive, so its numbers
+are motor torque.

@@ -1,260 +1,164 @@
-"""Single source of truth for every arm dimension (mm, deg).
+"""Single source of truth for every arm Rev 2 dimension (mm, deg).
+
+Rev 2 is a twin-plate arm with a direct-drive elbow: the Eaglepower LA8308
+KV90 sits between the two upper-arm plates and its rotor drives the forearm.
 
 World frame: origin on the shoulder axis at the shoulder output-flange face.
 +Y is the shoulder axis pointing outboard (away from the torso), +X forward,
 +Z up. At zero shoulder angle the arm hangs along -Z; the elbow axis is
-parallel to Y.
+parallel to Y at x = 0, z = Z_ELBOW.
 
-Elbow frame E (used for everything round the elbow): z is the elbow-actuator
-axis (lid rear face z = 0, output toward +z = world +Y), y is the distance
-below the elbow axis (the forearm length coordinate s when hanging) and x is
-forward. A direction at angle psi in E is world (cos psi, 0, -sin psi):
-0 = forward, 90 = down, 270 = up.
-
-Shoulder and elbow numbers are read from their own sources (shoulder
-parts.md / gen_actuator_3mf.py, elbow params.py) and only re-stated here
-where the shoulder code has them inline; gen_arm.py asserts them.
+Arm-plane coordinates (u, v): u = world x (forward), v = world z - Z_ELBOW
+(up from the elbow axis). Every plate is a 2D outline in (u, v) extruded
+between two world-y faces. Flexion turns the forearm about +y by theta:
+the hanging forearm (pointing -v) swings toward +u.
 """
 
 import math
-import os
-import sys
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "elbow", "cad"))
-import params as ep  # noqa: E402  (elbow params, path set above)
 
 # ---------------------------------------------------------------- geometry (arm/research.md s2, 160 cm)
 L_UPPER = 298.0  # shoulder axis -> elbow axis
 L_FOREARM = 234.0  # elbow axis -> wrist flange face
-L_HAND = 173.0  # future hand (not built in v0): sets the lc3 / lc4 load point only
+L_HAND = 173.0  # future hand: load point only
 Z_ELBOW = -L_UPPER
-THETA_MIN, THETA_MAX = -5.0, 140.0  # hard stops (software 0..135)
-SWEEP = [-5.0, 0.0, 20.0, 40.0, 60.0, 80.0, 100.0, 120.0, 135.0, 140.0]
-
-# ---------------------------------------------------------------- loads (arm never weaker than the shoulder)
-T_SH = 50.0  # shoulder current-limit / proof torque (shoulder calc.txt)
-M_SH_TILT = 50.0  # shoulder tilt proof
-T_EL = ep.T_PROOF  # elbow output at the odesc 10 a current limit
+THETA_MIN, THETA_MAX = -5.0, 140.0  # rubber-sleeve stop contacts (gen_arm sweep: heel at -5, front edge at ~140)
+SOFT_MIN, SOFT_MAX = -3.0, 135.0  # odesc software limits
+SWEEP = [-5.0, 0.0, 15.0, 30.0, 45.0, 60.0, 75.0, 90.0, 105.0, 120.0, 130.0, 135.0, 138.0, 140.0]
 G = 9.81
 
-# ---------------------------------------------------------------- materials
-SIG_ASA_XY, SIG_ASA_Z = 37.0 - 3.0, 31.0 - 4.0  # bambu asa tds tensile, mean - 1 sd
-E_ASA_Z = 2120.0 - 260.0  # bambu asa tds young's modulus across layers, mean - 1 sd (lattice bar buckling)
-SF_PRINT = 2.0  # printed parts against mean - 1 sd at the limit loads
-MU_PRINT = 0.30  # asa on asa / asa on 6061 static friction used for printed joints
-MU_METAL = 0.15  # steel / aluminium faces (shoulder calc)
+# ---------------------------------------------------------------- materials (bambu petg hf tds: 34 +- 4 / 23 +- 4 mpa, 1.28 g/cm3, hdt 62 c)
+SIG_PETG_XY, SIG_PETG_Z = 34.0 - 4.0, 23.0 - 4.0  # mean - 1 sd
+E_PETG = 1810.0 - 190.0
+SF_PRINT = 2.0
+RHO_PETG = 1.28
+MU_PRINT = 0.30
 
 # ---------------------------------------------------------------- shoulder interface (shoulder parts.md 42, 43, 45)
 SH_FLANGE_Z = 100.5  # flange face in shoulder z
-SH_M5_R, SH_M5_ANG = 26.0, [30.0 + 60.0 * k for k in range(6)]  # 6 x m5, tapped 8 deep in en24t
+SH_M5_R, SH_M5_ANG = 26.0, [30.0 + 60.0 * k for k in range(6)]  # 6 x m5, tapped 8 deep
 SH_M5_TAP = 8.0
 SH_M4_HEAD_R, SH_M4_HEAD_ANG = 27.0, [60.0, 180.0, 300.0]  # carrier-2 screw heads flush with the face
-SH_PILOT_R, SH_PILOT_DEPTH = 20.0, 2.0  # d40 h7 pilot
+SH_PILOT_R, SH_PILOT_DEPTH = 20.0, 2.0  # d40 h7 recess in the flange
 SH_COVER_Y = -1.0  # stationary cover front face (world y)
-SH_R = 50.0  # housing and cover radius
+SH_R = 50.0
+SPIGOT = dict(r=20.0 - 0.10, h=1.8)  # printed d40 spigot (clearance set by the coupon), 0.2 short of the recess floor
+M4_HEAD_RELIEF = dict(r=4.5, depth=0.4)
+M5 = dict(hole_r=5.15 / 2, washer=dict(od=10.0, id=5.3, t=1.0), screw_l=12.0, torque=2.0)  # iso 7089 washer, low torque into petg
 
-# ---------------------------------------------------------------- adapter plate 6061-t6 (cnc, 8 mm stock)
-AD_T = 6.0
-AD_AF = 76.0  # hexagon across flats, corners at 0 + 60k
-AD_CORNER_R = 6.0
-AD_SPIGOT_R, AD_SPIGOT_H = 20.0 - 0.009, 1.8  # d40 g6, 0.2 short of the pilot bottom
-AD_BORE_R = 14.0
-AD_M5_HOLE_R = 5.5 / 2  # iso 273 medium
-AD_M4_R, AD_M4_ANG = 34.0, [15.0 + 60.0 * k for k in range(6)]  # m4 tapped through
-AD_RELIEF_R, AD_RELIEF_DEPTH = 4.5, 0.3  # over the shoulder m4 heads
-WASHER_M5 = dict(od=10.0, id=5.3, t=1.0)  # iso 7089
-M5_SCREW_L = 12.0  # iso 4762 12.9 at 8.0 n*m + loctite 243 (shoulder calc)
-M5_HEAD = dict(dk=8.5, k=5.0)
+# ---------------------------------------------------------------- elbow motor (eaglepower la8308 kv90; shoulder parts.md rev 1.4 measurements)
+MOTOR = dict(r=46.0, h=32.5, mass=336.0, kv=90.0, r_phase=0.0846, l=37e-6, pp=20, i_cont=22.0, i_peak=40.0)
+MOTOR_BASE = dict(pcd_r=20.0, ang=[0.0, 90.0, 180.0, 270.0], d=4.0, thread=6.0)  # 4 x m4 on d40 (angles vs the lead exit: measure)
+ROTOR = dict(pcd_r=15.5, ang=[45.0, 135.0, 225.0, 315.0], d=3.0, thread=5.0, stub_r=1.75, stub_l=10.5, cap_r=8.7)
+LEAD = dict(r=32.0, ang=135.0, hole_r=8.5)  # phase-lead bundle (13 across) leaves the rear face here: up and back, never swept
+STANDOFF = dict(ro=5.5, ri=2.25, h=5.0)  # printed tubes on the motor screws: 5 mm air gap, keeps the petg away from the stator
+NTC = "10k NTC (B3950) bonded to a stator coil through a base window, wired to the ODESC motor thermistor input"
 
-# ---------------------------------------------------------------- upper arm, shoulder half (asa)
-Y_BED = 1.0  # inboard face of the upper arm = print bed plane, 2.0 from the shoulder cover
-DRUM_R, DRUM_T, DRUM_Y1 = SH_R, 2.5, 61.0  # same diameter as the shoulder housing
-HUB_Y1 = 16.0  # hub plate outboard face
-HUB_RIM = dict(r=40.5, y=8.0)  # outside the m4 washers the drum floor steps down to y 8
-HEX_CLEAR = 0.15  # per flat, printed pocket
-M5_POCKET_R, M5_POCKET_Y1 = 5.5, AD_T + WASHER_M5["t"] + M5_HEAD["k"] + 0.5
-WASHER_M4L = dict(od=12.0, id=4.3, t=1.0)  # din 9021
-M4_HUB_L = 16.0  # iso 4762, hub plate -> adapter thread
-M4_HEAD = dict(dk=7.0, k=4.0)
-CAP_T = 2.5
-CAP_SCREW_R, CAP_SCREW_ANG = 46.0, [45.0 + 90.0 * k for k in range(4)]
-CAP_GROOVE = (40.0, 41.2, 0.6)  # decorative groove on the cap face: r in, r out, depth
-CABLE_EXIT_R, CABLE_EXIT_Y = 7.0, 34.0  # d14 hole, rear of the drum
-CAP_WIN = dict(r=(13.0, 37.0), spoke=8.0, r_fillet=2.0)  # four windows between spokes on the cap screws
-AD_POCKET = dict(groove=(15.0, 20.0), r=3.5, pcd_r=26.0, ang=[60.0 * k for k in range(6)], depth=3.0)  # hub face, clear of the m5 washers and m4 threads
+# ---------------------------------------------------------------- elbow stack (world y)
+Y_UI = (0.0, 5.0)  # upper inner plate, inboard face on the shoulder flange
+Y_MOUNT = Y_UI[1] + STANDOFF["h"]  # motor mounting face
+Y_ROTOR = Y_MOUNT + MOTOR["h"]  # rotor hub face
+HUB = dict(flange_r=21.0, flange_t=4.0, tube_r=15.0, insert_r=10.0, insert_ang=[0.0, 90.0, 180.0, 270.0])
+Y_UO = (Y_ROTOR + HUB["flange_t"] + 1.0, Y_ROTOR + HUB["flange_t"] + 6.0)  # upper outer plate
+Y_FO = (Y_UO[1] + 1.0, Y_UO[1] + 5.0)  # forearm outer plate (bolted to the hub end face at Y_FO[0])
+Y_FI = (-5.0, -1.0)  # forearm inner plate
+FI_BOSS_Y0 = -7.0  # forearm inner plate is 6 thick round the pivot bearing
+UO_HUB_CLEAR_R = HUB["tube_r"] + 2.0  # clearance hole in the upper outer plate
 
-# ---------------------------------------------------------------- upper arm beam (asa: shoulder half = two plates + x-braced walls, elbow half = octagon shell)
-BEAM_T = 2.5
-BEAM_Y1 = 61.0
-Z_JOINT = -150.0  # bolted joint between the two upper-arm prints
-Z_CAV_TOP = -46.0  # shell cavity opens into the drum here
-Z_CAV_BOT = -200.0
-UA_TRUSS = dict(plate=5.0, wall=4.0, c=4.0, roof_c=12.0, z=(-46.0, -138.0), n=2, post=6.0, bar=8.0, r=1.5)  # plates inboard / outboard, x bays front and back between posts
-CROWN_POCKET = dict(inset=3.0, y=(44.0, 72.0), c=10.0)  # lightening pocket in the crown, clear of channel and ring inserts
-RING_POCKET = 1.5  # front ring sits this deep in the crown face (shear key for the housing torque)
-CROWN_Y1 = 9.5 + ep.Z_BRG0 + ep.T_FLANGE_COVER + RING_POCKET  # crown outboard face (world y); pocket floor = cover-flange face
+# ---------------------------------------------------------------- motor encoder (same pcb / stack as shoulder p12, relative to the mounting face)
+PCB = dict(w=30.0, t=1.6, hole_r=17.0, hole_d=2.2, ang0=45.0)  # m2.5 self-tapping into the plate
+Y_PCB = (Y_MOUNT - 8.5, Y_MOUNT - 8.5 + PCB["t"])
+Y_IC_TOP = Y_PCB[1] + 0.9
+Y_MAG = Y_MOUNT - 4.75  # magnet face on the rear-cap holder (shoulder part 8 geometry)
+POCKET_CLEAR = 0.3
+CABLE_GROOVE = dict(w=6.0, d=2.0, ang=135.0, r1=58.0)  # encoder cable groove on the outboard face of the inner plate
 
+# ---------------------------------------------------------------- inner pivot (compliant: only knocks reach it)
+PIVOT_BRG = dict(d=25.0, D=32.0, B=4.0, d1=26.8, D1=30.2, nballs=20, dball=2.0)  # 6705-2RS (thin section)
+PIVOT_BORE_R = PIVOT_BRG["D"] / 2 + 0.30  # 0.3 radial float, centred by the o-ring
+ORING = dict(id=31.5, cs=1.5, groove_r=PIVOT_BRG["D"] / 2 + 1.5 * 0.75, groove_w=2.0)  # nbr 70, 25 % squeeze on the bearing od
+STUB = dict(r=PIVOT_BRG["d"] / 2, shoulder_r=14.2, journal_clear=0.05)  # printed on the inner plate; journal radius = r - clear (coupon row y 15)
+# ---------------------------------------------------------------- upper-arm plates (petg, 5 thick, printed flat)
+UPPER = dict(r_sh=44.0, r_el=52.0,
+             front=[(48.9, 17.8), (18.0, 95.0), (18.0, 215.0), (41.3, 283.0)],
+             back=[(-41.3, 283.0), (-20.0, 215.0), (-20.0, 95.0), (-48.9, 17.8)],
+             heel=[(-53.5, -48.2), (-35.7, -62.5)], heel_a=(222.0, 240.3))  # heel face radial at 240.3 deg, carries the rubber pad
+HEEL_PAD = dict(t=3.0, r=(52.0, 72.0))  # 3 mm rubber glued on the heel face of both plates: extension stop at -5 deg, unpowered fall ~200 N
+SLOTS = [(62.0, 98.0, 6.0), (194.0, 232.0, 6.0)]  # (v0, v1, half width): solid band between them carries the laps
+SPLIT = dict(inner=120.0, outer=155.0, lap=30.0, screw_u=10.0, screw_dv=9.0)  # staggered half-laps, epoxy + 4 x m3 csk; pieces <= 235 long
+UPPER_SPACER = dict(inset=7.5, every=4, r=4.5, r_el_min=58.0, r_sh_min=50.0,
+                    shoulder=[(36.0, L_UPPER), (-36.0, L_UPPER), (0.0, L_UPPER - 40.0)])
+SPACER_INSERT = dict(d_hole=4.0, depth=6.7)  # ruthex-type m3 x 5.7 heat-set insert in each sleeve end
 
-def beam_station(z):
-    """Outer section (x back, x front, y outboard, chamfer) of the upper arm at world z."""
-    xb = -32.0 - 2.0 * min(1.0, (-30.0 - z) / 196.0)
-    if z >= -208.0:
-        xf = 32.0 - 4.0 * (-30.0 - z) / 178.0
-    elif z >= -236.0:
-        xf = 28.0 - 16.0 * (-208.0 - z) / 28.0
-    else:
-        xf = 12.0
-    t = min(1.0, max(0.0, (-196.0 - z) / 30.0))  # flare 0..1 between z -196 and -226
-    return xb, xf, BEAM_Y1 + t * (CROWN_Y1 - BEAM_Y1), 15.0 - 9.0 * t
+# ---------------------------------------------------------------- forearm plates (petg, 4 thick truss)
+FORE = dict(r_lobe=26.0, rim=7.0, bar=6.0,
+            back=[(-24.4, -8.9), (-30.0, -60.0), (-21.0, -165.0), (-20.0, -228.0)],
+            front=[(20.0, -228.0), (21.0, -165.0), (30.0, -60.0), (24.4, -8.9)],
+            lobe_a=(-20.0, 200.0))
+FORE_NODES = [("back", -60.0), ("front", -85.0), ("back", -110.0), ("front", -135.0), ("back", -160.0), ("front", -205.0), ("back", -205.0)]
+STOP_EXT, STOP_FLEX = 0, 1  # indices in FORE_NODES that carry rubber sleeves
+FORE_SPACER = dict(r=4.0, sleeve_r=5.0)  # d8 printed sleeve; silicone tube 8 x 10 on the two stop spacers
+WRIST = dict(v=(-L_FOREARM, -216.0), u=20.0, pcd_r=15.0, n=4, ang0=45.0, spigot_r=10.0 - 0.01, spigot_h=1.8)
 
+# ---------------------------------------------------------------- fasteners
+M3 = dict(clear_r=3.4 / 2, csk_d=6.3, csk_depth=1.7)
+M4 = dict(clear_r=4.5 / 2, csk_d=8.4, csk_depth=2.2)
 
-BEAM_Z_UP = [-30.0, Z_JOINT]
-BEAM_Z_LOW = [Z_JOINT, -196.0, -208.0, -226.0, -236.0, Z_ELBOW + 20.0]
-TAB_W, TAB_IN, TAB_C = 14.0, 8.0, 4.0  # joint collar: width outside the shell, overlap into the shell, chamfer
-TAB_H_UP, TAB_H_LOW = 8.0, 10.0
-TAB_BOLT_Y = [7.0, 55.0]
-TAB_DOWEL_Y = 31.0
-M4_TAB_L = 16.0
-DOWEL4 = dict(d=4.0, l=16.0)  # iso 8734
-INSERT_M4 = dict(d_hole=5.6, length=8.1, depth=9.1)  # ruthex rx-m4x8.1
-INSERT_M3 = ep.INSERT  # ruthex rx-m3x5.7
-
-# ---------------------------------------------------------------- elbow placement
-Y_E0 = Y_BED + 8.0 + 0.5  # lid rear face: 8 mm rear ear + 0.5 air
-E_ROT = 36.0  # actuator turned about its axis: lead port 220 -> 256 (up, 14 deg back)
-SADDLE_R = ep.R_FLANGE + 1.5
-EAR_Z = (-8.5, -0.5)  # rear ear, elbow frame z
-EAR_R = 24.0
-EAR_BOX = (-30.0, 12.0, -50.0)  # x0, x1, y top (elbow frame y = -up)
-CHANNEL = dict(x=(-24.0, 4.0), y=(6.0, 40.0), z_lo=25.0)  # crown cable channel: world x, world y, height above the axis
-GROOVE = dict(w=6.0, d=3.0)  # encoder wire groove on the ear inner face
-
-# ---------------------------------------------------------------- front ring 6061-t6 (cnc, 4 mm plate)
-RING_Z0 = ep.Z_BRG0 + ep.T_FLANGE_COVER  # 74.3, on the cover flange
-RING_T = 4.0
-RING_Z1 = RING_Z0 + RING_T
-RING_ID_R = ep.R_NECK + 0.1  # pilots on the cover neck d52
-RING_R = 44.0
-RING_TAB = (-31.0, 9.0, -69.0)  # x0, x1, y top (69 above the axis)
-RING_FILLET = 4.0
-RING_BOLTS = [(-24.0, -52.0), (2.0, -52.0), (-24.0, -63.0), (2.0, -63.0)]  # elbow frame (x, y)
-RING_WIN = dict(r=35.25, w=11.5, half=7.5, psi=(0.0, 200.0))  # kidney slots in the screw gaps centred in this psi range: below the tab, away from the stop pin
-M4_RING_L = 12.0  # iso 10642, flush in the ring
-FLANGE_SCREW_L = 16.0  # din 912 m3: replaces the elbow m3 x 12 (ring under the heads)
-Z_FLANGE_HEAD1 = RING_Z1 + ep.WASHER_M3["t"] + ep.M3_SHCS["k"]
-
-# ---------------------------------------------------------------- hard stop (pin in the ring, slot in cheek a)
-STOP_R = ep.R_FLANGE_SCREW
-STOP_PSI = (ep.ANG_FLANGE[5] + ep.ANG_FLANGE[6]) / 2 + E_ROT - 360.0  # between two flange screws
-STOP_PIN = dict(d=5.0, l=14.0)  # iso 8734, pressed through the ring and its boss (7 mm)
-STOP_BOSS = dict(r=5.0, h=3.0)  # on the ring front face, between two flange screw heads
-ORING = dict(id=4.5, cs=1.5, n=3)  # nbr 70, din 3771
-ORING_OD = STOP_PIN["d"] + 2 * ORING["cs"]
-SLOT_W = ORING_OD + 0.6
-
-# ---------------------------------------------------------------- forearm (elbow frame: x = x_f, y = s)
-CHEEK_A_Z = (Z_FLANGE_HEAD1 + 1.0, Z_FLANGE_HEAD1 + 1.0 + 8.0)
-CHEEK_A_R, CHEEK_A_TOP = 44.0, -30.0
-CHEEK_A_TIP, CHEEK_B_TIP = (30.0, 80.0), (27.0, 80.0)  # flank end points (x, s); cheek flanks are tangent to the disc
-CHEEK_GROOVE = (24.0, 25.2, 0.6)  # decorative groove on the cheek a face: r in, r out, depth
-BOSS_R, BOSS_R_MAX = 18.75, ep.BRG_OUT_LIP_ID / 2 - 0.7  # 61807 inner-ring abutment, middle of skf da 37..38; teardrop inside the cover lip
-BOSS_Z0 = ep.Z_BRG1  # clamps the 61807 inner ring
-BOSS_FACE = 0.5  # round (inside da max 38) for this length at the ring face, teardrop behind it
-HUB_SCREW_L = 16.0  # din 912 m3
-HUB_CBORE = dict(d=6.2, depth=3.4)
-HUB_DOWEL = dict(d=3.0, l=16.0, in_boss=11.0)  # iso 8734; 5 in the elbow hub (as the elbow), 11 in the asa
-SLOT_DEPTH = 6.0  # 2 mm floor left in cheek a
-FA_POST = -22.0  # posterior face (print bed)
-FA_CUT_R = 47.0  # concave clearance round the cradle
-FA_T = 2.5  # clevis trough wall
-Z_CHEEK_B_IN = -12.5  # forearm inboard face = cheek b inner face
-FA_ZC = (Z_CHEEK_B_IN + CHEEK_A_Z[0]) / 2  # forearm centre plane (elbow z)
-S_FULL = 80.0  # full clevis width down to here; open anterior trough above, root ring + cage below
-FA_ROOT = 8.0  # root ring: trough -> cage, corner chamfer opens 8 -> 14 over it
-S_END = 226.0  # wrist end block start
-FA_C = 8.0
-FA_ROOF_C = 14.0  # inner chamfer at the anterior corners of the trough
-FA_ANT = [(30.0, 10.0 - 16.0 * 20.0 / 34.0), (S_FULL, 30.0)]  # anterior edge (s, a): straight flank up to the clevis end
-FA_WRIST = dict(a=22.0, half=28.0, c=12.9)  # wrist block: anterior x, half width (z), chamfer (posterior stays FA_POST)
-FA_CAGE = dict(c=14.0, t=6.0, bar=10.0, ring=7.0, n=4, r=2.0)  # octagon cone: chamfer at the root ring, shell, bar width over each corner, ring width, bays, window corner radius
-
-
-def fa_lin(s, v0, v1):
-    """Straight blend from v0 at S_FULL to v1 at S_END, held flat outside."""
-    t = min(1.0, max(0.0, (s - S_FULL) / (S_END - S_FULL)))
-    return v0 + t * (v1 - v0)
-
-
-def fa_z(s):
-    """Inboard and outboard forearm faces (elbow z) at length s: clevis width, then a straight cone to the wrist."""
-    w = FA_WRIST["half"]
-    return fa_lin(s, Z_CHEEK_B_IN, FA_ZC - w), fa_lin(s, CHEEK_A_Z[1], FA_ZC + w)
-
-
-def fa_a(s):
-    """Anterior face of the forearm at length s: straight flank up to S_FULL, then a straight cone to the wrist."""
-    (s0, a0), (s1, a1) = FA_ANT
-    if s <= s1:
-        return a0 + (a1 - a0) * (s - s0) / (s1 - s0)
-    return fa_lin(s, a1, FA_WRIST["a"])
-
-
-def fa_c(s):
-    """Corner chamfer at length s: clevis chamfer, opened to the cage chamfer over the root ring, then straight to the wrist."""
-    s1 = S_FULL + FA_ROOT
-    if s <= s1:
-        return FA_C + (FA_CAGE["c"] - FA_C) * max(0.0, s - S_FULL) / FA_ROOT
-    return FA_CAGE["c"] + (FA_WRIST["c"] - FA_CAGE["c"]) * min(1.0, (s - s1) / (S_END - s1))
-
-
-def fa_bays():
-    """(start, end) s of each open cage bay between the root ring, the rings and the wrist block (0.5 band before the block)."""
-    q, s0 = FA_CAGE, S_FULL + FA_ROOT
-    length = (S_END - 0.5 - s0 - (q["n"] - 1) * q["ring"]) / q["n"]
-    return [(s0 + k * (length + q["ring"]), s0 + k * (length + q["ring"]) + length) for k in range(q["n"])]
-
-
-CHEEK_B_JOINT = [(-15.0, 52.0), (-15.0, 70.0), (8.0, 60.0), (14.0, 72.0)]  # m4 bosses, elbow frame (x, y)
-CHEEK_B_BOSS_R = 5.5
-CHEEK_B_HOLE_R = 4.8 / 2  # 0.4 radial float: cheek b is aligned to the pin before tightening
-M4_CHEEK_B_L = 16.0
-WRIST = dict(pcd_r=15.0, n=4, ang0=45.0, spigot_r=10.0 - 0.01, spigot_h=1.8,
-             bore_r=5.0)  # 4 x m3 inserts on d30 + d20 h7 spigot, kept for the future wrist / hand (d20 h8 recess in that part)
-
-# ---------------------------------------------------------------- passive side (elbow frame z, outward = more negative)
-BRG_P = dict(d=20.0, D=32.0, B=7.0, d1=23.85, D1=28.2, nballs=18, dball=3.0)  # skf 61804-2rs1
-Z_P_IN0, Z_P_IN1 = -20.6, -13.6  # 61804 inner ring (fixed on the pin)
-CHEEK_B_Z = (-21.0, Z_CHEEK_B_IN)
-CHEEK_B_R = 34.0
-CHEEK_B_LIP = dict(z=-13.25, r=14.5)  # inner lip (printed on the bed side)
-BORE_P_R = BRG_P["D"] / 2  # slip fit: outer ring floats 0.35 each way (point load on the outer ring)
-PIN = dict(spigot_r=8.0, z_spigot=-2.5, flange_r=19.0, z_flange=(-11.5, -8.5), shoulder_r=11.5,
-           z_end=Z_P_IN0 + 0.2, bore_r=5.0, screw_r=15.0, tap_r=7.5)
-PIN_SCREW_ANG = [90.0, 210.0, 330.0]
-PIN_TAP_ANG = [90.0, 210.0, 330.0]  # m2.5 tapped in the journal end, clear of the wire groove at 270
-PIN_TAP_DEPTH = 6.0
-L_PIN_SCREW = 8.0  # iso 10642 m3
-RETAINER = dict(r0=14.5, r1=30.0, z=(-22.0, -21.0))  # asa washer: outer-ring stop on the cover side
-BRACKET = dict(boss_r=11.0, r=20.0, z_boss=(-22.5, Z_P_IN0), z_plate=(-25.5, -22.5), hole_r=5.0, csk_r=7.5,
-               groove=(6.0, 13.0, 1.5))  # wire groove under the pcb: width, length, depth
-L_BRACKET_SCREW = 10.0  # iso 10642 m2.5
-PCB_OUT = dict(w=30.0, t=1.6, hole_r=17.0, ang0=45.0)  # same board as shoulder p12
-Z_PCB_OUT = (BRACKET["z_plate"][0] - PCB_OUT["t"], BRACKET["z_plate"][0])
-Z_IC_OUT = (Z_PCB_OUT[0] - ep.IC["h"], Z_PCB_OUT[0])
-Z_MAG_OUT = (Z_IC_OUT[0] - 1.0 - ep.MAG["h"], Z_IC_OUT[0] - 1.0)
-L_PCB_SCREW = 4.0  # din 912 m2.5
-COVER = dict(r=25.0, ri=23.5, z_end=Z_MAG_OUT[0] - 2.0, boss_r=3.5, boss_pcd_r=26.5, mag_boss_r=5.0, seat=-28.5)
-COVER_ANG = [0.0, 120.0, 240.0]  # forearm frame
-L_COVER_SCREW = 12.0  # din 912 m3, head in a counterbore at COVER["seat"]
-MAG_SPACING_MIN = 30.0  # stray-field rule between the two encoder magnets / ics
-
-# ---------------------------------------------------------------- print bed (bambu p1s 256 x 256 x 256, 5 mm margin)
+# ---------------------------------------------------------------- print bed (bambu p2s 256 x 256 x 256, 5 mm margin)
 BED = 246.0
-BRIDGE_MAX = 33.0  # longest unsupported roof bridge allowed in any print
-PRINT_SKIN = {104: 2.5, 125: 3.4}  # solid depth from every surface (walls x 0.42, top / bottom shell), default 1.7 = 4 walls; plates, x walls and cage print solid
+PRINT_SKIN = 1.7  # 4 walls; thin truss bars print solid anyway
 
 
 def polar(r, deg):
     """(x, y) for radius r at angle deg."""
     a = math.radians(deg)
     return r * math.cos(a), r * math.sin(a)
+
+
+def bezier(P, n=24):
+    """Points on the cubic bezier with control points P (4 x (u, v))."""
+    out = []
+    for i in range(n + 1):
+        t = i / n
+        k = ((1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t * t, t ** 3)
+        out.append((sum(k[j] * P[j][0] for j in range(4)), sum(k[j] * P[j][1] for j in range(4))))
+    return out
+
+
+def inset(curve, d):
+    """Offset the interior points of a curve by d to its left (into a ccw outline)."""
+    out = []
+    for i in range(1, len(curve) - 1):
+        (u0, v0), (u1, v1) = curve[i - 1], curve[i + 1]
+        length = math.hypot(u1 - u0, v1 - v0)
+        out.append((curve[i][0] - d * (v1 - v0) / length, curve[i][1] + d * (u1 - u0) / length))
+    return out
+
+
+def upper_spacers():
+    """Spacer sleeve centres (u, v) between the upper-arm plates."""
+    q = UPPER_SPACER
+    pts = inset(bezier(UPPER["front"]), q["inset"]) + inset(bezier(UPPER["back"]), q["inset"])
+    pts = [p for i, p in enumerate(pts) if i % q["every"] == 2]
+    keep = [p for p in pts if math.hypot(*p) > q["r_el_min"] and math.hypot(p[0], p[1] - L_UPPER) > q["r_sh_min"]]
+    laps = [lap_screws("inner"), lap_screws("outer")]
+    keep = [p for p in keep if all(math.hypot(p[0] - s[0], p[1] - s[1]) > 9.0 for ls in laps for s in ls)]
+    return keep + q["shoulder"]
+
+
+def lap_screws(which):
+    """The four m3 screw centres (u, v) of one half-lap."""
+    v0, du, dv = SPLIT[which], SPLIT["screw_u"], SPLIT["screw_dv"]
+    return [(su * du, v0 + sv * dv) for su in (-1, 1) for sv in (-1, 1)]
+
+
+def fore_rims():
+    """(back curve, front curve, back inset, front inset) of the forearm truss plates."""
+    b, f = bezier(FORE["back"], 22), bezier(FORE["front"], 22)
+    return b, f, inset(b, FORE["rim"]), inset(f, FORE["rim"])
+
+
+def fore_nodes():
+    """Truss node / spacer centres (u, v) on the forearm rims, in FORE_NODES order."""
+    _, _, bi, fi = fore_rims()
+    side = {"back": bi, "front": fi}
+    return [min(side[s], key=lambda p: abs(p[1] - v)) for s, v in FORE_NODES]
