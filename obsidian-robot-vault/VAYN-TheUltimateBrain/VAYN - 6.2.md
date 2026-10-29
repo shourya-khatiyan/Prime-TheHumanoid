@@ -1,3 +1,9 @@
+> **Revision note (2026-10-20):**
+> The structure of this baseline is unchanged and remains frozen.
+> The RT Motion Core is refined by [**VAYN-6.2.1 — RT Motion Core Hardening Revision**](VAYN - 6.2.1.md). It adds two validation gates, braking-distance limits, the task and timing model, the fault-to-reaction matrix, homing, the CAN budget and `ACTION_ACK_V1`.
+> It also fills parameterized items for Phase 1: RT hardware is a Dell Latitude 5490 with PREEMPT_RT, and the actuator bus is CAN 1 Mbit/s to an ODESC3.6.
+> Where this document says "the exact processor remains an engineering decision" (§6) or leaves the bus open (§54), see 6.2.1 for the Phase-1 values.
+
 # VAYN-6.2 — Versatile Arbitrated Embodied Nervous-System
 
 ## Implementation-Ready Heterogeneous Robot Intelligence Architecture

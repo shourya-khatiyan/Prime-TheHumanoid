@@ -1,3 +1,10 @@
+> **Revision note (2026-10-20, VAYN-6.2.1):** corrected in place:  
+> The RT hardware and bus are now chosen for Phase 1: a Dell Latitude 5490 with PREEMPT_RT, and classic CAN at 1 Mbit/s to a Flipsky ODESC3.6 (firmware 0.5.1).  
+> The unsafe limit example (`torque = 0` past a position limit) is replaced by a braking-distance limit with hold.  
+> The pipeline now ends with an output guard.  
+> The old system name "RHEI" is replaced by VAYN throughout.  
+> The current, detailed plan is the [RT Core implementation spec](RT Core Implementation - VAYN 6.2.1.md); the milestones there supersede §16 below.
+
 > Actuators + motor drivers + Safety MCU + RT Motion Core + state estimator + stabilization + impedance control, operating without the AI computer.
 
 It also deliberately leaves the **RT hardware, actuator bus, and exact actuator architecture open**, so we should not pretend those choices are already finalized.
@@ -42,7 +49,6 @@ At the end of Phase 1, we want this:
                                      │
                                      ▼
                               RT State Estimator
-
 
         ┌─────────────────────────┐
         │      SAFETY MCU         │
@@ -194,9 +200,9 @@ while robot_enabled:
 
     calculate_control()
 
-    apply_limits()
+    apply_limits()          # output guard: braking distance, limits, thermal, drive state
 
-    send_motor_commands()
+    send_motor_commands()   # only commands that passed the output guard
 
     publish_state()
 
@@ -246,24 +252,18 @@ I recommend we write the RT Motion Core in **C++**, not Python.
 Python can still be used for:
 
 - simulation
-    
 - plotting
-    
 - dataset analysis
-    
 - controller tuning
-    
 - tests
-    
 - offline tools
-    
 
 But the actual RT loop should be C/C++.
 
 A clean project could start as:
 
 ```text
-VAYN/
+vayn/
 │
 ├── rt_core/
 │   ├── main.cpp
@@ -323,7 +323,7 @@ This gives us one very important property:
 ```text
 RT Core
    ↓
-Actuatwe aor Interface
+Actuator Interface
    ↓
      ┌───────────────┐
      │               │
@@ -445,18 +445,21 @@ fault state
 Example:
 
 ```cpp
-if (position > max_position)
-    torque = 0;
+// look ahead: can we still stop before the limit at this speed?
+if (q + qd * std::abs(qd) / (2.0 * a_stop) > q_max - margin)
+    start_stop_at_limit_and_hold();   // never torque = 0 on a gravity-loaded joint
 
 if (temperature > max_temperature)
-    disable();
+    controlled_stop();                // derate first, then stop
 
 if (command_expired)
-    enter_fallback();
+    enter_fallback();                 // bounded extrapolation, then hold
 
 if (!encoder_valid)
-    disable();
+    request_idle_and_fault();         // cannot control without position (rig catches the arm)
 ```
+
+> Why not `torque = 0`: on a gravity-loaded joint, removing torque makes the arm fall, and checking position alone reacts only after the limit has already been crossed. See [VAYN-6.2.1 I-4](../VAYN - 6.2.1.md).
 
 This implements the VAYN principle that learned or high-level commands never bypass physical limits.
 
@@ -747,21 +750,21 @@ Right now the robot has one job:
 
 We'll use these actual milestones:
 
-|Milestone|Goal|
-|---|---|
-|**P1.0**|Software project + simulator|
-|**P1.1**|Single-joint state model|
-|**P1.2**|Impedance controller|
-|**P1.3**|Safety validator|
-|**P1.4**|Fixed-rate RT loop|
-|**P1.5**|Simulated actuator|
-|**P1.6**|Failure injection|
-|**P1.7**|Real motor driver interface|
-|**P1.8**|Real single actuator|
-|**P1.9**|IMU + multi-joint state|
-|**P1.10**|Multi-joint stabilization|
-|**P1.11**|Independent Safety MCU|
-|**P1.12**|Phase 1 complete|
+| Milestone | Goal |
+| ---| --- |
+| P1.0 | Software project + simulator |
+| P1.1 | Single-joint state model |
+| P1.2 | Impedance controller |
+| P1.3 | Safety validator |
+| P1.4 | Fixed-rate RT loop |
+| P1.5 | Simulated actuator |
+| P1.6 | Failure injection |
+| P1.7 | Real motor driver interface |
+| P1.8 | Real single actuator |
+| P1.9 | IMU + multi-joint state |
+| P1.10 | Multi-joint stabilization |
+| P1.11 | Independent Safety MCU |
+| P1.12 | Phase 1 complete |
 
 ---
 
@@ -796,6 +799,12 @@ Then we'll progressively replace the simulated pieces with real hardware.
 ### One important point
 
 I don't want to choose the physical motor driver, RT computer, or actuator bus blindly. Your VAYN-6.2 document intentionally leaves those as engineering decisions, and the correct choice depends on the actual actuator electronics.
+
+> **Update (2026-10-20):** these are now chosen for Phase 1:  
+> motor driver: Flipsky ODESC3.6, firmware 0.5.1  
+> RT computer: Dell Latitude 5490 with PREEMPT_RT  
+> actuator bus: classic CAN at 1 Mbit/s  
+> See [VAYN-6.2.1](../VAYN - 6.2.1.md).
 
 So **software P1.0 can begin immediately**, while the physical P1.7/P1.8 interface will be mapped to your actual motor/driver/encoder hardware.
 

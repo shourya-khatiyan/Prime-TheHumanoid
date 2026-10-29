@@ -1,3 +1,8 @@
+> **Revision note (2026-10-20, VAYN-6.2.1):**  
+> The hardware choices that §26 lists as open are now made for Phase 1. RT processor: Dell Latitude 5490 with PREEMPT_RT. Actuator bus: classic CAN at 1 Mbit/s. Motor driver: Flipsky ODESC3.6, firmware 0.5.1. Safety for Phase 1: a guarded, tethered rig. Actuator: EaglePower LA8308 KV90 with a 30:1 two-stage planetary gearbox.  
+> The rest of this explainer is still valid.  
+> What the RT core is and how it is built: [VAYN-6.2.1](../VAYN - 6.2.1.md), [RT Core implementation spec](RT Core Implementation - VAYN 6.2.1.md), and [RT Core from fundamentals to advanced](RT Core - From Fundamentals to Advanced.md).
+
 # Building VAYN-6.2 — Versatile Arbitrated Embodied Nervous-System
 
 > **VAYN-6.2 is not one AI model. It is a complete robot control system in which different computers and models have different jobs.**
@@ -30,7 +35,6 @@ Think of the robot as having **three main computers**:
              ┌─────────────────────┐
              │     ACTUATORS       │
              └─────────────────────┘
-
 
              ┌─────────────────────┐
              │    SAFETY MCU       │
