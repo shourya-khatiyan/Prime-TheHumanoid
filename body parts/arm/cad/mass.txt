@@ -1,159 +1,167 @@
 # arm masses, solid material (g); groups use the print estimate for printed parts;
 # centres of mass in world mm at 0 deg (y outboard, z up); the motor (336 g) is in the upper group
-201 Upper inner plate, elbow piece (PETG)                      82.1 g   print est    75.0 g
-202 Upper inner plate, shoulder piece (PETG)                   87.2 g   print est    77.2 g
-203 Upper outer plate, elbow piece (PETG)                      90.8 g   print est    80.7 g
+201 Upper inner plate, elbow piece (PETG)                     113.3 g   print est    91.0 g
+202 Upper inner plate, shoulder piece (PETG)                  121.0 g   print est    93.0 g
+203 Upper outer plate, elbow piece (PETG)                      90.6 g   print est    80.5 g
 204 Upper outer plate, shoulder piece (PETG)                   69.8 g   print est    64.0 g
-218.1 Rubber pad 3 mm, heel, inner plate                        0.4 g
+218.1 Rubber pad 3 mm, heel, inner plate                        0.5 g
 218.2 Rubber pad 3 mm, heel, outer plate                        0.4 g
-205.1 Upper spacer sleeve D9 (PETG)                             3.2 g   print est     3.2 g
+205.1 Upper spacer sleeve D9 (PETG)                             3.3 g   print est     3.3 g
 230.1 Insert M3x5.7 upper spacer, inner end                     0.3 g
 231.1 Insert M3x5.7 upper spacer, outer end                     0.3 g
-232.1 Screw M3x10 ISO 10642 inner plate->spacer                 0.7 g
+232.1 Screw M3x12 ISO 10642 inner plate->spacer                 0.8 g
 233.1 Screw M3x10 ISO 10642 outer plate->spacer                 0.7 g
-205.2 Upper spacer sleeve D9 (PETG)                             3.2 g   print est     3.2 g
+205.2 Upper spacer sleeve D9 (PETG)                             3.3 g   print est     3.3 g
 230.2 Insert M3x5.7 upper spacer, inner end                     0.3 g
 231.2 Insert M3x5.7 upper spacer, outer end                     0.3 g
-232.2 Screw M3x10 ISO 10642 inner plate->spacer                 0.7 g
+232.2 Screw M3x12 ISO 10642 inner plate->spacer                 0.8 g
 233.2 Screw M3x10 ISO 10642 outer plate->spacer                 0.7 g
-205.3 Upper spacer sleeve D9 (PETG)                             3.2 g   print est     3.2 g
+205.3 Upper spacer sleeve D9 (PETG)                             3.3 g   print est     3.3 g
 230.3 Insert M3x5.7 upper spacer, inner end                     0.3 g
 231.3 Insert M3x5.7 upper spacer, outer end                     0.3 g
-232.3 Screw M3x10 ISO 10642 inner plate->spacer                 0.7 g
+232.3 Screw M3x12 ISO 10642 inner plate->spacer                 0.8 g
 233.3 Screw M3x10 ISO 10642 outer plate->spacer                 0.7 g
-205.4 Upper spacer sleeve D9 (PETG)                             3.2 g   print est     3.2 g
+205.4 Upper spacer sleeve D9 (PETG)                             3.3 g   print est     3.3 g
 230.4 Insert M3x5.7 upper spacer, inner end                     0.3 g
 231.4 Insert M3x5.7 upper spacer, outer end                     0.3 g
-232.4 Screw M3x10 ISO 10642 inner plate->spacer                 0.7 g
+232.4 Screw M3x12 ISO 10642 inner plate->spacer                 0.8 g
 233.4 Screw M3x10 ISO 10642 outer plate->spacer                 0.7 g
-205.5 Upper spacer sleeve D9 (PETG)                             3.2 g   print est     3.2 g
+205.5 Upper spacer sleeve D9 (PETG)                             3.3 g   print est     3.3 g
 230.5 Insert M3x5.7 upper spacer, inner end                     0.3 g
 231.5 Insert M3x5.7 upper spacer, outer end                     0.3 g
-232.5 Screw M3x10 ISO 10642 inner plate->spacer                 0.7 g
+232.5 Screw M3x12 ISO 10642 inner plate->spacer                 0.8 g
 233.5 Screw M3x10 ISO 10642 outer plate->spacer                 0.7 g
-205.6 Upper spacer sleeve D9 (PETG)                             3.2 g   print est     3.2 g
+205.6 Upper spacer sleeve D9 (PETG)                             3.3 g   print est     3.3 g
 230.6 Insert M3x5.7 upper spacer, inner end                     0.3 g
 231.6 Insert M3x5.7 upper spacer, outer end                     0.3 g
-232.6 Screw M3x10 ISO 10642 inner plate->spacer                 0.7 g
+232.6 Screw M3x12 ISO 10642 inner plate->spacer                 0.8 g
 233.6 Screw M3x10 ISO 10642 outer plate->spacer                 0.7 g
-205.7 Upper spacer sleeve D9 (PETG)                             3.2 g   print est     3.2 g
+205.7 Upper spacer sleeve D9 (PETG)                             3.3 g   print est     3.3 g
 230.7 Insert M3x5.7 upper spacer, inner end                     0.3 g
 231.7 Insert M3x5.7 upper spacer, outer end                     0.3 g
-232.7 Screw M3x10 ISO 10642 inner plate->spacer                 0.7 g
+232.7 Screw M3x12 ISO 10642 inner plate->spacer                 0.8 g
 233.7 Screw M3x10 ISO 10642 outer plate->spacer                 0.7 g
-205.8 Upper spacer sleeve D9 (PETG)                             3.2 g   print est     3.2 g
+205.8 Upper spacer sleeve D9 (PETG)                             3.3 g   print est     3.3 g
 230.8 Insert M3x5.7 upper spacer, inner end                     0.3 g
 231.8 Insert M3x5.7 upper spacer, outer end                     0.3 g
-232.8 Screw M3x10 ISO 10642 inner plate->spacer                 0.7 g
+232.8 Screw M3x12 ISO 10642 inner plate->spacer                 0.8 g
 233.8 Screw M3x10 ISO 10642 outer plate->spacer                 0.7 g
-205.9 Upper spacer sleeve D9 (PETG)                             3.2 g   print est     3.2 g
+205.9 Upper spacer sleeve D9 (PETG)                             3.3 g   print est     3.3 g
 230.9 Insert M3x5.7 upper spacer, inner end                     0.3 g
 231.9 Insert M3x5.7 upper spacer, outer end                     0.3 g
-232.9 Screw M3x10 ISO 10642 inner plate->spacer                 0.7 g
+232.9 Screw M3x12 ISO 10642 inner plate->spacer                 0.8 g
 233.9 Screw M3x10 ISO 10642 outer plate->spacer                 0.7 g
-205.10 Upper spacer sleeve D9 (PETG)                            3.2 g   print est     3.2 g
+205.10 Upper spacer sleeve D9 (PETG)                            3.3 g   print est     3.3 g
 230.10 Insert M3x5.7 upper spacer, inner end                    0.3 g
 231.10 Insert M3x5.7 upper spacer, outer end                    0.3 g
-232.10 Screw M3x10 ISO 10642 inner plate->spacer                0.7 g
+232.10 Screw M3x12 ISO 10642 inner plate->spacer                0.8 g
 233.10 Screw M3x10 ISO 10642 outer plate->spacer                0.7 g
-205.11 Upper spacer sleeve D9 (PETG)                            3.2 g   print est     3.2 g
+205.11 Upper spacer sleeve D9 (PETG)                            3.3 g   print est     3.3 g
 230.11 Insert M3x5.7 upper spacer, inner end                    0.3 g
 231.11 Insert M3x5.7 upper spacer, outer end                    0.3 g
-232.11 Screw M3x10 ISO 10642 inner plate->spacer                0.7 g
+232.11 Screw M3x12 ISO 10642 inner plate->spacer                0.8 g
 233.11 Screw M3x10 ISO 10642 outer plate->spacer                0.7 g
-234.1 Screw M3x10 ISO 10642 inner lap                           0.7 g
-234.2 Screw M3x10 ISO 10642 inner lap                           0.7 g
-234.3 Screw M3x10 ISO 10642 inner lap                           0.7 g
-234.4 Screw M3x10 ISO 10642 inner lap                           0.7 g
+234.1 Screw M3x12 ISO 10642 inner lap                           0.8 g
+234.2 Screw M3x12 ISO 10642 inner lap                           0.8 g
+234.3 Screw M3x12 ISO 10642 inner lap                           0.8 g
+234.4 Screw M3x12 ISO 10642 inner lap                           0.8 g
 235.1 Screw M3x10 ISO 10642 outer lap                           0.7 g
 235.2 Screw M3x10 ISO 10642 outer lap                           0.7 g
 235.3 Screw M3x10 ISO 10642 outer lap                           0.7 g
 235.4 Screw M3x10 ISO 10642 outer lap                           0.7 g
 206.1 Motor standoff (PETG)                                     0.5 g   print est     0.5 g
-236.1 Screw M4x16 ISO 10642 motor->inner plate                  1.8 g
+236.1 Screw M4x18 ISO 10642 motor->inner plate                  2.0 g
 206.2 Motor standoff (PETG)                                     0.5 g   print est     0.5 g
-236.2 Screw M4x16 ISO 10642 motor->inner plate                  1.8 g
+236.2 Screw M4x18 ISO 10642 motor->inner plate                  2.0 g
 206.3 Motor standoff (PETG)                                     0.5 g   print est     0.5 g
-236.3 Screw M4x16 ISO 10642 motor->inner plate                  1.8 g
+236.3 Screw M4x18 ISO 10642 motor->inner plate                  2.0 g
 206.4 Motor standoff (PETG)                                     0.5 g   print est     0.5 g
-236.4 Screw M4x16 ISO 10642 motor->inner plate                  1.8 g
+236.4 Screw M4x18 ISO 10642 motor->inner plate                  2.0 g
 240 Motor LA8308 KV90 (envelope)                                0.0 g
 212 Magnet holder (resin, bonded in the rear cap)               0.2 g
 241 Encoder magnet D6x2.5 diametric                             0.5 g
-242 Encoder PCB 30x30 AS5047P (shoulder P12)                    0.0 g
+242 Encoder PCB 30x30 AS5047P (Meukron)                         0.0 g
 243 AS5047P TSSOP-14 (envelope)                                 0.0 g
-244.1 Screw M2.5x6 ISO 10642 pcb (nut on the pcb)               0.3 g
-244.2 Screw M2.5x6 ISO 10642 pcb (nut on the pcb)               0.3 g
-244.3 Screw M2.5x6 ISO 10642 pcb (nut on the pcb)               0.3 g
-244.4 Screw M2.5x6 ISO 10642 pcb (nut on the pcb)               0.3 g
+244.1 Screw M2.5x6 ISO 10642 pcb                                0.3 g
+245.1 Nut M2.5 encoder (in the pocket, below the plate face)      0.4 g
+244.2 Screw M2.5x6 ISO 10642 pcb                                0.3 g
+245.2 Nut M2.5 encoder (in the pocket, below the plate face)      0.4 g
+244.3 Screw M2.5x6 ISO 10642 pcb                                0.3 g
+245.3 Nut M2.5 encoder (in the pocket, below the plate face)      0.4 g
+244.4 Screw M2.5x6 ISO 10642 pcb                                0.3 g
+245.4 Nut M2.5 encoder (in the pocket, below the plate face)      0.4 g
 237.1 Washer M5 ISO 7089 shoulder                               0.4 g
-238.1 Screw M5x12 ISO 4762 inner plate->shoulder                4.0 g
+238.1 Screw M5x12 ISO 4762 inner plate->shoulder                4.3 g
 237.2 Washer M5 ISO 7089 shoulder                               0.4 g
-238.2 Screw M5x12 ISO 4762 inner plate->shoulder                4.0 g
+238.2 Screw M5x12 ISO 4762 inner plate->shoulder                4.3 g
 237.3 Washer M5 ISO 7089 shoulder                               0.4 g
-238.3 Screw M5x12 ISO 4762 inner plate->shoulder                4.0 g
+238.3 Screw M5x12 ISO 4762 inner plate->shoulder                4.3 g
 237.4 Washer M5 ISO 7089 shoulder                               0.4 g
-238.4 Screw M5x12 ISO 4762 inner plate->shoulder                4.0 g
+238.4 Screw M5x12 ISO 4762 inner plate->shoulder                4.3 g
 237.5 Washer M5 ISO 7089 shoulder                               0.4 g
-238.5 Screw M5x12 ISO 4762 inner plate->shoulder                4.0 g
+238.5 Screw M5x12 ISO 4762 inner plate->shoulder                4.3 g
 237.6 Washer M5 ISO 7089 shoulder                               0.4 g
-238.6 Screw M5x12 ISO 4762 inner plate->shoulder                4.0 g
-250 6705-2RS pivot inner ring                                   2.1 g
-250 6705-2RS pivot outer ring                                   2.6 g
-250 6705-2RS pivot ball set                                     0.7 g
-250 6705-2RS pivot seal rear                                    0.6 g
-250 6705-2RS pivot seal front                                   0.6 g
-251 O-ring 31.5x1.5 NBR 70 pivot                                0.1 g
+238.6 Screw M5x12 ISO 4762 inner plate->shoulder                4.3 g
+250 6804Z pivot inner ring                                      6.3 g
+250 6804Z pivot outer ring                                      8.8 g
+250 6804Z pivot ball set                                        1.4 g
+250 6804Z pivot seal rear                                       0.6 g
+250 6804Z pivot seal front                                      0.6 g
 252 Insert M3x5.7 stub                                          0.3 g
-253 Washer 26/3.2x1 stub (PETG)                                 0.7 g
+253 Washer 22/3.2x1 stub (PETG)                                 0.5 g
 254 Screw M3x6 ISO 4762 stub                                    0.8 g
-207 Rotor hub (PETG)                                            9.8 g   print est     9.4 g
+207 Rotor hub (PETG)                                           14.4 g   print est    12.9 g
+213 Hub bearing sleeve (PETG)                                   3.7 g   print est     3.7 g
+214 Hub bearing spacer (PETG)                                   0.2 g   print est     0.2 g
+255 Hub bearing 19.5x26.5 inner ring                            2.8 g
+255 Hub bearing 19.5x26.5 outer ring                            3.1 g
+255 Hub bearing 19.5x26.5 ball set                              0.3 g
 220.1 Screw M3x10 ISO 10642 hub->rotor                          0.7 g
 220.2 Screw M3x10 ISO 10642 hub->rotor                          0.7 g
 220.3 Screw M3x10 ISO 10642 hub->rotor                          0.7 g
 220.4 Screw M3x10 ISO 10642 hub->rotor                          0.7 g
 221.1 Insert M3x5.7 hub                                         0.3 g
-222.1 Screw M3x8 ISO 10642 forearm plate->hub                   0.6 g
+222.1 Screw M3x10 ISO 10642 forearm plate->hub                  0.7 g
 221.2 Insert M3x5.7 hub                                         0.3 g
-222.2 Screw M3x8 ISO 10642 forearm plate->hub                   0.6 g
+222.2 Screw M3x10 ISO 10642 forearm plate->hub                  0.7 g
 221.3 Insert M3x5.7 hub                                         0.3 g
-222.3 Screw M3x8 ISO 10642 forearm plate->hub                   0.6 g
+222.3 Screw M3x10 ISO 10642 forearm plate->hub                  0.7 g
 208 Forearm outer plate (PETG)                                 34.5 g   print est    34.5 g
-209 Forearm inner plate (PETG)                                 33.3 g   print est    33.3 g
-210.1 Forearm spacer sleeve D8 (PETG)                           3.3 g   print est     3.3 g
+209 Forearm inner plate (PETG)                                 40.2 g   print est    40.2 g
+210.1 Forearm spacer sleeve D8 (PETG)                           3.9 g   print est     3.9 g
 223.1 Insert M3x5.7 forearm spacer, ends                        0.5 g
 224.1 Screws 2 x M3x10 ISO 10642 forearm spacer                 1.3 g
-217.1 Silicone tube 8x10 stop sleeve, extension                 1.8 g
-210.2 Forearm spacer sleeve D8 (PETG)                           3.3 g   print est     3.3 g
+217.1 Silicone tube 8x10 stop sleeve, extension                 2.2 g
+210.2 Forearm spacer sleeve D8 (PETG)                           3.9 g   print est     3.9 g
 223.2 Insert M3x5.7 forearm spacer, ends                        0.5 g
 224.2 Screws 2 x M3x10 ISO 10642 forearm spacer                 1.3 g
-217.2 Silicone tube 8x10 stop sleeve, flexion                   1.8 g
-210.3 Forearm spacer sleeve D8 (PETG)                           3.3 g   print est     3.3 g
+217.2 Silicone tube 8x10 stop sleeve, flexion                   2.2 g
+210.3 Forearm spacer sleeve D8 (PETG)                           3.9 g   print est     3.9 g
 223.3 Insert M3x5.7 forearm spacer, ends                        0.5 g
 224.3 Screws 2 x M3x10 ISO 10642 forearm spacer                 1.3 g
-210.4 Forearm spacer sleeve D8 (PETG)                           3.3 g   print est     3.3 g
+210.4 Forearm spacer sleeve D8 (PETG)                           3.9 g   print est     3.9 g
 223.4 Insert M3x5.7 forearm spacer, ends                        0.5 g
 224.4 Screws 2 x M3x10 ISO 10642 forearm spacer                 1.3 g
-210.5 Forearm spacer sleeve D8 (PETG)                           3.3 g   print est     3.3 g
+210.5 Forearm spacer sleeve D8 (PETG)                           3.9 g   print est     3.9 g
 223.5 Insert M3x5.7 forearm spacer, ends                        0.5 g
 224.5 Screws 2 x M3x10 ISO 10642 forearm spacer                 1.3 g
-210.6 Forearm spacer sleeve D8 (PETG)                           3.3 g   print est     3.3 g
+210.6 Forearm spacer sleeve D8 (PETG)                           3.9 g   print est     3.9 g
 223.6 Insert M3x5.7 forearm spacer, ends                        0.5 g
 224.6 Screws 2 x M3x10 ISO 10642 forearm spacer                 1.3 g
-210.7 Forearm spacer sleeve D8 (PETG)                           3.3 g   print est     3.3 g
+210.7 Forearm spacer sleeve D8 (PETG)                           3.9 g   print est     3.9 g
 223.7 Insert M3x5.7 forearm spacer, ends                        0.5 g
 224.7 Screws 2 x M3x10 ISO 10642 forearm spacer                 1.3 g
-211 Wrist block (PETG)                                         50.1 g   print est    31.2 g
+211 Wrist block (PETG)                                         59.5 g   print est    36.5 g
 225.1 Screws 2 x M3x10 ISO 10642 wrist block (inserts in the block)      1.3 g
 225.2 Screws 2 x M3x10 ISO 10642 wrist block (inserts in the block)      1.3 g
 
-m_upper = 741.5
+m_upper = 800.7
 com_upper_x = -0.7
-com_upper_y = 24.5
-com_upper_z = -217.5
-m_fore = 155.9
+com_upper_y = 25.2
+com_upper_z = -217.0
+m_fore = 177.5
 com_fore_x = -0.6
-com_fore_y = 28.3
-com_fore_z = -420.4
+com_fore_y = 32.2
+com_fore_z = -416.1
 m_motor = 336.0
-m_arm = 897.4
+m_arm = 978.2

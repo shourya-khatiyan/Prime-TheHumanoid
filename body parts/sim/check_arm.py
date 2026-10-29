@@ -23,8 +23,8 @@ SHOULDER_PROOF = 10.0
 ALPHA = 12.57  # rad/s^2
 
 # mass.txt gravity, arm horizontal, no hand
-EXPECT_SHOULDER = 2.22
-EXPECT_ELBOW = 0.19
+EXPECT_SHOULDER = 2.43
+EXPECT_ELBOW = 0.21
 
 STRAIGHT = np.array([-np.pi / 2, 0.0])  # both links forward
 BENT = np.array([-np.pi / 2, np.pi / 2])  # forearm hanging

@@ -43,7 +43,7 @@ SH_COVER_Y = -1.0  # stationary cover front face (world y)
 SH_R = 50.0
 SPIGOT = dict(r=20.0 - 0.10, h=1.8)  # printed d40 spigot (clearance set by the coupon), 0.2 short of the recess floor
 M4_HEAD_RELIEF = dict(r=4.5, depth=0.4)
-M5 = dict(hole_r=5.15 / 2, washer=dict(od=10.0, id=5.3, t=1.0), screw_l=12.0, torque=2.0)  # iso 7089 washer, low torque into petg
+M5 = dict(hole_r=5.15 / 2, washer=dict(od=10.0, id=5.3, t=1.0), screw_l=14.0, torque=2.0)  # iso 7089 washer; 14 mm keeps 6 mm in the 8 mm tap through the 7 mm plate
 
 # ---------------------------------------------------------------- elbow motor (eaglepower la8308 kv90; shoulder parts.md rev 1.4 measurements)
 MOTOR = dict(r=46.0, h=32.5, mass=336.0, kv=90.0, r_phase=0.0846, l=37e-6, pp=20, i_cont=22.0, i_peak=40.0)
@@ -54,29 +54,49 @@ STANDOFF = dict(ro=5.5, ri=2.25, h=5.0)  # printed tubes on the motor screws: 5 
 NTC = "10k NTC (B3950) bonded to a stator coil through a base window, wired to the ODESC motor thermistor input"
 
 # ---------------------------------------------------------------- elbow stack (world y)
-Y_UI = (0.0, 5.0)  # upper inner plate, inboard face on the shoulder flange
+# measured: magnet face to the old hub face is 47.5-48 mm. that stack already
+# matched the old model, and the tube then stuck out of 203 by only 1 mm.
+# the new hub is longer so the end flange stands clear of 203.
+Y_UI = (0.0, 7.0)  # was 5. the extra 2 mm holds the encoder nuts inside the plate, off the magnet
 Y_MOUNT = Y_UI[1] + STANDOFF["h"]  # motor mounting face
 Y_ROTOR = Y_MOUNT + MOTOR["h"]  # rotor hub face
-HUB = dict(flange_r=21.0, flange_t=4.0, tube_r=15.0, insert_r=10.0, insert_ang=[0.0, 90.0, 180.0, 270.0])
-Y_UO = (Y_ROTOR + HUB["flange_t"] + 1.0, Y_ROTOR + HUB["flange_t"] + 6.0)  # upper outer plate
-Y_FO = (Y_UO[1] + 1.0, Y_UO[1] + 5.0)  # forearm outer plate (bolted to the hub end face at Y_FO[0])
+HUB = dict(flange_r=21.0, flange_t=4.0, journal_d=19.20, spacer_l=2.40,
+           end_r=14.0, end_t=6.0, end_pcd_r=10.0, end_ang=(90.0, 210.0, 330.0))
+# sleeve drops into the big hole in 203. body od under the hole, bore over the 26.5 bearing.
+SLEEVE = dict(hole_r=17.3, od_r=16.4, flange_r=19.0, flange_t=1.2,
+              bore_r=13.45, lip_r=11.0, lip_t=1.2, proud=2.2)
+_HUB_FLANGE_END = Y_ROTOR + HUB["flange_t"]
+Y_SLEEVE = (_HUB_FLANGE_END + 0.5, _HUB_FLANGE_END + 0.5 + SLEEVE["flange_t"] + 5.0 + SLEEVE["proud"])
+Y_UO = (Y_SLEEVE[0] + SLEEVE["flange_t"], Y_SLEEVE[0] + SLEEVE["flange_t"] + 5.0)  # upper outer plate, 5 thick
+Y_HUB_END = (Y_SLEEVE[1] + 0.30, Y_SLEEVE[1] + 0.30 + HUB["end_t"])  # flange that bolts to the forearm
+Y_FO = (Y_HUB_END[1], Y_HUB_END[1] + 4.0)  # forearm outer plate
 Y_FI = (-5.0, -1.0)  # forearm inner plate
-FI_BOSS_Y0 = -7.0  # forearm inner plate is 6 thick round the pivot bearing
-UO_HUB_CLEAR_R = HUB["tube_r"] + 2.0  # clearance hole in the upper outer plate
 
-# ---------------------------------------------------------------- motor encoder (same pcb / stack as shoulder p12, relative to the mounting face)
-PCB = dict(w=30.0, t=1.6, hole_r=17.0, hole_d=2.2, ang0=45.0)  # m2.5 self-tapping into the plate
-Y_PCB = (Y_MOUNT - 8.5, Y_MOUNT - 8.5 + PCB["t"])
-Y_IC_TOP = Y_PCB[1] + 0.9
+# ---------------------------------------------------------------- motor encoder (meukron board, not the shoulder p12 square)
+# user calipers: diagonals 24 mm and 19 mm, centre to centre. the photo shows the
+# 24 mm pair running corner to corner of the board, the 19 mm pair the other way.
+_S2 = math.sqrt(2.0)
+PCB = dict(w=30.0, t=1.6, hole_d=3.2,
+           holes=[(12.0 / _S2, 12.0 / _S2), (-12.0 / _S2, -12.0 / _S2),
+                  (9.5 / _S2, -9.5 / _S2), (-9.5 / _S2, 9.5 / _S2)])
+Y_PCB = (2.6, 4.2)  # board sits in the pocket; m2.5 nuts (2.0) stay below the y 7 face
+Y_IC_TOP = Y_PCB[1] + 1.1  # tssop-14, under the 1.20 mm max
 Y_MAG = Y_MOUNT - 4.75  # magnet face on the rear-cap holder (shoulder part 8 geometry)
 POCKET_CLEAR = 0.3
 CABLE_GROOVE = dict(w=6.0, d=2.0, ang=135.0, r1=58.0)  # encoder cable groove on the outboard face of the inner plate
 
-# ---------------------------------------------------------------- inner pivot (compliant: only knocks reach it)
-PIVOT_BRG = dict(d=25.0, D=32.0, B=4.0, d1=26.8, D1=30.2, nballs=20, dball=2.0)  # 6705-2RS (thin section)
-PIVOT_BORE_R = PIVOT_BRG["D"] / 2 + 0.30  # 0.3 radial float, centred by the o-ring
-ORING = dict(id=31.5, cs=1.5, groove_r=PIVOT_BRG["D"] / 2 + 1.5 * 0.75, groove_w=2.0)  # nbr 70, 25 % squeeze on the bearing od
-STUB = dict(r=PIVOT_BRG["d"] / 2, shoulder_r=14.2, journal_clear=0.05)  # printed on the inner plate; journal radius = r - clear (coupon row y 15)
+# ---------------------------------------------------------------- bearings
+# 6804Z catalog is 20 x 32 x 7 (skf / iso 15). the diameters below are the ones measured on this bearing.
+PIVOT_BRG = dict(d=19.5, D=31.5, B=7.0, d1=23.5, D1=27.5, nballs=8, dball=3.5)
+PIVOT_FACE_Y = -2.15  # outboard face of the pivot bearing
+PIVOT_BORE_R = PIVOT_BRG["D"] / 2 + 0.25  # slip, not a press: the motor bearings still set the axis
+PIVOT_LIP_Y = PIVOT_FACE_Y + 0.10
+PIVOT_LIP_R = 13.2  # keeps the outer ring, clears the stub shoulder
+FI_BOSS_Y0 = PIVOT_FACE_Y - PIVOT_BRG["B"] - 1.7
+STUB = dict(r=PIVOT_BRG["d"] / 2, journal_clear=0.15, shoulder_r=11.0, shoulder_t=0.45, neck_r=6.5)
+# hub bearing: measured id 19.5, od 26.5. width was not measured; the model uses 5 mm.
+# the sleeve lip is 7.2 mm deep, so a 4 mm or a 7 mm bearing still seats. shorten part 214 if it is wider than 5.
+HUB_BRG = dict(d=19.5, D=26.5, B=5.0, d1=22.0, D1=24.2, nballs=8, dball=2.0)
 # ---------------------------------------------------------------- upper-arm plates (petg, 5 thick, printed flat)
 UPPER = dict(r_sh=44.0, r_el=52.0,
              front=[(48.9, 17.8), (18.0, 95.0), (18.0, 215.0), (41.3, 283.0)],

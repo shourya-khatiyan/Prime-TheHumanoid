@@ -46,12 +46,12 @@ The elbow motor is the LA8308 KV90 already in stock (same motor as the shoulder 
 
 | Component | India link | Price |
 |---|---|---|
-| Pivot bearing, 6705-2RS, 25 × 32 × 4 (1) | — | Not listed. Alternative 61805 (25 × 37 × 7) needs a thicker boss in part 209 |
-| O-ring 31.5 × 1.5 NBR 70 (1) | — | Not listed as a single size; buy an NBR O-ring kit |
+| Pivot bearing, 6804Z, 20 × 32 × 7 catalog; this one measures about 19.5 × 31.5 (1) | — | Already in hand. Design uses the measured diameters and the catalog 7 mm width |
+| Hub bearing, measured 19.5 inner × 26.5 outer (1) | — | Already in hand. Width was not measured; the sleeve takes 4–7 mm |
 | Heat-set inserts M3 × 5.7, Ø4.0 hole (48) | [Amazon.in, ruthex 100 pieces](https://www.amazon.in/ruthex-M3-Thread-Insert-RX-M3x5-7/dp/B08BCRZZS3) | ₹1,711 incl. tax for 100 |
-| M3 × 10 countersunk ISO 10642 (52), M3 × 8 countersunk (3), M3 × 6 socket head (1), M3 nyloc (8) | [onlyscrews.in](https://onlyscrews.in/search?q=m3+countersunk) | Check the listing at order time |
-| M4 × 16 countersunk (4) | [onlyscrews.in](https://onlyscrews.in/search?q=m4+countersunk) | Check the listing at order time |
-| M5 × 12 socket head 12.9 (6) and M5 washers ISO 7089 (6) | — | Not listed as a 12.9 line. These are the screws the shoulder BOM calls “arm screws” |
+| M3 × 12 countersunk (15), M3 × 10 countersunk (40), M3 × 6 socket head (1), M3 nyloc (8) | [onlyscrews.in](https://onlyscrews.in/search?q=m3+countersunk) | Check the listing at order time |
+| M4 × 18 countersunk (4) | [onlyscrews.in](https://onlyscrews.in/search?q=m4+countersunk) | Check the listing at order time. ×16 is too short for the 7 mm plate |
+| M5 × 14 socket head 12.9 (6) and M5 washers ISO 7089 (6) | — | Not listed as a 12.9 line. ×12 loses thread engagement in the thicker plate |
 | M2.5 × 6 countersunk + nuts (4 + 4) | [onlyscrews.in](https://onlyscrews.in/search?q=m2.5) | Check the listing at order time |
 | Silicone tube Ø8 / Ø10, 120 mm | — | Not listed; local hardware or aquarium tubing |
 | Rubber sheet 3 mm, small piece | — | Local |

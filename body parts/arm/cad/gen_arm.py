@@ -2,12 +2,13 @@
 
 Upper arm = two shaped PETG plates (each printed in two pieces joined by a
 glued, screwed half-lap) held apart by printed spacer sleeves; the LA8308
-sits between them on four standoffs. The rotor drives a printed hub that
-passes through the outer plate and carries the forearm outer plate; the
-forearm inner plate pivots on a printed stub through a 6705 bearing in an
-o-ring seat. The forearm is two PETG truss plates with spacer sleeves and a
-wrist block. Two forearm spacers wear silicone sleeves and are the hard
-stops. All dimensions come from arm_params.py. Writes, beside this script:
+sits between them on four standoffs. The rotor drives a printed hub. A
+sleeve in the outer plate carries the hub bearing, and the hub end flange
+stands proud of that plate and bolts to the forearm outer plate. The
+forearm inner plate pivots on a printed stub through a 6804Z. The forearm
+is two PETG truss plates with spacer sleeves and a wrist block. Two
+forearm spacers wear silicone sleeves and are the hard stops. All
+dimensions come from arm_params.py. Writes, beside this script:
   arm.step          coloured, named assembly (shoulder + arm)
   arm.3mf           named, coloured meshes
   arm_stl.zip       every arm part, assembled position
@@ -40,7 +41,7 @@ import gen_actuator_3mf as g  # noqa: E402  (shoulder module, path set above)
 import gen_actuator_occ as occ  # noqa: E402
 
 OUT = os.path.join(HERE, "arm")
-REV = "2.0"
+REV = "2.1"
 BIG = 1000.0
 
 g.MATERIALS.update({
@@ -54,8 +55,9 @@ g.MATERIALS.update({
 
 # print orientation (rx, ry, rz) in world; +y up = (90, 0, 0), +y down = (-90, 0, 0)
 PRINT = {201: (-90, 0, 0), 202: (-90, 0, 0), 203: (90, 0, 0), 204: (90, 0, 0), 205: (90, 0, 0), 206: (90, 0, 0),
-         207: (90, 0, 0), 208: (90, 0, 0), 209: (-90, 0, 0), 210: (90, 0, 0), 211: (180, 0, 0)}
-MOVING = {207, 208, 209, 210, 211, 217, 220, 221, 222, 223, 224, 225}  # turn with the forearm (218 pads stay on the upper plates)
+         207: (90, 0, 0), 208: (90, 0, 0), 209: (-90, 0, 0), 210: (90, 0, 0), 211: (180, 0, 0),
+         213: (90, 0, 0), 214: (90, 0, 0)}
+MOVING = {207, 208, 209, 210, 211, 214, 217, 220, 221, 222, 223, 224, 225}  # turn with the forearm (218 pads stay on the upper plates)
 
 
 # ---------------------------------------------------------------- frames and primitives (local frame: x = u, y = v, z = -world y)
@@ -203,7 +205,7 @@ def split(plate, y0, y1, v_split, gap_high):
 
 
 def inner_plate():
-    """Upper inner plate (y 0..5) as (lower piece 201, upper piece 202)."""
+    """Upper inner plate as (lower piece 201, upper piece 202)."""
     y0, y1 = p.Y_UI
     s = upper_plate(y0, y1)
     cut = []
@@ -211,19 +213,14 @@ def inner_plate():
         cut.append(csk_hole(u, v, y0, y1 - y0, 3.0, 1))
     for u, v in p.lap_screws("inner"):
         cut.append(csk_hole(u, v, y0, y1 - y0, 3.0, 1))
-    # motor
     for a in p.MOTOR_BASE["ang"]:
         cut.append(csk_hole(*p.polar(p.MOTOR_BASE["pcd_r"], a), y0, y1 - y0, 4.0, 1))
     cut.append(ycyl(p.LEAD["hole_r"], y0 - 1, y1 + 1, *p.polar(p.LEAD["r"], p.LEAD["ang"])))
-    # encoder pocket (bed side), pcb screws, cable groove
     w = p.PCB["w"] / 2 + p.POCKET_CLEAR
     cut.append(ybox(-w, w, -w, w, p.Y_PCB[0], y1 + 1))
-    for a in g.every(4, p.PCB["ang0"]):
-        cut.append(csk_hole(*p.polar(p.PCB["hole_r"], a), y0, p.Y_PCB[0] - y0, 2.5, 1))
     gq = p.CABLE_GROOVE
     cut.append(occ.Solid(cq.Solid.makeBox(gq["r1"], gq["w"], gq["d"] + 1, cq.Vector(0, -gq["w"] / 2, -(y1 + 1)))
                          .rotate((0, 0, 0), (0, 0, 1), gq["ang"])))
-    # shoulder
     sh = (0.0, p.L_UPPER)
     for a in p.SH_M5_ANG:
         u, v = p.polar(p.SH_M5_R, a)
@@ -233,19 +230,24 @@ def inner_plate():
         cut.append(ycyl(p.M4_HEAD_RELIEF["r"], y0 - 1, y0 + p.M4_HEAD_RELIEF["depth"], u, sh[1] + v))
     s = s - union(cut)
     s = s + ycyl(p.SPIGOT["r"], -p.SPIGOT["h"], y0 + 0.01, 0, sh[1])
-    # pivot stub on the inboard face
-    pb = p.PIVOT_BRG
-    stub = ycyl(p.STUB["shoulder_r"], -2.0, y0 + 0.01) + ycyl(p.STUB["r"] - p.STUB["journal_clear"], -2.0 - pb["B"] + 0.1, -1.99)
-    stub = stub - ycyl(p.SPACER_INSERT["d_hole"] / 2, -2.0 - pb["B"] + 0.1 - 0.01, -2.0 - pb["B"] + 0.1 + p.SPACER_INSERT["depth"])
+    # stub: journal for the 6804, a shoulder the inner ring stops on, a thin neck so the encoder heads stay clear
+    face, pb, st = p.PIVOT_FACE_Y, p.PIVOT_BRG, p.STUB
+    y_in = face - pb["B"]
+    stub = ycyl(st["r"] - st["journal_clear"], y_in, face + 0.01)
+    stub = stub + ycyl(st["shoulder_r"], face + 0.10, face + 0.10 + st["shoulder_t"])
+    stub = stub + ycyl(st["neck_r"], face + 0.10 + st["shoulder_t"] - 0.01, y0 + 0.01)
+    stub = stub - ycyl(p.SPACER_INSERT["d_hole"] / 2, y_in - 0.01, y_in + p.SPACER_INSERT["depth"])
     s = s + stub
-    return split(s, y0, y1, p.SPLIT["inner"], True)
+    # cut after the stub so the neck cannot fill a countersink
+    holes = [csk_hole(u, v, y0, p.Y_PCB[0] - y0, 2.5, 1) for u, v in p.PCB["holes"]]
+    return split(s - union(holes), y0, y1, p.SPLIT["inner"], True)
 
 
 def outer_plate():
     """Upper outer plate as (lower piece 203, upper piece 204)."""
     y0, y1 = p.Y_UO
     s = upper_plate(y0, y1)
-    cut = [ycyl(p.UO_HUB_CLEAR_R, y0 - 1, y1 + 1)]
+    cut = [ycyl(p.SLEEVE["hole_r"], y0 - 1, y1 + 1)]
     for u, v in p.upper_spacers() + p.lap_screws("outer"):
         cut.append(csk_hole(u, v, y1, y1 - y0, 3.0, -1))
     for a in p.SH_M5_ANG:
@@ -277,34 +279,48 @@ def wrist_screws():
 
 
 def fore_outer():
-    """Forearm outer plate 208 (bolted to the hub end face)."""
+    """Forearm outer plate 208 (bolted to the hub end flange)."""
     y0, y1 = p.Y_FO
     s = fore_plate(y0, y1)
-    cut = [csk_hole(*p.polar(7.0, a), y1, y1 - y0, 3.0, -1) for a in (90.0, 210.0, 330.0)]
+    cut = [csk_hole(*p.polar(p.HUB["end_pcd_r"], a), y1, y1 - y0, 3.0, -1) for a in p.HUB["end_ang"]]
     cut += [csk_hole(u, v, y1, y1 - y0, 3.0, -1) for u, v in p.fore_nodes() + wrist_screws()]
     return s - union(cut)
 
 
 def fore_inner():
-    """Forearm inner plate 209: pivot boss with the o-ring bearing seat."""
+    """Forearm inner plate 209: boss and a slip bore for the 6804, with a lip that keeps the outer ring in."""
     y0, y1 = p.Y_FI
     s = fore_plate(y0, y1) + ycyl(p.FORE["r_lobe"] - 0.5, p.FI_BOSS_Y0, y0 + 0.5)
-    yb = -2.0 - p.PIVOT_BRG["B"] / 2
-    cut = [ycyl(p.PIVOT_BORE_R, p.FI_BOSS_Y0 - 1, y1 + 1),
-           ytube(p.ORING["groove_r"], p.PIVOT_BORE_R - 0.5, yb - p.ORING["groove_w"] / 2, yb + p.ORING["groove_w"] / 2)]
+    cut = [ycyl(p.PIVOT_BORE_R, p.FI_BOSS_Y0 - 1, p.PIVOT_LIP_Y),
+           ycyl(p.PIVOT_LIP_R, p.PIVOT_LIP_Y - 0.01, y1 + 1)]
     cut += [csk_hole(u, v, y0, y1 - y0, 3.0, 1) for u, v in p.fore_nodes() + wrist_screws()]
     return s - union(cut)
 
 
 def hub():
-    """Rotor hub 207: flange on the rotor face, tube through the outer plate, inserts for the forearm plate."""
+    """Rotor hub 207: flange on the rotor, Ø19.2 journal through the bearing, end flange proud of 203."""
     y_r = p.Y_ROTOR
     yf = y_r + p.HUB["flange_t"]
-    s = ycyl(p.HUB["flange_r"], y_r, yf) + ycyl(11.0, yf - 0.01, p.Y_FO[0])
-    cut = [ycyl(p.ROTOR["stub_r"], y_r - 1, p.Y_FO[0] + 1)]
+    ye0, ye1 = p.Y_HUB_END
+    jr = p.HUB["journal_d"] / 2
+    s = ycyl(p.HUB["flange_r"], y_r, yf) + ycyl(jr, yf - 0.01, ye0) + ycyl(p.HUB["end_r"], ye0 - 0.01, ye1)
+    cut = [ycyl(p.ROTOR["stub_r"], y_r - 1, ye1 + 1)]
     cut += [csk_hole(*p.polar(p.ROTOR["pcd_r"], a), yf, p.HUB["flange_t"], 3.0, -1) for a in p.ROTOR["ang"]]
-    cut += [ycyl(p.SPACER_INSERT["d_hole"] / 2, p.Y_FO[0] - p.SPACER_INSERT["depth"], p.Y_FO[0] + 1, *p.polar(7.0, a)) for a in (90.0, 210.0, 330.0)]
+    cut += [ycyl(p.SPACER_INSERT["d_hole"] / 2, ye1 - p.SPACER_INSERT["depth"], ye1 + 1,
+                 *p.polar(p.HUB["end_pcd_r"], a)) for a in p.HUB["end_ang"]]
     return s - union(cut)
+
+
+def sleeve():
+    """Sleeve 213: flange against the inboard face of 203, bore for the hub bearing, lip on the outboard end."""
+    S = p.SLEEVE
+    y0, y1 = p.Y_SLEEVE
+    yf = y0 + S["flange_t"]
+    lip = y1 - S["lip_t"]
+    s = ycyl(S["flange_r"], y0, yf) + ycyl(S["od_r"], yf - 0.01, y1)
+    s = s - ycyl(S["bore_r"], y0 - 1, lip)
+    s = s - ycyl(S["lip_r"], lip - 0.01, y1 + 1)
+    return s
 
 
 def wrist_block():
@@ -324,24 +340,28 @@ def wrist_block():
 
 
 def coupon():
-    """Fit coupon (own frame, z up). Row y 15: 6705 journals at -0.05 / -0.10 / -0.15 on radius.
-    Row y 50: 6705 seats at +0.20 / +0.30 / +0.40 radial float, each with the o-ring groove.
-    Right block: m3 / m4 / m5 / hub clearance holes, d9 and d8 sleeve stubs with insert holes, d39.8 spigot ring."""
-    pb = p.PIVOT_BRG
-    s = occ.box(0, 190, 0, 70, 0, 5)
-    for k in range(3):
-        x = 18 + 26 * k
-        s = s + occ.cyl(pb["d"] / 2 - 0.05 * (k + 1), 5, 9, x, 15) + occ.cyl(22.0, 5, 6, x, 50)
-    for k in range(3):
-        x = 18 + 26 * k
-        s = s - occ.cyl(pb["D"] / 2 + 0.20 + 0.10 * k, -1, 7, x, 50)
-        s = s - occ.tube(p.ORING["groove_r"], pb["D"] / 2, 2, 4).translate((x, 50, 0))
-    for x, y, r in [(95, 12, p.M3["clear_r"]), (105, 12, p.M4["clear_r"]), (117, 12, p.M5["hole_r"]), (133, 14, p.UO_HUB_CLEAR_R - 4.0)]:
+    """Fit coupon (own frame, z up).
+
+    Row y 16: journals for both 19.5 bores, radius clearance 0.15 / 0.25 / 0.35.
+    Row y 46: 6804 seats, radial float 0.15 / 0.25 / 0.35 over the measured 31.5 od.
+    Row y 78: hub-bearing seats, same three floats over the measured 26.5 od.
+    Right side: sleeve outside diameters 32.4 / 32.8 / 33.2, screw holes, spacer stubs, spigot ring.
+    """
+    bore = p.PIVOT_BRG["d"] / 2
+    s = occ.box(0, 236, 0, 116, 0, 4)
+    for k, clear in enumerate((0.15, 0.25, 0.35)):
+        x = 24 + 46 * k
+        s = s + occ.cyl(bore - clear, 4, 16, x, 16)
+        s = s + occ.cyl(20.0, 4, 11, x, 50) - occ.cyl(p.PIVOT_BRG["D"] / 2 + clear, -1, 12, x, 50)
+        s = s + occ.cyl(17.0, 4, 11, x, 84) - occ.cyl(p.HUB_BRG["D"] / 2 + clear, -1, 12, x, 84)
+    for k, r in enumerate((16.2, 16.4, 16.6)):
+        s = s + occ.cyl(r, 4, 12, 168, 20 + 38 * k)
+    for x, y, r in [(206, 16, 1.6), (220, 16, p.M3["clear_r"]), (206, 32, p.M4["clear_r"]), (220, 32, p.M5["hole_r"])]:
         s = s - occ.cyl(r, -1, 6, x, y)
     for k, r in enumerate((p.UPPER_SPACER["r"], p.FORE_SPACER["r"])):
-        x = 100 + 14 * k
-        s = s + occ.cyl(r, 5, 15, x, 34) - occ.cyl(p.SPACER_INSERT["d_hole"] / 2, 15 - p.SPACER_INSERT["depth"], 16, x, 34)
-    s = s + occ.tube(p.SPIGOT["r"], p.SPIGOT["r"] - 3.0, 5, 5 + p.SPIGOT["h"]).translate((166, 35, 0))
+        x = 208 + 16 * k
+        s = s + occ.cyl(r, 4, 16, x, 58) - occ.cyl(p.SPACER_INSERT["d_hole"] / 2, 16 - p.SPACER_INSERT["depth"], 17, x, 58)
+    s = s + occ.tube(p.SPIGOT["r"], p.SPIGOT["r"] - 3.0, 4, 4 + p.SPIGOT["h"]).translate((210, 92, 0))
     return s
 
 
@@ -371,49 +391,55 @@ def build_arm():
         add(f"205.{i + 1} Upper spacer sleeve D9 (PETG)", "PETG", sl)
         add(f"230.{i + 1} Insert M3x5.7 upper spacer, inner end", "Brass insert", insert(u, v, ya, 1))
         add(f"231.{i + 1} Insert M3x5.7 upper spacer, outer end", "Brass insert", insert(u, v, yb, -1))
-        add(f"232.{i + 1} Screw M3x10 ISO 10642 inner plate->spacer", "Steel 12.9 fastener", csk(u, v, p.Y_UI[0], 10.0, 3.0, 1))
+        add(f"232.{i + 1} Screw M3x12 ISO 10642 inner plate->spacer", "Steel 12.9 fastener", csk(u, v, p.Y_UI[0], 12.0, 3.0, 1))
         add(f"233.{i + 1} Screw M3x10 ISO 10642 outer plate->spacer", "Steel 12.9 fastener", csk(u, v, p.Y_UO[1], 10.0, 3.0, -1))
     for i, (u, v) in enumerate(p.lap_screws("inner")):
-        add(f"234.{i + 1} Screw M3x10 ISO 10642 inner lap", "Steel 12.9 fastener", csk(u, v, p.Y_UI[0], 10.0, 3.0, 1))
+        add(f"234.{i + 1} Screw M3x12 ISO 10642 inner lap", "Steel 12.9 fastener", csk(u, v, p.Y_UI[0], 12.0, 3.0, 1))
     for i, (u, v) in enumerate(p.lap_screws("outer")):
         add(f"235.{i + 1} Screw M3x10 ISO 10642 outer lap", "Steel 12.9 fastener", csk(u, v, p.Y_UO[1], 10.0, 3.0, -1))
     # motor, standoffs, encoder
     for i, a in enumerate(p.MOTOR_BASE["ang"]):
         u, v = p.polar(p.MOTOR_BASE["pcd_r"], a)
         add(f"206.{i + 1} Motor standoff (PETG)", "PETG", ytube(p.STANDOFF["ro"], p.STANDOFF["ri"], p.Y_UI[1], p.Y_MOUNT, u, v))
-        add(f"236.{i + 1} Screw M4x16 ISO 10642 motor->inner plate", "Steel 12.9 fastener", csk(u, v, p.Y_UI[0], 16.0, 4.0, 1))
+        add(f"236.{i + 1} Screw M4x18 ISO 10642 motor->inner plate", "Steel 12.9 fastener", csk(u, v, p.Y_UI[0], 18.0, 4.0, 1))
     motor = ycyl(p.MOTOR["r"], p.Y_MOUNT, p.Y_ROTOR) + ycyl(1.45, p.Y_ROTOR - 0.01, p.Y_ROTOR + 8.9)
     add("240 Motor LA8308 KV90 (envelope)", "Motor envelope", motor)
     add("212 Magnet holder (resin, bonded in the rear cap)", "Resin", ycyl(5.0, p.Y_MAG + 2.5, p.Y_MOUNT))
     add("241 Encoder magnet D6x2.5 diametric", "NdFeB magnet", ycyl(3.0, p.Y_MAG, p.Y_MAG + 2.5))
-    pcb = ybox(-15, 15, -15, 15, *p.Y_PCB) - union([ycyl(1.35, p.Y_PCB[0] - 1, p.Y_PCB[1] + 1, *p.polar(p.PCB["hole_r"], a)) for a in g.every(4, p.PCB["ang0"])])
-    add("242 Encoder PCB 30x30 AS5047P (shoulder P12)", "Electronics", pcb)
+    pcb = ybox(-15, 15, -15, 15, *p.Y_PCB) - union([ycyl(1.5, p.Y_PCB[0] - 1, p.Y_PCB[1] + 1, u, v) for u, v in p.PCB["holes"]])
+    add("242 Encoder PCB 30x30 AS5047P (Meukron)", "Electronics", pcb)
     add("243 AS5047P TSSOP-14 (envelope)", "Electronics", ybox(-2.5, 2.5, -2.2, 2.2, p.Y_PCB[1], p.Y_IC_TOP))
-    for i, a in enumerate(g.every(4, p.PCB["ang0"])):
-        add(f"244.{i + 1} Screw M2.5x6 ISO 10642 pcb (nut on the pcb)", "Steel 12.9 fastener", csk(*p.polar(p.PCB["hole_r"], a), p.Y_UI[0], 6.0, 2.5, 1))
+    for i, (u, v) in enumerate(p.PCB["holes"]):
+        add(f"244.{i + 1} Screw M2.5x6 ISO 10642 pcb", "Steel 12.9 fastener", csk(u, v, p.Y_UI[0], 6.0, 2.5, 1))
+        add(f"245.{i + 1} Nut M2.5 encoder (in the pocket, below the plate face)", "Steel 12.9 fastener",
+            ycyl(2.9, p.Y_PCB[1], p.Y_PCB[1] + 2.0, u, v))
     # shoulder bolts
     for i, a in enumerate(p.SH_M5_ANG):
         u, v = p.polar(p.SH_M5_R, a)
         wsh = p.M5["washer"]
         add(f"237.{i + 1} Washer M5 ISO 7089 shoulder", "Steel 12.9 fastener", ytube(wsh["od"] / 2, wsh["id"] / 2, p.Y_UI[1], p.Y_UI[1] + wsh["t"], u, p.L_UPPER + v))
         add(f"238.{i + 1} Screw M5x12 ISO 4762 inner plate->shoulder", "Steel 12.9 fastener", shcs(u, p.L_UPPER + v, p.Y_UI[1] + wsh["t"], p.M5["screw_l"], 5.0, -1))
-    # pivot
-    for k, s in occ.ball_bearing(z0=2.0, seals=True, **p.PIVOT_BRG).items():
-        add(f"250 6705-2RS pivot {k}", "Bearing (purchased)", s)
-    rc = (p.PIVOT_BRG["D"] / 2 + p.ORING["groove_r"]) / 2
-    add("251 O-ring 31.5x1.5 NBR 70 pivot", "NBR O-ring", occ.Solid(cq.Solid.makeTorus(rc, 0.55, cq.Vector(0, 0, 2.0 + p.PIVOT_BRG["B"] / 2), cq.Vector(0, 0, 1))))
-    y_end, y_brg = -2.0 - p.PIVOT_BRG["B"] + 0.1, -2.0 - p.PIVOT_BRG["B"]
-    add("252 Insert M3x5.7 stub", "Brass insert", insert(0.0, 0.0, y_end, 1))
-    add("253 Washer 26/3.2x1 stub (PETG)", "PETG", ytube(13.0, 1.7, y_brg - 1.0, y_brg))
+    # local z = -world y. z0 is the outboard face; the bearing runs inboard from there.
+    for k, s in occ.ball_bearing(z0=-p.PIVOT_FACE_Y, seals=True, **p.PIVOT_BRG).items():
+        add(f"250 6804Z pivot {k}", "Bearing (purchased)", s)
+    y_brg = p.PIVOT_FACE_Y - p.PIVOT_BRG["B"]
+    add("252 Insert M3x5.7 stub", "Brass insert", insert(0.0, 0.0, y_brg, 1))
+    add("253 Washer 22/3.2x1 stub (PETG)", "PETG", ytube(11.0, 1.7, y_brg - 1.0, y_brg))
     add("254 Screw M3x6 ISO 4762 stub", "Steel 12.9 fastener", shcs(0.0, 0.0, y_brg - 1.0, 6.0, 3.0, 1))
     # forearm group
     add("207 Rotor hub (PETG)", "PETG forearm", hub())
+    add("213 Hub bearing sleeve (PETG)", "PETG", sleeve())
+    y_sp = p.Y_ROTOR + p.HUB["flange_t"]
+    add("214 Hub bearing spacer (PETG)", "PETG forearm", ytube(11.0, p.HUB["journal_d"] / 2 + 0.20, y_sp, y_sp + p.HUB["spacer_l"]))
+    y_seat = p.Y_SLEEVE[1] - p.SLEEVE["lip_t"]
+    for k, s in occ.ball_bearing(z0=-y_seat, seals=False, **p.HUB_BRG).items():
+        add(f"255 Hub bearing 19.5x26.5 {k}", "Bearing (purchased)", s)
     for i, a in enumerate(p.ROTOR["ang"]):
         add(f"220.{i + 1} Screw M3x10 ISO 10642 hub->rotor", "Steel 12.9 fastener", csk(*p.polar(p.ROTOR["pcd_r"], a), p.Y_ROTOR + p.HUB["flange_t"], 10.0, 3.0, -1))
-    for i, a in enumerate((90.0, 210.0, 330.0)):
-        u, v = p.polar(7.0, a)
-        add(f"221.{i + 1} Insert M3x5.7 hub", "Brass insert", insert(u, v, p.Y_FO[0], -1))
-        add(f"222.{i + 1} Screw M3x8 ISO 10642 forearm plate->hub", "Steel 12.9 fastener", csk(u, v, p.Y_FO[1], 8.0, 3.0, -1))
+    for i, a in enumerate(p.HUB["end_ang"]):
+        u, v = p.polar(p.HUB["end_pcd_r"], a)
+        add(f"221.{i + 1} Insert M3x5.7 hub", "Brass insert", insert(u, v, p.Y_HUB_END[1], -1))
+        add(f"222.{i + 1} Screw M3x10 ISO 10642 forearm plate->hub", "Steel 12.9 fastener", csk(u, v, p.Y_FO[1], 10.0, 3.0, -1))
     add("208 Forearm outer plate (PETG)", "PETG forearm", fore_outer())
     add("209 Forearm inner plate (PETG)", "PETG forearm", fore_inner())
     ya, yb = p.Y_FI[1], p.Y_FO[0]
@@ -592,10 +618,20 @@ def preview(groups, path):
 
 
 def encoder_check():
-    """Print the motor magnet / ic gap (ams allows 0.5..3.0 mm)."""
+    """Print the joint stack and refuse a magnet gap outside 0.5..3.0 mm."""
     gap = p.Y_MAG - p.Y_IC_TOP
+    d24 = math.dist(p.PCB["holes"][0], p.PCB["holes"][1])
+    d19 = math.dist(p.PCB["holes"][2], p.PCB["holes"][3])
+    proud = p.Y_HUB_END[1] - p.Y_UO[1]
     print(f"encoder: magnet face y {p.Y_MAG:.2f}, ic top y {p.Y_IC_TOP:.2f} -> gap {gap:.2f} mm (0.5..3.0)")
+    print(f"encoder holes: diagonals {d24:.2f} and {d19:.2f} mm")
+    print(f"stack y: plate {p.Y_UI[1]:.1f}, mount {p.Y_MOUNT:.1f}, rotor {p.Y_ROTOR:.1f}, "
+          f"outer plate {p.Y_UO[0]:.1f}..{p.Y_UO[1]:.1f}, hub end {p.Y_HUB_END[1]:.1f} (proud {proud:.1f})")
     assert 0.5 <= gap <= 3.0
+    assert abs(d24 - 24.0) < 0.05 and abs(d19 - 19.0) < 0.05
+    assert p.Y_UI[0] + 6.0 < p.Y_MAG  # m2.5x6 tip stays off the magnet
+    assert p.Y_PCB[1] + 2.0 < p.Y_UI[1]  # nuts below the plate face
+    assert proud > 5.0
 
 
 if __name__ == "__main__":
@@ -609,8 +645,8 @@ if __name__ == "__main__":
     interferences(arm, shoulder)
     num = {n: g.part_no(n) for n, _, _ in arm}
     moving = [q for q in arm if num[q[0]] in MOVING]
-    stationary = [q for q in arm if num[q[0]] not in MOVING and num[q[0]] not in (250, 251)]
-    sweep([q for q in moving if num[q[0]] not in (207, 220, 221, 222)], stationary)  # the hub group is coaxial with the turn
+    stationary = [q for q in arm if num[q[0]] not in MOVING and num[q[0]] not in (250, 255)]
+    sweep([q for q in moving if num[q[0]] not in (207, 214, 220, 221, 222)], stationary)  # hub group is coaxial with the turn
     posed = bed_check(arm)
     masses(arm)
     show_s = [q for q in shoulder if g.part_no(q[0][1:]) in {8, 15, 33, 42, 45}]

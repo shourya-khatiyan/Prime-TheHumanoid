@@ -1,0 +1,2 @@
+- what is the budget for hardware 
+- can we source some parts 

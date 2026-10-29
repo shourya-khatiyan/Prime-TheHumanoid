@@ -6,65 +6,65 @@ no-load joint speed at 20 V x 0.7 modulation: 7560 deg/s -> vel_limit is a safet
 electrical time constant L/R 0.44 ms; lumped heat capacity 194 J/K (estimate)
 
 === 2 elbow loads, direct drive (joint torque = motor torque) ===
-forearm structure (CAD print estimate) 156 g at 122 mm; dummy hand 150 g at 296 mm
+forearm structure (CAD print estimate) 178 g at 118 mm; dummy hand 150 g at 296 mm
 
-no hand: static 0.19  continuous 0.23  proof 0.38 N*m   J 0.0033 kg*m2 (rotor 7.3 %)
-   hold         2.0 A    0.6 W   steady rise 1, 2, 2 K for R_th (2.0, 3.0, 4.0)
-   continuous   2.5 A    0.9 W   steady rise 2, 3, 4 K for R_th (2.0, 3.0, 4.0)
-   proof        4.2 A    2.5 W   steady rise 5, 7, 10 K for R_th (2.0, 3.0, 4.0)
+no hand: static 0.21  continuous 0.25  proof 0.42 N*m   J 0.0035 kg*m2 (rotor 6.8 %)
+   hold         2.2 A    0.7 W   steady rise 1, 2, 3 K for R_th (2.0, 3.0, 4.0)
+   continuous   2.7 A    1.1 W   steady rise 2, 3, 4 K for R_th (2.0, 3.0, 4.0)
+   proof        4.5 A    3.0 W   steady rise 6, 9, 12 K for R_th (2.0, 3.0, 4.0)
 
-dummy hand: static 0.62  continuous 0.83  proof 1.39 N*m   J 0.0165 kg*m2 (rotor 1.5 %)
-   hold         6.8 A    6.6 W   steady rise 13, 20, 27 K for R_th (2.0, 3.0, 4.0)
-   continuous   9.0 A   11.8 W   steady rise 24, 35, 47 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 45.3 min (R_th 3)
-   proof       15.1 A   32.8 W   steady rise 66, 99, 131 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 4.2 min (R_th 3)
+dummy hand: static 0.64  continuous 0.85  proof 1.42 N*m   J 0.0167 kg*m2 (rotor 1.4 %)
+   hold         7.0 A    7.0 W   steady rise 14, 21, 28 K for R_th (2.0, 3.0, 4.0)
+   continuous   9.3 A   12.4 W   steady rise 25, 37, 50 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 27.5 min (R_th 3)
+   proof       15.5 A   34.6 W   steady rise 69, 104, 138 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 4.0 min (R_th 3)
 
-dummy hand + 0.10 kg payload: static 0.91  continuous 1.23  proof 2.06 N*m   J 0.0252 kg*m2 (rotor 1.0 %)
-   hold         9.9 A   14.3 W   steady rise 29, 43, 57 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 16.4 min (R_th 3)
-   continuous  13.4 A   25.9 W   steady rise 52, 78, 104 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 5.8 min (R_th 3)
-   proof       22.4 A   72.2 W   steady rise 144, 217, 289 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 1.7 min (R_th 3)
+dummy hand + 0.10 kg payload: static 0.93  continuous 1.25  proof 2.09 N*m   J 0.0255 kg*m2 (rotor 0.9 %)
+   hold        10.1 A   14.9 W   steady rise 30, 45, 59 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 14.9 min (R_th 3)
+   continuous  13.6 A   26.8 W   steady rise 54, 80, 107 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 5.5 min (R_th 3)
+   proof       22.8 A   74.8 W   steady rise 150, 224, 299 K for R_th (2.0, 3.0, 4.0)  -> NTC limit in 1.6 min (R_th 3)
 
 === 2b continuous rating and payload (stator 70 C at 35 C ambient) 
-R_th 2 K/W: 17.5 W -> 0.99 N*m continuous (10.8 A); payload at the hand centre with the dummy hand 0.12 kg
-R_th 3 K/W: 11.7 W -> 0.81 N*m continuous ( 8.8 A); payload at the hand centre with the dummy hand 0.06 kg
-R_th 4 K/W:  8.8 W -> 0.70 N*m continuous ( 7.7 A); payload at the hand centre with the dummy hand 0.03 kg
+R_th 2 K/W: 17.5 W -> 0.99 N*m continuous (10.8 A); payload at the hand centre with the dummy hand 0.11 kg
+R_th 3 K/W: 11.7 W -> 0.81 N*m continuous ( 8.8 A); payload at the hand centre with the dummy hand 0.05 kg
+R_th 4 K/W:  8.8 W -> 0.70 N*m continuous ( 7.7 A); payload at the hand centre with the dummy hand 0.02 kg
 
 === 3 ODESC axis 1 settings =====================================
-pole_pairs 20, torque_constant 0.0919, current_lim 20 A (1.84 N*m, 1.33 x the dummy-hand proof current)
+pole_pairs 20, torque_constant 0.0919, current_lim 20 A (1.84 N*m, 1.29 x the dummy-hand proof current)
 vel_limit 0.5 turn/s (180 deg/s), motor thermistor 10k NTC: limit 70 C, abort 80 C
 soft limits -3 .. 135 deg (encoder on the motor = joint angle, absolute at power-up, no homing)
 direction: set so flexion is positive; output resolution 14 bit = 0.022 deg = 0.12 mm at 0.30 m
 
 === 4 stops and falls ===========================================
-unpowered fall horizontal -> straight: 0.62 J, 8.7 rad/s (2.6 m/s at the hand); ODESC idle = open phases, no braking (shorted phases would give only 0.067 N*m*s/rad)
-  extension stop (heel tab): sleeve at r 64 mm; absorbing 0.62 J in 1 mm -> average 623 N (312 N per plate edge)
-  extension stop (heel tab): sleeve at r 64 mm; absorbing 0.62 J in 3 mm -> average 208 N (104 N per plate edge)
-  flexion stop (front edge): sleeve at r 83 mm; absorbing 0.62 J in 1 mm -> average 623 N (312 N per plate edge)
-  flexion stop (front edge): sleeve at r 83 mm; absorbing 0.62 J in 3 mm -> average 208 N (104 N per plate edge)
-driven into a stop at the 180 deg/s cap: 0.081 J kinetic + current limit 1.84 N*m -> 22 N static at the flexion sleeve
+unpowered fall horizontal -> straight: 0.64 J, 8.8 rad/s (2.6 m/s at the hand); ODESC idle = open phases, no braking (shorted phases would give only 0.067 N*m*s/rad)
+  extension stop (heel tab): sleeve at r 64 mm; absorbing 0.64 J in 1 mm -> average 642 N (321 N per plate edge)
+  extension stop (heel tab): sleeve at r 64 mm; absorbing 0.64 J in 3 mm -> average 214 N (107 N per plate edge)
+  flexion stop (front edge): sleeve at r 83 mm; absorbing 0.64 J in 1 mm -> average 642 N (321 N per plate edge)
+  flexion stop (front edge): sleeve at r 83 mm; absorbing 0.64 J in 3 mm -> average 214 N (107 N per plate edge)
+driven into a stop at the 180 deg/s cap: 0.082 J kinetic + current limit 1.84 N*m -> 22 N static at the flexion sleeve
 result: a powered stall is harmless; for an unpowered fall the 3 mm rubber pad on the heel face (part 218) gives the 3 mm travel (~200 N); keep the arm hanging (0 deg) whenever the ODESC is idle
 
 === 5 shoulder ==================================================
-upper arm + motor 742 g at 218 mm, forearm 156 g, dummy hand 150 g
-arm horizontal: gravity 3.10 N*m, + 12.57 rad/s2 (J 0.116) -> 4.55 N*m vs 30 N*m continuous (SF 6.6)
+upper arm + motor 801 g at 217 mm, forearm 178 g, dummy hand 150 g
+arm horizontal: gravity 3.30 N*m, + 12.57 rad/s2 (J 0.121) -> 4.83 N*m vs 30 N*m continuous (SF 6.2)
 
 === 6 upper-arm plates and half-laps ============================
-half-lap 30 long x 54 wide, 4 x M3 csk (+-10, +-9), half thickness 2.5: screws alone carry 12.1 N*m on the link at 15 MPa bearing; epoxy alone 67.7 N*m at 2 MPa
--> shoulder current limit for the printed arm: 10 N*m output (dummy-hand demand 4.6 N*m)
-  v    40: plate width  83.1: shoulder 10 N*m on the link ->  0.87 MPa (allow 15)
-  v    80: plate width  64.9 (slot 12): shoulder 10 N*m on the link ->  1.44 MPa (allow 15)
-  v   120: plate width  54.5: shoulder 10 N*m on the link ->  2.02 MPa (allow 15)
-  v   155: plate width  51.0: shoulder 10 N*m on the link ->  2.31 MPa (allow 15)
-  v   220: plate width  56.8 (slot 12): shoulder 10 N*m on the link ->  1.88 MPa (allow 15)
-  v   260: plate width  70.0: shoulder 10 N*m on the link ->  1.22 MPa (allow 15)
-shoulder flange 6 x M5 in close-fit holes: 64 N each at 10 N*m -> 2.6 MPa bearing in the plate; 6 x M5 at 2 N*m preload 2000 N each (petg creep: re-torque after the first week)
+half-lap 30 long x 54 wide, 4 x M3 csk (+-10, +-9), half thickness 3.0: screws alone carry 14.5 N*m on the link at 15 MPa bearing; epoxy alone 67.7 N*m at 2 MPa
+-> shoulder current limit for the printed arm: 10 N*m output (dummy-hand demand 4.8 N*m)
+  v    40: plate width  83.1: shoulder 10 N*m on the link ->  0.72 MPa (allow 15)
+  v    80: plate width  64.9 (slot 12): shoulder 10 N*m on the link ->  1.20 MPa (allow 15)
+  v   120: plate width  54.5: shoulder 10 N*m on the link ->  1.69 MPa (allow 15)
+  v   155: plate width  51.0: shoulder 10 N*m on the link ->  1.92 MPa (allow 15)
+  v   220: plate width  56.8 (slot 12): shoulder 10 N*m on the link ->  1.56 MPa (allow 15)
+  v   260: plate width  70.0: shoulder 10 N*m on the link ->  1.02 MPa (allow 15)
+shoulder flange 6 x M5 in close-fit holes: 64 N each at 10 N*m -> 1.8 MPa bearing in the inner plate; 6 x M5 at 2 N*m preload 2000 N each (petg creep: re-torque after the first week)
 
 === 7 elbow joint: hub, pivot, standoffs ========================
-current limit 1.84 N*m: 4 x M3 hub->rotor 30 N each (2.5 MPa in the flange); 3 x M3 plate->hub 88 N each (7.3 MPa in the 4 mm plate, allow 15); tube shear 0.9 MPa
-motor 40 A peak 3.68 N*m: 4 x M3 hub->rotor 59 N each (4.9 MPa in the flange); 3 x M3 plate->hub 175 N each (14.6 MPa in the 4 mm plate, allow 15); tube shear 1.8 MPa
-side push 20 N at the hand: 5.9 N*m out of plane -> 100 N couple between the hub (motor bearings) and the 6705 pivot (60 mm apart); 6705 static capacity >= 1.0 kN gives s0 >= 10.0
-side push 50 N at the hand: 14.8 N*m out of plane -> 249 N couple between the hub (motor bearings) and the 6705 pivot (60 mm apart); 6705 static capacity >= 1.0 kN gives s0 >= 4.0
+current limit 1.84 N*m: 4 x M3 hub->rotor 30 N each (2.5 MPa in the flange); 3 x M3 plate->hub 61 N each (5.1 MPa in the 4 mm plate, allow 15); journal shear 1.3 MPa
+motor 40 A peak 3.68 N*m: 4 x M3 hub->rotor 59 N each (4.9 MPa in the flange); 3 x M3 plate->hub 123 N each (10.2 MPa in the 4 mm plate, allow 15); journal shear 2.6 MPa
+side push 20 N at the hand: 5.9 N*m out of plane -> 100 N on the hub bearing and the 6804 (59 mm apart). both seats are a slip fit, so the motor bearings still set the axis
+side push 50 N at the hand: 14.8 N*m out of plane -> 250 N on the hub bearing and the 6804 (59 mm apart). both seats are a slip fit, so the motor bearings still set the axis
 motor standoffs: M4 at 0.5 N*m -> 625 N on 79 mm2 = 7.9 MPa in petg near the stator (hdt test 1.8 MPa at 62 C): use 0.5 N*m + Loctite 243, re-check torque after the thermal test
-motor torque reaction: 3.68 N*m peak on 4 x M4 at r 20 -> 46 N each in shear (bearing 2.3 MPa)
+motor torque reaction: 3.68 N*m peak on 4 x M4 at r 20 -> 46 N each in shear (bearing 1.6 MPa)
 
 === 8 forearm truss plates ======================================
 v   -60: rims 7 x 4 at +-22.7 mm, two plates: elbow current limit 1.84 N*m -> 0.83 MPa
@@ -73,4 +73,4 @@ v  -200: rims 7 x 4 at +-17.3 mm, two plates: elbow current limit 1.84 N*m -> 1.
 stop sleeve load at the current limit: 22 N on the d8 sleeve near the plates (short lever), 0.7 MPa edge contact per plate
 
 === 9 mass ======================================================
-arm total 897 g (upper arm + motor 742, forearm 156); Rev 1 had a 508 g elbow actuator alone
+arm total 978 g (upper arm + motor 801, forearm 178); Rev 1 had a 508 g elbow actuator alone

@@ -34,7 +34,7 @@ Upgrade path: gripper and hand loads (S1 2.5 N·m static = 27 A) need gearing. T
 | Off-the-shelf 12 V linear actuator | — | Rejected | 7 mm/s ≈ 9°/s at the elbow vs 180°/s, 889 g, 20 % duty ([Robu](https://oldwp.robu.in/product/linear-actuator-stroke-length-100mm7mm-s1500n12v/), [QuartzComponents](https://quartzcomponents.com/products/linear-actuator-stroke-length-12v-100mm-7mm-s)) |
 | DIY screw linear actuator | — | Rejected | Pancake motor cannot lie along the arm; angle-dependent torque and linkage ([humanoid.guide](https://humanoid.guide/linear-vs-rotary-actuators-humanoid-joints/), [Humanoids Daily](https://www.humanoidsdaily.com/news/actuator-architecture-sparks-debate-figure-ceo-refutes-claim-of-using-planetary-roller-screws)) |
 | Strain wave | short | Rejected | High ratio, poor backdrivability and torque transparency ([LAAS/HAL](https://hal.science/hal-01494676v2/file/iros-ddp-romeo.pdf)) |
-| **Direct drive, motor clamped between the upper-arm plates** | elbow 64.5 mm wide | **Chosen** | No gearbox to print or jam, zero backlash, absolute joint encoder, enough torque for the dummy hand |
+| **Direct drive, motor clamped between the upper-arm plates** | elbow 78.6 mm wide after the Rev 2.1 fit fix | **Chosen** | No gearbox to print or jam, zero backlash, absolute joint encoder, enough torque for the dummy hand |
 
 ## 4. Thermal model (to be measured)
 

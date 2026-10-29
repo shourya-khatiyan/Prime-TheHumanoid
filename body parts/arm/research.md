@@ -30,7 +30,7 @@ Girths (male build, chosen for the look):
 | Wrist | 155–160 mm round | ANSUR II scaled 161 mm; Haryana men median 165 mm ([Haryana hand study](https://www.researchgate.net/publication/271520706_Analysis_of_Hand_Anthropometric_Dimensions_of_Male_Industrial_Workers_of_Haryana_State)) |
 | Hand breadth | 80–85 mm | ANSUR II scaled 80 mm; Haryana knuckle breadth median 85 mm |
 
-Order of girth: shoulder (deltoid) > upper arm > elbow ≈ forearm maximum > hand > wrist. The Rev 2 skeleton is exposed for now (elbow mechanism 64.5 mm wide, forearm 62.5 mm); covers can clip onto the spacer bars later.
+Order of girth: shoulder (deltoid) > upper arm > elbow ≈ forearm maximum > hand > wrist. The Rev 2 skeleton is exposed for now (elbow mechanism 78.6 mm wide after the fit fix, forearm 62.5 mm); covers can clip onto the spacer bars later.
 
 ## 3. Reference arms
 
@@ -43,9 +43,9 @@ Order of girth: shoulder (deltoid) > upper arm > elbow ≈ forearm maximum > han
 
 ## 4. Structure
 
-- Upper arm: two PETG plates 5 mm (Y 0–5 and 47.5–52.5) with a bone outline (R44 shoulder lobe, waist, R52 elbow lobe, heel tab = extension stop), 11 spacer sleeves, two lightening slots. Each plate is printed in two pieces (394 mm does not fit the 256 mm bed): glued, screwed half-laps at v 120 (inner) and v 155 (outer).
+- Upper arm: two PETG plates (inner 7 mm, Y 0–7; outer 5 mm, Y 50.2–55.2) with a bone outline (R44 shoulder lobe, waist, R52 elbow lobe, heel tab = extension stop), 11 spacer sleeves, two lightening slots. Each plate is printed in two pieces (394 mm does not fit the 256 mm bed): glued, screwed half-laps at v 120 (inner) and v 155 (outer).
 - Shoulder: the inner plate bolts straight to the shoulder flange (Ø40 spigot, 6 × M5 in close-fit holes); no aluminium adapter.
-- Elbow: motor on 4 standoffs (5 mm air gap) between the plates; rotor hub through the outer plate drives the forearm outer plate; the forearm inner plate pivots on a stub through a 6705 in an O-ring seat (motor bearings set the axis, no over-constraint).
+- Elbow: motor on 4 standoffs (5 mm air gap) between the plates. The hub journal (Ø19.2) runs through a bearing in a sleeve in the outer plate, and the hub end flange bolts to the forearm outer plate. The forearm inner plate pivots on a stub through a 6804Z in a slip bore. Both new bearings are slip fits so they do not fight the motor bearings.
 - Forearm: two 4 mm truss plates outside the upper plates, 7 sleeves, wrist block with the Ø20 spigot and 4 × M3 on Ø30 for the future hand.
 - Cables: the stator is fixed to the upper arm, so the motor leads and encoder cable never flex at the elbow; they leave through a hole up and behind the axis (never swept) and run along the upper arm.
 
@@ -56,16 +56,16 @@ Order of girth: shoulder (deltoid) > upper arm > elbow ≈ forearm maximum > han
 | Bambu PETG HF | All printed parts | 34 ± 4 MPa X-Y, 23 ± 4 MPa Z, E 1.81 GPa, hdt 62 °C at 1.8 MPa, 1.28 g/cm³ ([Bambu TDS](https://store.bblcdn.com/3a230e260a3a47c2b0db0156e07eef91.pdf), [Bambu TDS mirror](https://filament.ee/en/index.php?controller=attachment&id_attachment=4)) |
 | Standard resin | Magnet holder only (precise, unloaded) | 33 MPa, brittle ([Elegoo TDS](https://www.advancedadditiveinnovations.com/_files/ugd/82283a_42d5bfd023b24c3ca1eb3b28b04409ff.pdf)) |
 
-Allowables are (mean − 1 sd) / 2. The highest printed stress is 2.3 MPa at the 10 N·m shoulder limit (calc §6). Every fit has a named clearance in `arm_params.py`, set from the fit coupon; nothing is pressed with a hammer (Rev 1 jam lesson, elbow research §7).
+Allowables are (mean − 1 sd) / 2. The highest printed stress is 1.9 MPa at the 10 N·m shoulder limit (calc §6). Every fit has a named clearance in `arm_params.py`, set from the fit coupon; nothing is pressed with a hammer (Rev 1 jam lesson, elbow research §7).
 
 ## 6. Mass (`cad/mass.txt`, print estimate)
 
 | Group | Mass |
 |---|---|
-| Upper-arm plates, sleeves, standoffs, fasteners, encoder | 405 g |
+| Upper-arm plates, sleeves, standoffs, fasteners, encoder | 465 g |
 | LA8308 motor | 336 g |
-| Forearm (hub, plates, sleeves, wrist block, fasteners) | 157 g |
-| **Arm total** | **897 g** |
+| Forearm (hub, plates, sleeves, wrist block, fasteners) | 178 g |
+| **Arm total** | **978 g** |
 
 Dummy hand 0.15 kg (not in the total).
 
@@ -76,12 +76,12 @@ Dummy hand 0.15 kg (not in the total).
 
 ## 8. Shoulder re-check (calc §5)
 
-Arm horizontal with the dummy hand: gravity 3.10 N·m, with 12.57 rad/s² acceleration 4.55 N·m, against 30 N·m continuous (SF 6.6). The printed arm sets the shoulder current limit: 10 N·m output (half-lap screws alone carry 12.1 N·m, epoxy alone 67.7 N·m).
+Arm horizontal with the dummy hand: gravity 3.30 N·m, with 12.57 rad/s² acceleration 4.83 N·m, against 30 N·m continuous (SF 6.2). The printed arm sets the shoulder current limit: 10 N·m output (half-lap screws alone carry 14.5 N·m, epoxy alone 67.7 N·m).
 
 ## 9. Open items
 
 1. Measure on the motor: rotor M3 pattern (Ø31 or Ø25) and thread depths, base M4 depth, lead-exit angle against the base holes.
-2. Print and read the fit coupon; update `STUB["journal_clear"]` and `PIVOT_BORE_R`.
+2. Print and read the fit coupon; update `STUB["journal_clear"]`, `HUB["journal_d"]`, `PIVOT_BORE_R` and `SLEEVE["bore_r"]`. Measure the hub bearing width and set `HUB_BRG["B"]` and `HUB["spacer_l"]`.
 3. Bench thermal-hold test for the motor thermal resistance; then fix the continuous rating and confirm the 70 °C NTC limit.
 4. Re-torque the shoulder M5 and check the motor standoffs after the first week (PETG creep).
 5. Set the shoulder output limit to 10 N·m in the ODESC profile.

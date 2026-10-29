@@ -145,7 +145,9 @@ def slot_w(v):
     return next((2 * hw for v0, v1, hw in p.SLOTS if v0 <= v <= v1), 0.0)
 
 
-t_pl = p.Y_UI[1] - p.Y_UI[0]
+t_in = p.Y_UI[1] - p.Y_UI[0]
+t_out = p.Y_UO[1] - p.Y_UO[0]
+t_pl = (t_in + t_out) / 2.0  # both plates, for the link section
 lap = p.SPLIT
 screws = p.lap_screws("inner")
 sum_r2 = sum((u ** 2 + (v - lap["inner"]) ** 2) for u, v in screws)
@@ -169,7 +171,7 @@ for v in (40.0, 80.0, lap["inner"], lap["outer"], 220.0, 260.0):
     print(f"  v {v:5.0f}: plate width {w:5.1f}{f' (slot {sw:.0f})' if sw else ''}: shoulder {t_sh_lim:.0f} N*m on the link -> "
           f"{sig:5.2f} MPa (allow {SIG_XY:.0f})")
 f_m5 = t_sh_lim / (6 * p.SH_M5_R / 1000)
-print(f"shoulder flange 6 x M5 in close-fit holes: {f_m5:.0f} N each at {t_sh_lim:.0f} N*m -> {f_m5 / (5 * t_pl):.1f} MPa bearing in the plate; "
+print(f"shoulder flange 6 x M5 in close-fit holes: {f_m5:.0f} N each at {t_sh_lim:.0f} N*m -> {f_m5 / (5 * t_in):.1f} MPa bearing in the inner plate; "
       f"6 x M5 at {p.M5['torque']:.0f} N*m preload {p.M5['torque'] / (0.2 * 0.005):.0f} N each (petg creep: re-torque after the first week)")
 
 # ---------------------------------------------------------------- 7 elbow joint parts
@@ -177,23 +179,25 @@ line("7 elbow joint: hub, pivot, standoffs")
 t_el = I_LIM * KT
 for name, t in (("current limit", t_el), ("motor 40 A peak", 40 * KT)):
     f_rotor = t / (4 * p.ROTOR["pcd_r"] / 1000)
-    f_fore = t / (3 * 0.007)
-    tau_tube = t * 1000 * 16 / (math.pi * 22.0 ** 3)
+    f_fore = t / (3 * p.HUB["end_pcd_r"] / 1000)
+    tau_j = t * 1000 * 16 / (math.pi * p.HUB["journal_d"] ** 3)
     print(f"{name} {t:.2f} N*m: 4 x M3 hub->rotor {f_rotor:.0f} N each ({f_rotor / (3 * p.HUB['flange_t']):.1f} MPa in the flange); "
           f"3 x M3 plate->hub {f_fore:.0f} N each ({f_fore / (3 * (p.Y_FO[1] - p.Y_FO[0])):.1f} MPa in the 4 mm plate, allow {SIG_XY:.0f}); "
-          f"tube shear {tau_tube:.1f} MPa")
-span = ((p.Y_FO[0] + p.Y_FO[1]) / 2 - (-2.0 - p.PIVOT_BRG["B"] / 2)) / 1000
+          f"journal shear {tau_j:.1f} MPa")
+y_hub = p.Y_SLEEVE[1] - p.SLEEVE["lip_t"] - p.HUB_BRG["B"] / 2
+y_piv = p.PIVOT_FACE_Y - p.PIVOT_BRG["B"] / 2
+span = (y_hub - y_piv) / 1000
 for f_side in (20.0, 50.0):
     m_side = f_side * HAND["r"]
     f_pair = m_side / span
-    print(f"side push {f_side:.0f} N at the hand: {m_side:.1f} N*m out of plane -> {f_pair:.0f} N couple between the hub (motor bearings) "
-          f"and the 6705 pivot ({span * 1000:.0f} mm apart); 6705 static capacity >= 1.0 kN gives s0 >= {1000 / f_pair:.1f}")
+    print(f"side push {f_side:.0f} N at the hand: {m_side:.1f} N*m out of plane -> {f_pair:.0f} N on the hub bearing and the 6804 "
+          f"({span * 1000:.0f} mm apart). both seats are a slip fit, so the motor bearings still set the axis")
 f_screw = 0.5 / (0.2 * 0.004)
 a_so = math.pi * (p.STANDOFF["ro"] ** 2 - p.STANDOFF["ri"] ** 2)
 print(f"motor standoffs: M4 at 0.5 N*m -> {f_screw:.0f} N on {a_so:.0f} mm2 = {f_screw / a_so:.1f} MPa in petg near the stator "
       f"(hdt test 1.8 MPa at 62 C): use 0.5 N*m + Loctite 243, re-check torque after the thermal test")
 print(f"motor torque reaction: {40 * KT:.2f} N*m peak on 4 x M4 at r {p.MOTOR_BASE['pcd_r']:.0f} -> "
-      f"{40 * KT / (4 * p.MOTOR_BASE['pcd_r'] / 1000):.0f} N each in shear (bearing {40 * KT / (4 * p.MOTOR_BASE['pcd_r'] / 1000) / (4 * t_pl):.1f} MPa)")
+      f"{40 * KT / (4 * p.MOTOR_BASE['pcd_r'] / 1000):.0f} N each in shear (bearing {40 * KT / (4 * p.MOTOR_BASE['pcd_r'] / 1000) / (4 * t_in):.1f} MPa)")
 
 # ---------------------------------------------------------------- 8 forearm plates
 line("8 forearm truss plates")
