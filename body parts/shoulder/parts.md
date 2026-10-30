@@ -4,19 +4,18 @@ Z = 0 is the rear face. The axis is Z, pointing toward the arm. Masses of machin
 
 ## Summary
 
-This is a two-stage planetary shoulder joint, 30:1 overall (6:1 then 5:1). The envelope is a plain Ø100 mm cylinder, 100.5 mm long. Modelled parts weigh 2,427 g. The motor adds 336 g, so the actuator is about 2.76 kg.
+This is a two-stage planetary shoulder joint, 30:1 overall (6:1 then 5:1). The envelope is a plain Ø100 mm cylinder, 100.5 mm long. Modelled parts weigh about 2,406 g at the 6082-T6 density of 2.70 g/cm³. The motor adds 336 g, so the actuator is about 2.74 kg.
 
 At 24 V the motor runs at 2,160 rpm, the first carrier at 360 rpm, and the output at 72 rpm. Continuous output is 30 N·m. Proof torque is 50 N·m, including a 50 N·m tilt case. The motor torque constant used in the calc is 0.0919 N·m/A, so 30 N·m needs about 12.1 A and 50 N·m needs about 20.2 A.
 
-The real actuator is metal. The stage-2 sun sees about 1,350 MPa contact stress at 30 N·m, which case-hardened 16MnCr5 can carry and aluminium cannot. The fit check is a 3D print of the machined parts. Bought parts (motor, bearings, pins, screws, dowels, spring, washers, shims, magnets, electronics) are not printed.
+The real actuator is metal. The stage-2 sun sees about 1,350 MPa contact stress at 30 N·m, which case-hardened 20MnCr5 can carry and aluminium cannot. The fit check is a 3D print of the machined parts. Bought parts (motor, bearings, pins, screws, dowels, spring, washers, shims, magnets, electronics) are not printed.
 
-Milling pack A (`shoulder/cad/milling/`) is the file set for the first metal quotation. Geometry is still Rev 1.4. It uses three alloys:
+Milling pack A (`shoulder/cad/milling/`) is the file set for the first metal quotation. Geometry is still Rev 1.4. Materials were revised on 30 October 2026 to two alloys:
 
-- **7075-T651:** encoder lid, magnet holder, housing, front cover. The lid and the magnet holder moved off 6061. 7075 is non-magnetic, so the magnet holder still satisfies the encoder rule.
-- **16MnCr5, carburized:** sun-1, both planet sets, and carrier-1 front, because sun-2 is cut on that same part. The carrier plate is masked during carburizing.
-- **42CrMo4 (EN19), quenched and tempered:** ring-1, the cartridge, carrier-1 rear, and both carrier-2 halves. Ring-1 and the cartridge are wire-EDM'd and then nitrided. The carriers get no further heat treatment. EN24T is not used.
+- **6082-T6:** encoder lid, magnet holder, housing, front cover. 6061-T6 may replace it if that is what the shop has. Use one aluminium only. 6082 is non-magnetic, so the magnet holder still satisfies the encoder rule. No anodize on this order.
+- **20MnCr5, one heat:** every steel part. Carburize the teeth only: sun-1, both planet sets, both rings, and the sun on carrier-1 front. Mask that carrier plate. Leave carrier-1 rear and both carrier-2 halves annealed. 16MnCr5 may replace 20MnCr5. No second steel, no nitriding, no tooth grinding.
 
-The rear plate (08) is 3D-printed for this build and is not in the milling STEP. The housing is still machined for the metal plug, so a 7075 plate can replace the print later. Planet pins stay purchased 52100 shaft.
+The rear plate (08) is 3D-printed for this build and is not in the milling STEP. The housing is still machined for the metal plug, so a 6082-T6 plate can replace the print later. Planet pins stay purchased 52100 shaft. They are the needle race and are not a third milled alloy.
 
 Three classes for the fit-check print (unchanged files):
 
@@ -35,9 +34,9 @@ The gearbox, bearings, and gears are unchanged. They sit 5.0 mm further forward.
 
 ## 01 Encoder lid
 
-3D print for the fit check, then CNC from 7075-T651. Quantity 1. Mass 14.8 g. Size Ø59.8 mm × 2 mm.
+3D print for the fit check, then CNC from 6082-T6. Quantity 1. Mass 14.2 g. Size Ø59.8 mm × 2 mm.
 
-It is the rearmost cover, from Z 0 to Z 2. Four M2 countersunk screws on a Ø54 mm circle clamp it to the rear plate. A slot at 0° lets the encoder cable out. A notch at 180° clears the phase-lead slot. Clear anodize. The screws are a light joint at 0.3 N·m.
+It is the rearmost cover, from Z 0 to Z 2. Four M2 countersunk screws on a Ø54 mm circle clamp it to the rear plate. A slot at 0° lets the encoder cable out. A notch at 180° clears the phase-lead slot. No anodize. The screws are a light joint at 0.3 N·m.
 
 ## 02 Lid screws
 
@@ -65,7 +64,7 @@ They clamp the PCB to four bosses in the rear plate. Torque 0.4 N·m. No threadl
 
 ## 06 Magnet holder
 
-3D print for the fit check, then CNC from 7075-T651. Quantity 1. Mass 0.88 g. Body Ø10 mm × 4.75 mm with a Ø6 × 2.5 mm magnet pocket in the rear face. A Ø2.8 × 2 mm pin is on the front face. 7075 is non-magnetic, which this part requires.
+3D print for the fit check, then CNC from 6082-T6. Quantity 1. Mass 0.85 g. Body Ø10 mm × 4.75 mm with a Ø6 × 2.5 mm magnet pocket in the rear face. A Ø2.8 × 2 mm pin is on the front face. 6082 is non-magnetic, which this part requires.
 
 It sits on the motor's rear cap, which turns with the rotor, from Z 6.25 to Z 11. The pin goes into the cap's plain centre hole, and that pin is what centres the magnet on the rotor axis. The model assumes a Ø3 hole at least 2 mm deep. Measure it, then turn the pin to the hole with 0–0.02 mm clearance. Glue the face and the pin with structural epoxy. The holder must be non-magnetic. Concentricity of pin to pocket within 0.03 mm TIR. No anodize required.
 
@@ -77,16 +76,16 @@ It sits in the holder, from Z 6.25 to Z 8.75. Glue it with structural epoxy. Kee
 
 ## 08 Rear mount plate
 
-3D-printed for milling pack A. Not in the milling STEP. A later metal plate is still 7075-T651. Quantity 1. Mass 129.7 g. A Ø100 × 2 mm rim (Z 0–2) and a Ø94.5 × 8 mm plug (Z 2–10).
+3D-printed for milling pack A. Not in the milling STEP. A later metal plate is 6082-T6, the same alloy as the housing. Quantity 1. Mass 124.6 g. A Ø100 × 2 mm rim (Z 0–2) and a Ø94.5 × 8 mm plug (Z 2–10).
 
-It is the part that bolts to the torso. The plug takes the place of the old housing lip: the motor is screwed to the plug's front face, and the plate and motor slide into the housing's open rear bore together. The rim seats on the housing's rear face at Z 2. The plug is Ø94.5 k6 in the housing's H7 bore (−25 to +32 µm). Both parts are 7075, so the fit does not change with temperature. Eight M3 radial holes, tapped 6 mm deep at Z 6 on 22.5° + 45° steps, take the housing screws. It carries:
+It is the part that bolts to the torso. The plug takes the place of the old housing lip: the motor is screwed to the plug's front face, and the plate and motor slide into the housing's open rear bore together. The rim seats on the housing's rear face at Z 2. The plug is Ø94.5 k6 in the housing's H7 bore (−25 to +32 µm). Both parts are 6082-T6, so the fit does not change with temperature. Eight M3 radial holes, tapped 6 mm deep at Z 6 on 22.5° + 45° steps, take the housing screws. It carries:
 
 - the stator screws, 4 × M4 countersunk on a Ø40 mm circle at 45°;
 - six M4 wire-thread inserts on a Ø76 mm circle for the torso, and two Ø4 torso dowels;
 - the encoder pocket, and the encoder cable groove at 0°;
 - the phase-lead slot at 180°: through the plate at a radius of 25–39 mm, 15 mm wide. It continues as a 5 mm deep groove in the rear face out to the rim. Bend the flexible leads flat into this groove.
 
-A Ø19.5 × 1.5 mm relief in the front face clears the rotating Ø17.4 mm motor cap by 1.05 mm radially. The plate does not pilot the motor. The countersunk stator screws centre it. The stator hole pattern and the torso holes are unchanged from Rev 1.3, where they fitted the real motor. Two M4 jack-screw holes in the rim are worth adding so the plug can be pushed out. Clear anodize, type II, with the plug diameter masked.
+A Ø19.5 × 1.5 mm relief in the front face clears the rotating Ø17.4 mm motor cap by 1.05 mm radially. The plate does not pilot the motor. The countersunk stator screws centre it. The stator hole pattern and the torso holes are unchanged from Rev 1.3, where they fitted the real motor. Two M4 jack-screw holes in the rim are worth adding so the plug can be pushed out. No anodize when the metal plate is made.
 
 ## 09 Plate screws
 
@@ -124,7 +123,7 @@ The rear end is under the rear cap. The front end comes out as the Ø2.9 stub.
 
 ## 15 Housing
 
-3D print for the fit check, then CNC from 7075-T651 or T6511 bar. Quantity 1. Mass 355.6 g. Ø100 mm × 87 mm, no flange.
+3D print for the fit check, then CNC from 6082-T6 bar. Quantity 1. Mass 341.6 g. Ø100 mm × 87 mm, no flange.
 
 It is the structural tube from Z 2 to Z 89. The rear is open: the Ø94.5 bore runs through the rear face, so the motor, already screwed to the plate, slides in from behind. The rear 8 mm of the bore is H7 for the plate plug. Eight Ø3.2 holes with 90° countersinks, at Z 6.1 on 22.5° + 45° steps, take the radial plate screws. Two notches in the rear face match the plate's cable grooves: 4 × 1 mm at 0° and 15 × 3 mm at 180°.
 
@@ -135,13 +134,13 @@ Inside, from back to front:
 - the Ø85 mm K6 bore for ring-1;
 - the Ø89 mm G7 bore for the cartridge.
 
-Twelve cooling slots, 3 mm × 20 mm at Z 19–39, pierce the motor-bore wall. Two radial slots in the front face of the partition, 3.02–3.04 mm wide and 1.5 mm deep, let the ring-1 dowels slide as the aluminium grows. The thinnest section is the 2.75 mm wall at the motor bore. At 50 N·m it sees 1.4 MPa in torsion, and 3.7 MPa in bending at the 65 N·m tilt case, so the section is set by stiffness, not by strength. Clear anodize, type II, with every fit and thread masked.
+Twelve cooling slots, 3 mm × 20 mm at Z 19–39, pierce the motor-bore wall. Two radial slots in the front face of the partition, 3.02–3.04 mm wide and 1.5 mm deep, let the ring-1 dowels slide as the aluminium grows. The thinnest section is the 2.75 mm wall at the motor bore. At 50 N·m it sees 1.4 MPa in torsion, and 3.7 MPa in bending at the 65 N·m tilt case, so the section is set by stiffness, not by strength. The plate-screw bearing stress is 69 MPa, against a 260 MPa yield for this bar. No anodize.
 
 ## 16 Ring-1
 
-3D print for the fit check, then CNC from 42CrMo4 (EN19), quenched and tempered to 28–34 HRC. Quantity 1. Mass 190.8 g. Size Ø85 mm h5 × 15.35 mm. Internal gear, 90 teeth, module 0.8.
+3D print for the fit check, then CNC from annealed 20MnCr5, the same heat as the other steel parts. Quantity 1. Mass 190.8 g. Size Ø85 mm h5 × 15.35 mm. Internal gear, 90 teeth, module 0.8.
 
-It is fixed in the housing from Z 47.5 to Z 62.85 and is the reaction ring of the first stage. The OD is a light interference at room temperature and becomes a clearance of about 44–81 µm at 80 °C, which is why the dowels, not the fit, keep it from spinning when hot. Teeth are wire-EDM, then gas or plasma nitrided, with 0.03–0.04 mm growth allowed and no grind afterwards. Inspection: dimension between Ø1.2 mm pins, Mi = 70.813 mm, plus 0.015 / minus 0. Two Ø3 mm H7 holes, 7 mm deep from the rear face, on a Ø79.5 mm circle, take the dowels.
+It is fixed in the housing from Z 47.5 to Z 62.85 and is the reaction ring of the first stage. The OD is a light interference at room temperature and becomes a clearance of about 44–81 µm at 80 °C, which is why the dowels, not the fit, keep it from spinning when hot. Teeth are wire-EDM while the steel is soft, then the tooth zone is carburized to 0.12–0.18 mm and 58–62 HRC. Mask the outside diameter. Allow 0.03–0.05 mm growth and do not grind the teeth. Finish the Ø85 h5 diameter after heat treatment. Inspection: dimension between Ø1.2 mm pins, Mi = 70.813 mm, plus 0.015 / minus 0. Two Ø3 mm H7 holes, 7 mm deep from the rear face, on a Ø79.5 mm circle, take the dowels.
 
 ## 17 Ring-1 dowels
 
@@ -151,9 +150,9 @@ They are pressed into ring-1 and slide in the housing slots. Axis at radius 39.7
 
 ## 18 Sun-1
 
-3D print for the fit check, then CNC from 16MnCr5, carburized. Quantity 1. Mass 42.8 g. Flange Ø40 mm × 3 mm, teeth Ø16 mm × 10.4 mm face, overall length 18.2 mm. 18 teeth, module 0.8.
+3D print for the fit check, then CNC from 20MnCr5, carburized. Quantity 1. Mass 42.8 g. Flange Ø40 mm × 3 mm, teeth Ø16 mm × 10.4 mm face, overall length 18.2 mm. 18 teeth, module 0.8.
 
-The flange bolts to the rotor hub face at Z 43.5–46.5. The teeth run from Z 51.3 to Z 61.7 and drive the three planet-1 gears. The rear face has a Ø3.5 × 10.5 mm bore for the motor's 8.9 mm shaft stub, and a Ø18 × 0.5 mm relief that clears the hub centre. The flange is drilled for both rotor patterns: 4 × M3 countersunk on Ø31 mm, and 4 × M3 countersunk on Ø25 mm at 45°. Use the pattern that matches the motor. Carburize to a case depth of 0.12–0.18 mm, 58–62 HRC on the teeth, core 30–40 HRC, then hard-finish the teeth to ISO 1328 grade 6–7. Span over 3 teeth, W3 = 6.082 mm, minus 0.015 / plus 0.
+The flange bolts to the rotor hub face at Z 43.5–46.5. The teeth run from Z 51.3 to Z 61.7 and drive the three planet-1 gears. The rear face has a Ø3.5 × 10.5 mm bore for the motor's 8.9 mm shaft stub, and a Ø18 × 0.5 mm relief that clears the hub centre. The flange is drilled for both rotor patterns: 4 × M3 countersunk on Ø31 mm, and 4 × M3 countersunk on Ø25 mm at 45°. Use the pattern that matches the motor. Carburize to a case depth of 0.12–0.18 mm, 58–62 HRC on the teeth, core 30–40 HRC. Grade 7–8 is accepted. Do not grind the teeth. Span over 3 teeth, W3 = 6.082 mm, minus 0.015 / plus 0.
 
 The labyrinth between this flange (Ø40 h8) and the partition bore (Ø41.0 H8) is 1.00–1.08 mm on the diameter at 20 °C. The flange front face is 1.5 mm from carrier-1, and the tooth tips are 1.5 mm from the carrier-1 front plate.
 
@@ -171,15 +170,15 @@ It is the thrust face between the stationary housing partition and the back of c
 
 ## 21 Carrier-1 rear
 
-3D print for the fit check, then CNC from 42CrMo4 (EN19), quenched and tempered to 28–34 HRC. Quantity 1. Mass 76.0 g. Envelope Ø60 mm × 14 mm, with three posts.
+3D print for the fit check, then CNC from annealed 20MnCr5, the same heat. Quantity 1. Mass 76.0 g. Envelope Ø60 mm × 14 mm, with three posts.
 
-The plate is from Z 48 to Z 51. Three posts run forward to Z 62 on a Ø44 mm circle and are tapped M3. Three Ø8 mm R7 holes on a Ø43.2 mm circle hold planet pins 1. No further heat treatment. The R7 fit on an h6 pin is 4–28 µm interference, so the pin cannot walk.
+The plate is from Z 48 to Z 51. Three posts run forward to Z 62 on a Ø44 mm circle and are tapped M3. Three Ø8 mm R7 holes on a Ø43.2 mm circle hold planet pins 1. Do not carburize this part. The R7 fit on an h6 pin is 4–28 µm interference, so the pin cannot walk.
 
 ## 22 Carrier-1 front and sun-2
 
-3D print for the fit check, then CNC from 16MnCr5, carburized. Quantity 1. Mass 92.0 g. Plate Ø60 mm, sun-2 teeth Ø20 mm × 10 mm face, overall about 24 mm. Sun-2 is 18 teeth, module 1.0.
+3D print for the fit check, then CNC from 20MnCr5, with the sun carburized. Quantity 1. Mass 92.0 g. Plate Ø60 mm, sun-2 teeth Ø20 mm × 10 mm face, overall about 24 mm. Sun-2 is 18 teeth, module 1.0.
 
-The plate is from Z 62 to Z 65 and closes carrier-1. A Ø19 × 1.2 mm recess in its rear face gives the sun-1 tooth tips 1.5 mm of axial clearance. Sun-2 teeth run from Z 76 to Z 86 and drive the second stage. Three M3 countersunk holes on a Ø44 mm circle bolt it to the posts. Carburize the sun to a case depth of 0.15–0.20 mm, 58–62 HRC, and mask the plate so it does not carburize. Span over 3 teeth, W3 = 7.609 mm, minus 0.015 / plus 0. Three Ø8 mm R7 holes take the front of planet pins 1.
+The plate is from Z 62 to Z 65 and closes carrier-1. A Ø19 × 1.2 mm recess in its rear face gives the sun-1 tooth tips 1.5 mm of axial clearance. Sun-2 teeth run from Z 76 to Z 86 and drive the second stage. Three M3 countersunk holes on a Ø44 mm circle bolt it to the posts. Carburize the sun to a case depth of 0.15–0.20 mm, 58–62 HRC, and mask the plate and the pin holes so they do not carburize. Grade 7–8 is accepted. Do not grind the teeth. Span over 3 teeth, W3 = 7.609 mm, minus 0.015 / plus 0. Three Ø8 mm R7 holes take the front of planet pins 1.
 
 ## 23 Carrier-1 screws
 
@@ -189,9 +188,9 @@ They clamp the carrier-1 front plate to the posts, from the front face at Z 65. 
 
 ## 24 Planet-1
 
-3D print for the fit check, then CNC from 16MnCr5, carburized. Quantity 3. Mass 41.6 g each. Size Ø30.4 mm × 10 mm face, bore Ø12 mm. 36 teeth, module 0.8.
+3D print for the fit check, then CNC from 20MnCr5, carburized. Quantity 3. Mass 41.6 g each. Size Ø30.4 mm × 10 mm face, bore Ø12 mm. 36 teeth, module 0.8.
 
-They orbit at radius 21.6 mm, teeth from Z 51.5 to Z 61.5, between sun-1 and ring-1. Space them at 0°, 120°, and 240°. Carburize to 0.12–0.18 mm case, 58–62 HRC, and grind the bore after hardening. Bore Ø12 N6, roundness IT5/2, Ra at or below 0.8 µm. Span over 5 teeth, W5 = 11.008 mm, minus 0.015 / plus 0. Tooth grade ISO 1328 grade 6–7. Sun-1's 10.4 mm face covers at least 9.7 mm of the planet face across the shim range.
+They orbit at radius 21.6 mm, teeth from Z 51.5 to Z 61.5, between sun-1 and ring-1. Space them at 0°, 120°, and 240°. Carburize to 0.12–0.18 mm case, 58–62 HRC, and grind the bore after hardening. Bore Ø12 N6, roundness IT5/2, Ra at or below 0.8 µm. Span over 5 teeth, W5 = 11.008 mm, minus 0.015 / plus 0. Tooth grade ISO 1328 grade 7–8 is accepted. Do not grind the teeth. Sun-1's 10.4 mm face covers at least 9.7 mm of the planet face across the shim range.
 
 ## 25 Planet-1 needle bearings
 
@@ -243,21 +242,21 @@ Buy: [61813-2Z listing](https://en.tradebearings.com/61813_2Z-80293.html). Confi
 
 ## 32 Carrier-2 rear
 
-3D print for the fit check, then CNC from 42CrMo4 (EN19), quenched and tempered to 28–34 HRC. Quantity 1. Mass 232.3 g. Hub Ø65 mm × 10 mm, three posts, envelope about Ø67 mm × 21 mm.
+3D print for the fit check, then CNC from annealed 20MnCr5, the same heat. Quantity 1. Mass 232.3 g. Hub Ø65 mm × 10 mm, three posts, envelope about Ø67 mm × 21 mm.
 
-The hub is the rear inner-ring seat, from Z 65.5 to Z 75.5, Ø65 mm j5. The posts run forward to Z 86.5 on a Ø54 mm circle and are tapped M4. The post faces are the shoulder for the rear inner ring. Three Ø8 mm R7 pin holes on a Ø45 mm circle are 6 mm deep from the front and stop on a 1.0 mm shoulder. A Ø3 mm hole through that shoulder vents the press and lets a punch drive the pin out. The rear lightening groove is Ø42–Ø59 mm and 3 mm deep, and it does not break the pin shoulder. No heat treatment unless a later endurance test shows fretting on the hub.
+The hub is the rear inner-ring seat, from Z 65.5 to Z 75.5, Ø65 mm j5. The posts run forward to Z 86.5 on a Ø54 mm circle and are tapped M4. The post faces are the shoulder for the rear inner ring. Three Ø8 mm R7 pin holes on a Ø45 mm circle are 6 mm deep from the front and stop on a 1.0 mm shoulder. A Ø3 mm hole through that shoulder vents the press and lets a punch drive the pin out. The rear lightening groove is Ø42–Ø59 mm and 3 mm deep, and it does not break the pin shoulder. Do not carburize this part.
 
 ## 33 Bearing cartridge and ring-2
 
-3D print for the fit check, then CNC from 42CrMo4, quenched and tempered to 28–34 HRC. Quantity 1. Mass 351.0 g. Flange Ø100 mm × 7.5 mm, spigot Ø89 mm, overall length 31.5 mm. Ring-2 is 72 teeth, module 1.0, cut in the same piece.
+3D print for the fit check, then CNC from annealed 20MnCr5, the same heat. Quantity 1. Mass 351.0 g. Flange Ø100 mm × 7.5 mm, spigot Ø89 mm, overall length 31.5 mm. Ring-2 is 72 teeth, module 1.0, cut in the same piece.
 
-It is the front structure, from Z 65 to Z 96.5. The spigot is Ø89 mm h6 in the housing's G7 bore. The Ø85 mm bore holds both 61813 outer rings. Machine that bore after measuring the bearings: 3–10 µm larger than the measured OD, and the rear ring must still slide under the spring. Ring-2 teeth run from Z 75.8 to Z 86.2. Wire-EDM the teeth, tap the eight M2.5 cover holes before nitriding, then nitride. Finish Ø89 and Ø85 after nitriding, or mask them. Eight M3 counterbored holes on a Ø93 mm circle bolt the flange to the housing. Inspection of ring-2: dimension between Ø1.5 mm pins, Mi = 70.499 mm, plus 0.015 / minus 0.
+It is the front structure, from Z 65 to Z 96.5. The spigot is Ø89 mm h6 in the housing's G7 bore. The Ø85 mm bore holds both 61813 outer rings. Machine that bore after measuring the bearings: 3–10 µm larger than the measured OD, and the rear ring must still slide under the spring. Ring-2 teeth run from Z 75.8 to Z 86.2. Wire-EDM the teeth while the steel is soft. Tap the eight M2.5 cover holes first and mask them. Carburize the teeth only, case 0.15–0.20 mm, 58–62 HRC, and mask the Ø89 spigot and the Ø85 bore. Do not grind the teeth. Finish Ø89 and Ø85 after heat treatment. Eight M3 counterbored holes on a Ø93 mm circle bolt the flange to the housing. Inspection of ring-2: dimension between Ø1.5 mm pins, Mi = 70.499 mm, plus 0.015 / minus 0.
 
 ## 34 Cartridge screws
 
 Purchase. Quantity 8. Mass 1.01 g each. M3 × 10 socket head, ISO 4762, grade 12.9.
 
-They clamp the cartridge flange to the housing. Heads at the front of the flange. Torque 1.2 N·m with Loctite 243. Slip safety factor at the proof load is 3.4. Thread engagement in the housing is 6 mm, strip safety factor 5.9.
+They clamp the cartridge flange to the housing. Heads at the front of the flange. Torque 1.2 N·m with Loctite 243. Slip safety factor at the proof load is 3.4. Thread engagement in the housing is 6 mm, strip safety factor 3.3 in 6082-T6.
 
 ## 35 Cartridge dowels
 
@@ -267,7 +266,7 @@ They stop the cartridge rotating in the housing, on a Ø94 mm circle, from Z 85 
 
 ## 36 Planet-2
 
-3D print for the fit check, then CNC from 16MnCr5, carburized. Quantity 3. Mass 35.2 g each. Size Ø29 mm × 10 mm face, bore Ø12 mm. 27 teeth, module 1.0.
+3D print for the fit check, then CNC from 20MnCr5, carburized. Quantity 3. Mass 35.2 g each. Size Ø29 mm × 10 mm face, bore Ø12 mm. 27 teeth, module 1.0.
 
 They orbit at radius 22.5 mm, teeth from Z 76 to Z 86, between sun-2 and ring-2. Same spacing as planet-1. Carburize to 0.15–0.20 mm case, 58–62 HRC, and grind the bore. Bore Ø12 N6. Span over 4 teeth, W4 = 10.687 mm, minus 0.015 / plus 0. This is the high-load mesh: at 30 N·m the sun contact stress is about 1,350 MPa.
 
@@ -307,9 +306,9 @@ Buy: [SKF 61813-2RS1](https://www.skf.com/uk/products/rolling-bearings/ball-bear
 
 ## 42 Carrier-2 front
 
-3D print for the fit check, then CNC from 42CrMo4 (EN19), quenched and tempered to 28–34 HRC. Quantity 1. Mass 313.9 g. Flange Ø78 mm, hub Ø65 mm, overall length 14 mm.
+3D print for the fit check, then CNC from annealed 20MnCr5, the same heat. Quantity 1. Mass 313.9 g. Flange Ø78 mm, hub Ø65 mm, overall length 14 mm. Do not carburize this part.
 
-This is the arm flange. The hub is from Z 86.5 to Z 97 and is the front inner-ring seat, Ø65 mm j5. The flange runs out to Z 100.5. Six M5 holes on a Ø52 mm circle, tapped 8 mm deep in the steel, take the arm screws. A Ø40 mm H7 pilot, 2 mm deep, centres the arm. Runout within 0.02 mm TIR, face flatness within 0.03 mm. Three Ø8 mm R7 holes, blind 6.3 mm deep, take planet pins 2. Three M4 counterbores on a Ø54 mm circle clamp this half to the rear half. A Ø3 mm radial hole in the rim at Z 98.75 holds the homing magnet.
+This is the arm flange. The hub is from Z 86.5 to Z 97 and is the front inner-ring seat, Ø65 mm j5. The flange runs out to Z 100.5. Six M5 holes on a Ø52 mm circle, tapped 8 mm deep in this steel, take the arm screws. A Ø40 mm H7 pilot, 2 mm deep, centres the arm. Runout within 0.02 mm TIR, face flatness within 0.03 mm. Three Ø8 mm R7 holes, blind 6.3 mm deep, take planet pins 2. Three M4 counterbores on a Ø54 mm circle clamp this half to the rear half. A Ø3 mm radial hole in the rim at Z 98.75 holds the homing magnet.
 
 ## 43 Carrier-2 screws
 
@@ -325,9 +324,9 @@ It is glued in the rim of the output flange at radius 36.8 mm, Z 98.75, pole fac
 
 ## 45 Front cover
 
-3D print for the fit check, then CNC from 7075-T651. Quantity 1. Mass 23.2 g. Size Ø100 mm outside, Ø80 mm inside, 3 mm thick.
+3D print for the fit check, then CNC from 6082-T6. Quantity 1. Mass 22.3 g. Size Ø100 mm outside, Ø80 mm inside, 3 mm thick.
 
-It is the bearing retainer, from Z 96.5 to Z 99.5. The lip touches only the front outer ring. Eight M2.5 countersunk screws on a Ø93.2 mm circle bolt it to the cartridge. A pocket at 270° holds the hall sensor, with a wire slot to the outside edge. Clear anodize.
+It is the bearing retainer, from Z 96.5 to Z 99.5. The lip touches only the front outer ring. Eight M2.5 countersunk screws on a Ø93.2 mm circle bolt it to the cartridge. A pocket at 270° holds the hall sensor, with a wire slot to the outside edge. No anodize.
 
 ## 46 Hall sensor
 
@@ -339,7 +338,7 @@ It sits in the cover pocket at 270°, from Z 97.6 to Z 99.2, facing the homing m
 
 Purchase. Quantity 8. Mass 0.29 g each. M2.5 × 6 countersunk, ISO 7046 or ISO 14581.
 
-They clamp the cover to the cartridge. The cartridge threads are M2.5 and must be tapped before the cartridge is nitrided. Torque 0.8 N·m with Loctite 222, so they can be removed without damaging the small threads.
+They clamp the cover to the cartridge. The cartridge threads are M2.5 and must be tapped and masked before the teeth are carburized. Torque 0.8 N·m with Loctite 222, so they can be removed without damaging the small threads.
 
 ## 48 Motor shims
 

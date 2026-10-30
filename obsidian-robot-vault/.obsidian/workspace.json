@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "VAYN-TheUltimateBrain/VAYN - 6.2.md",
+                "file": "VAYN-TheUltimateBrain/Building VAYN - 6.2/RT Core Implementation - VAYN 6.2.1.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "VAYN - 6.2"
+              "title": "RT Core Implementation - VAYN 6.2.1"
             }
           }
         ]
@@ -187,6 +187,8 @@
   },
   "active": "e5d8f6cde867bb43",
   "lastOpenFiles": [
+    "VAYN-TheUltimateBrain/Building VAYN - 6.2/Safety MCU - Nucleo Build Guide.md",
+    "VAYN-TheUltimateBrain/VAYN - 6.2.md",
     "VAYN-TheUltimateBrain/VAYN Docs.md",
     "VAYN-TheUltimateBrain/Building VAYN - 6.2/motor specification and actuator details.md",
     "VAYN-TheUltimateBrain/Building VAYN - 6.2/RT Core - From Fundamentals to Advanced.md",

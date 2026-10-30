@@ -41,7 +41,7 @@ L2 torque proof: Tmotor 1.847 N*m, Tsun2 10.53 N*m, ring-2 reaction 39.5 N*m, ri
 L4 combined proof: Tmotor 1.847 N*m, Tsun2 10.53 N*m, ring-2 reaction 39.5 N*m, ring-1 8.68 N*m
   S1 Ft  103 N  lewis   103 MPa  KHbeta 2.60  sigH sun   833  ring   372
   S2 Ft  468 N  lewis   455 MPa  f_ma 26.9 um KHbeta 3.16  sigH sun  1849  ring   925
-  allowables: 16MnCr5 case-hardened sigHlim 1500 / sigFlim 500 (x ZNT/YNT 1.6/2.5 static); 42CrMo4 nitrided ring sigHlim 1000-1200
+  allowables: 20MnCr5 case-hardened sigHlim 1500 / sigFlim 500 (x ZNT/YNT 1.6/2.5 static); rings use the same case-hardened steel
 HK0810 stage-2 at L1: P 561 N, n_rel 192 rpm, L10h 50,922 h
 pin-2 bending at L2: 74 MPa (52100 60 HRC)
 backlash 0.03 mm/mesh -> output 0.092 deg
@@ -76,11 +76,11 @@ torso bracket -> rear plate      6xM4 @3.0 N*m: FM  4471 N  slip   153 N*m (load
 arm -> output flange             6xM5 @8.0 N*m: FM  9920 N  slip   232 N*m (load 50, SF  4.6)  separation   733 N*m (load 50, SF 14.7)
 carrier-2 halves                 3xM4 @4.0 N*m: FM  5961 N  slip    72 N*m (load 50, SF  1.4)  
 sun-1 -> rotor (pcd 25 worst)    4xM3 @0.8 N*m: FM  1585 N  slip    12 N*m (load 2, SF  6.4)  
-housing M3 x6 engage (cartridge)     strip 14038 N vs FM 2378 N  SF 5.9
-plate plug M3 x5.25 engage (radial)  strip 12283 N vs FM 2378 N  SF 5.2
+housing M3 x6 engage (cartridge)     strip  7889 N vs FM 2378 N  SF 3.3
+plate plug M3 x5.25 engage (radial)  strip  6902 N vs FM 2378 N  SF 2.9
 ring-1 dowels 2x D3 (slot 1.5 deep)    110 N each  shear    16 MPa  bearing(Al)   25 MPa
 cartridge dowels 2x D4 (backup)        420 N each  shear    33 MPa  bearing(Al)   26 MPa
-plate plug 8x M3 radial: torque 129 N + tilt 65.1 N*m 224 N -> 258 N per screw; shear SF 12.5, wall bearing (1.25 straight) 69 MPa vs Rp0.2 503
+plate plug 8x M3 radial: torque 129 N + tilt 65.1 N*m 224 N -> 258 N per screw; shear SF 12.5, wall bearing (1.25 straight) 69 MPa vs Rp0.2 260
 carrier-2 post shear 617 N each, bending 10 MPa
 cover lip: 426 N -> line 1.65 N/mm, bending 3 MPa
 

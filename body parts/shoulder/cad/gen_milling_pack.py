@@ -1,7 +1,8 @@
 """Write the shoulder milling quotation pack.
 
-Geometry is Rev 1.4. This pack keeps only the parts a shop machines from bar
-or plate, in three alloys. The rear plate is not included. Run:
+Geometry is Rev 1.4. Materials were cut to two alloys on 30 October 2026:
+6082-T6 for the housing family, 20MnCr5 for every steel part. The rear plate
+is not included. Run:
 
   D:\\VAYN-CAD-env\\venv\\Scripts\\python.exe gen_milling_pack.py
 
@@ -46,21 +47,20 @@ STEP_NAME = "VAYN_shoulder_milling.step"
 QUOTE_NAME = "VAYN_shoulder_milling_quotation.pdf"
 ZIP_NAME = "VAYN_shoulder_milling_quotation.zip"
 
-# one colour per alloy, so the step tree reads as three metals
+# one colour per alloy, so the step tree reads as two metals
 ALLOY_COLOR = {
-    "7075-T651": cq.Color(0.72, 0.75, 0.78),
-    "16MnCr5": cq.Color(0.54, 0.44, 0.31),
-    "42CrMo4": cq.Color(0.43, 0.35, 0.27),
+    "6082-T6": cq.Color(0.72, 0.75, 0.78),
+    "20MnCr5": cq.Color(0.45, 0.38, 0.30),
 }
-DENSITY = {"7075-T651": 2.81, "16MnCr5": 7.85, "42CrMo4": 7.85}  # g/cm3
+DENSITY = {"6082-T6": 2.70, "20MnCr5": 7.85}  # g/cm3
 
 # model material key that build() must still be using
 MODEL_MAT = {
-    "01": "7075-T6", "06": "7075-T6", "15": "7075-T6", "45": "7075-T6",
-    "18": "16MnCr5 carburized", "22": "16MnCr5 carburized",
-    "24": "16MnCr5 carburized", "36": "16MnCr5 carburized",
-    "16": "42CrMo4 nitrided", "33": "42CrMo4 nitrided",
-    "21": "42CrMo4 Q&T", "32": "42CrMo4 Q&T", "42": "42CrMo4 Q&T",
+    "01": "6082-T6", "06": "6082-T6", "15": "6082-T6", "45": "6082-T6",
+    "18": "20MnCr5", "22": "20MnCr5",
+    "24": "20MnCr5", "36": "20MnCr5",
+    "16": "20MnCr5", "33": "20MnCr5",
+    "21": "20MnCr5", "32": "20MnCr5", "42": "20MnCr5",
 }
 
 # view name, projector direction, projector x, sign applied to view y
@@ -75,22 +75,22 @@ PAGE = landscape(A3)
 
 # id, drawing file, title, qty, alloy, group, size, stock, process, finish, notes
 PARTS = [
-    ("01", "01_encoder_lid.pdf", "Encoder lid", 1, "7075-T651", "Housing family",
-     "Ø59.8 × 2 mm", "5 mm 7075-T651 plate, shared with the cover",
-     "CNC mill", "Clear anodize, type II",
+    ("01", "01_encoder_lid.pdf", "Encoder lid", 1, "6082-T6", "Housing family",
+     "Ø59.8 × 2 mm", "5 mm 6082-T6 plate, shared with the cover",
+     "CNC mill", "No anodize",
      ["4 × M2 countersunk on Ø54 mm.", "Cable slot at 0°. Notch at 180° for the phase-lead slot.",
       "Screws are a light joint, 0.3 N·m."]),
-    ("06", "06_magnet_holder.pdf", "Magnet holder", 1, "7075-T651", "Housing family",
-     "Ø10 × 4.75 mm, pin Ø2.8 × 2 mm", "Ø12 × 40 mm 7075-T651 bar",
+    ("06", "06_magnet_holder.pdf", "Magnet holder", 1, "6082-T6", "Housing family",
+     "Ø10 × 4.75 mm, pin Ø2.8 × 2 mm", "Ø12 × 40 mm 6082-T6 bar",
      "CNC lathe", "No anodize",
-     ["Must stay non-magnetic. 7075 is non-magnetic.",
+     ["Must stay non-magnetic. 6082 is an aluminium-silicon-magnesium alloy and is non-magnetic.",
       "Magnet pocket Ø6 × 2.5 mm in the rear face.",
       "Pin Ø2.8 is a stand-in. Turn the pin to the measured rotor-cap hole, clearance 0–0.02 mm.",
       "Pocket concentric to the pin within 0.03 mm TIR."]),
-    ("15", "15_housing.pdf", "Housing", 1, "7075-T651", "Housing family",
-     "Ø100 × 87 mm", "Ø105 × 100 mm 7075-T6511 bar",
+    ("15", "15_housing.pdf", "Housing", 1, "6082-T6", "Housing family",
+     "Ø100 × 87 mm", "Ø105 × 100 mm 6082-T6 bar",
      "CNC lathe and mill, 4th axis for the radial holes",
-     "Clear anodize, type II. Mask every fit and every thread.",
+     "No anodize. Leave the fits and the threads bare.",
      ["Rear bore Ø94.5, rear 8 mm H7, open through the rear face (future metal plate).",
       "8 × Ø3.2 radial holes with 90° countersinks at Z 6.1, centres 0.1 mm forward of the plug threads.",
       "Rear-face notches 4 × 1 mm at 0° and 15 × 3 mm at 180°.",
@@ -98,84 +98,84 @@ PARTS = [
       "Ring-1 bore Ø85 K6. Cartridge bore Ø89 G7.",
       "12 cooling slots, 3 × 20 mm. Two ring-1 dowel slots, width 3.02–3.04 mm, 1.5 mm deep.",
       "8 × M3 in the front face, 6 mm thread engagement."]),
-    ("45", "45_front_cover.pdf", "Front cover", 1, "7075-T651", "Housing family",
-     "Ø100 / Ø80 × 3 mm", "5 mm 7075-T651 plate, 110 × 110 mm, shared with the lid",
-     "CNC mill", "Clear anodize, type II",
+    ("45", "45_front_cover.pdf", "Front cover", 1, "6082-T6", "Housing family",
+     "Ø100 / Ø80 × 3 mm", "5 mm 6082-T6 plate, 110 × 110 mm, shared with the lid",
+     "CNC mill", "No anodize",
      ["8 × M2.5 countersunk on Ø93.2 mm.",
       "Lip touches the front bearing outer ring only.",
       "Hall-sensor pocket at 270°, with a wire slot to the outside edge."]),
-    ("18", "18_sun_1.pdf", "Sun-1", 1, "16MnCr5", "Gears",
+    ("18", "18_sun_1.pdf", "Sun-1", 1, "20MnCr5", "Gears",
      "Flange Ø40 × 3 mm, teeth Ø16 × 10.4 mm, overall 18.2 mm",
-     "Ø45 × 30 mm 16MnCr5, annealed, same heat as the other 16MnCr5",
+     "Ø45 × 30 mm 20MnCr5, annealed, same heat as the other steel",
      "Turn, hob or shape",
-     "Carburize, case 0.12–0.18 mm, 58–62 HRC, core 30–40 HRC. Hard-finish the teeth.",
+     "Carburize, case 0.12–0.18 mm, 58–62 HRC, core 30–40 HRC. Do not grind the teeth.",
      ["18 teeth, module 0.8, 20° pressure angle, profile shift 0.",
       "Span over 3 teeth W3 = 6.082 mm, minus 0.015 / plus 0.",
-      "ISO 1328 grade 6–7. Backlash 0.05 ± 0.02 mm per mesh.",
+      "ISO 1328 grade 7–8 is accepted. Do not grind the teeth. Backlash 0.05 ± 0.02 mm per mesh.",
       "4 × M3 countersunk on Ø31 mm, and 4 × M3 countersunk on Ø25 mm at 45°. Use the pattern the rotor has.",
       "Bore Ø3.5 × 10.5 mm for the motor stub. Hub relief Ø18 × 0.5 mm.",
       "Flange Ø40 h8."]),
-    ("22", "22_carrier_1_front.pdf", "Carrier-1 front and sun-2", 1, "16MnCr5", "Gears",
+    ("22", "22_carrier_1_front.pdf", "Carrier-1 front and sun-2", 1, "20MnCr5", "Gears",
      "Plate Ø60 mm, sun Ø20 × 10 mm face, overall about 24 mm",
-     "Ø65 × 35 mm 16MnCr5, annealed, same heat",
+     "Ø65 × 35 mm 20MnCr5, annealed, same heat",
      "Turn, hob, drill",
      "Carburize the sun only. Case 0.15–0.20 mm, 58–62 HRC. Mask the plate.",
-     ["Sun-2: 18 teeth, module 1.0. Span over 3 teeth W3 = 7.609 mm, minus 0.015 / plus 0.",
-      "ISO 1328 grade 6–7.",
+     [      "Sun-2: 18 teeth, module 1.0. Span over 3 teeth W3 = 7.609 mm, minus 0.015 / plus 0.",
+      "ISO 1328 grade 7–8 is accepted. Do not grind the teeth.",
       "3 × Ø8 mm R7 holes for the planet pins.",
       "3 × M3 countersunk on Ø44 mm.",
       "Rear recess Ø19 × 1.2 mm, so the sun-1 tips clear by 1.5 mm."]),
-    ("24", "24_planet_1.pdf", "Planet-1", 3, "16MnCr5", "Gears",
+    ("24", "24_planet_1.pdf", "Planet-1", 3, "20MnCr5", "Gears",
      "Ø30.4 × 10 mm face, bore Ø12 mm",
-     "Ø35 × 120 mm 16MnCr5 bar, same heat. Hob the three blanks as one stack.",
+     "Ø35 × 120 mm 20MnCr5 bar, same heat. Hob the three blanks as one stack.",
      "Turn, hob, part off",
      "Carburize, case 0.12–0.18 mm, 58–62 HRC. Grind the bore after hardening.",
      ["36 teeth, module 0.8. Span over 5 teeth W5 = 11.008 mm, minus 0.015 / plus 0.",
-      "ISO 1328 grade 6–7.",
+      "ISO 1328 grade 7–8 is accepted. Do not grind the teeth.",
       "Bore Ø12 N6, roundness IT5/2, Ra 0.8 µm or finer.",
       "Three identical parts. In the STEP they are 24.1, 24.2 and 24.3."]),
-    ("36", "36_planet_2.pdf", "Planet-2", 3, "16MnCr5", "Gears",
+    ("36", "36_planet_2.pdf", "Planet-2", 3, "20MnCr5", "Gears",
      "Ø29 × 10 mm face, bore Ø12 mm",
      "Same Ø35 bar as planet-1",
      "Turn, hob, part off",
      "Carburize, case 0.15–0.20 mm, 58–62 HRC. Grind the bore after hardening.",
      ["27 teeth, module 1.0. Span over 4 teeth W4 = 10.687 mm, minus 0.015 / plus 0.",
-      "ISO 1328 grade 6–7. This is the high-load mesh, about 1,350 MPa at 30 N·m.",
+      "ISO 1328 grade 7–8 is accepted. Do not grind the teeth. This is the high-load mesh, about 1,350 MPa at 30 N·m.",
       "Bore Ø12 N6.",
       "Three identical parts. In the STEP they are 36.1, 36.2 and 36.3."]),
-    ("16", "16_ring_1.pdf", "Ring-1", 1, "42CrMo4", "Around the gears",
-     "Ø85 h5 × 15.35 mm", "Ø105 mm 42CrMo4 (EN19) bar, Q&T, shared with the other EN19 parts",
-     "Turn, then wire-EDM the teeth",
-     "Buy at 28–34 HRC. Gas or plasma nitride after EDM. No tooth grind. Allow 0.03–0.04 mm growth.",
+    ("16", "16_ring_1.pdf", "Ring-1", 1, "20MnCr5", "Gears",
+     "Ø85 h5 × 15.35 mm", "Ø105 mm 20MnCr5 bar, annealed, same heat as the other steel",
+     "Turn, then wire-EDM the teeth while the steel is still soft",
+     "Carburize the teeth only. Case 0.12–0.18 mm, 58–62 HRC. Mask the outside diameter. No tooth grind. Allow 0.03–0.05 mm growth. Finish Ø85 h5 after heat treatment.",
      ["Internal gear, 90 teeth, module 0.8.",
       "Measure between Ø1.2 mm pins, Mi = 70.813 mm, plus 0.015 / minus 0.",
       "2 × Ø3 mm H7 dowel holes, 7 mm deep from the rear face, on Ø79.5 mm."]),
-    ("21", "21_carrier_1_rear.pdf", "Carrier-1 rear", 1, "42CrMo4", "Around the gears",
-     "Ø60 × 14 mm, three posts", "Same EN19 bar",
-     "CNC mill", "Already quenched and tempered, 28–34 HRC. Do not nitride.",
+    ("21", "21_carrier_1_rear.pdf", "Carrier-1 rear", 1, "20MnCr5", "Carriers",
+     "Ø60 × 14 mm, three posts", "Same 20MnCr5 bar",
+     "CNC mill", "Leave annealed. Do not carburize.",
      ["3 × Ø8 mm R7 pin holes on Ø43.2 mm.",
       "Posts tapped M3, on Ø44 mm.",
       "R7 on an h6 pin is 4–28 µm interference."]),
-    ("32", "32_carrier_2_rear.pdf", "Carrier-2 rear", 1, "42CrMo4", "Around the gears",
-     "Hub Ø65 × 10 mm, envelope about Ø67 × 21 mm", "Same EN19 bar",
-     "CNC mill", "Already quenched and tempered, 28–34 HRC. Do not nitride.",
+    ("32", "32_carrier_2_rear.pdf", "Carrier-2 rear", 1, "20MnCr5", "Carriers",
+     "Hub Ø65 × 10 mm, envelope about Ø67 × 21 mm", "Same 20MnCr5 bar",
+     "CNC mill", "Leave annealed. Do not carburize.",
      ["Hub Ø65 j5, rear inner-ring seat.",
       "3 × Ø8 mm R7 holes on Ø45 mm, 6 mm deep, ending on a 1.0 mm shoulder.",
       "Ø3 mm hole through each shoulder, for venting and punch-out.",
       "Rear lightening groove Ø42–Ø59 mm, 3 mm deep. It must not break the pin shoulder.",
       "Posts tapped M4. Post faces are the inner-ring shoulders."]),
-    ("33", "33_cartridge.pdf", "Bearing cartridge and ring-2", 1, "42CrMo4", "Around the gears",
-     "Flange Ø100 × 7.5 mm, spigot Ø89 mm, overall 31.5 mm", "Same EN19 bar",
-     "Turn, wire-EDM the ring-2 teeth, drill and tap",
-     "Buy at 28–34 HRC. Tap the 8 × M2.5 before nitriding and mask them. Nitride after EDM. Finish Ø89 and Ø85 after nitriding, or mask them.",
+    ("33", "33_cartridge.pdf", "Bearing cartridge and ring-2", 1, "20MnCr5", "Gears",
+     "Flange Ø100 × 7.5 mm, spigot Ø89 mm, overall 31.5 mm", "Same 20MnCr5 bar",
+     "Turn, wire-EDM the ring-2 teeth while the steel is still soft, drill and tap",
+     "Carburize the ring-2 teeth only. Case 0.15–0.20 mm, 58–62 HRC. Tap the 8 × M2.5 first and mask them. Mask the Ø89 spigot and the Ø85 bore. No tooth grind. Finish Ø89 and Ø85 after heat treatment.",
      ["Spigot Ø89 h6.",
       "Bearing bore Ø85 is selective: 3–10 µm larger than the measured 61813 outer diameter. The rear ring must still slide.",
       "Ring-2: 72 teeth, module 1.0. Between Ø1.5 mm pins, Mi = 70.499 mm, plus 0.015 / minus 0.",
       "8 × M3 counterbored holes on Ø93 mm. 2 × Ø4 mm dowel holes.",
-      "8 × M2.5 tapped for the cover, before nitride."]),
-    ("42", "42_carrier_2_front.pdf", "Carrier-2 front", 1, "42CrMo4", "Around the gears",
-     "Flange Ø78 mm, hub Ø65 mm, overall 14 mm", "Same EN19 bar",
-     "CNC lathe and mill", "Already quenched and tempered, 28–34 HRC. Do not nitride.",
+      "8 × M2.5 tapped for the cover, before carburizing, and masked."]),
+    ("42", "42_carrier_2_front.pdf", "Carrier-2 front", 1, "20MnCr5", "Carriers",
+     "Flange Ø78 mm, hub Ø65 mm, overall 14 mm", "Same 20MnCr5 bar",
+     "CNC lathe and mill", "Leave annealed. Do not carburize. The M5 arm threads are in this steel.",
      ["Hub Ø65 j5, front inner-ring seat.",
       "6 × M5 tapped, 8 mm deep, on Ø52 mm.",
       "Pilot Ø40 H7 × 2 mm. Runout within 0.02 mm TIR. Face flatness within 0.03 mm.",
@@ -188,7 +188,7 @@ PARTS = [
 OTHERS = [
     ("3D-printed this order", "08 Rear mount plate", "1",
      "Rim Ø100 × 2 mm plus plug Ø94.5 × 8 mm", "130 g",
-     "Printed plastic this build. A later metal plate is 7075-T651.",
+     "Printed plastic this build. A later metal plate is 6082-T6.",
      "Not milled. The housing is still cut to accept a metal plug later."),
     ("Bought shaft, cut to length", "26 Planet pins 1", "3",
      "Ø8 h6 × 17 mm", "6.6 g each",
@@ -269,17 +269,17 @@ FITS = [
     ("Planet-2 span", "W4 = 10.687 −0.015 / 0"),
     ("Ring-1, over Ø1.2 pins", "Mi = 70.813 +0.015 / 0"),
     ("Ring-2, over Ø1.5 pins", "Mi = 70.499 +0.015 / 0"),
-    ("Gear quality", "Suns and planets ISO 1328 grade 6–7. Rings grade 7–8."),
+    ("Gear quality", "ISO 1328 grade 7–8 is accepted. Do not grind the teeth."),
     ("Untoleranced sizes", "ISO 2768-1 class m, ISO 2768-2 class K"),
 ]
 
 STOCK = [
-    ("7075-T6511 round", "Ø105 × 100 mm", "Housing"),
-    ("7075-T651 plate", "5 mm, 110 × 110 mm", "Front cover and encoder lid"),
-    ("7075-T651 round", "Ø12 × 40 mm", "Magnet holder"),
-    ("42CrMo4 / EN19, Q&T 28–34 HRC", "Ø105 × 160 mm, one bar",
+    ("6082-T6 round. 6061-T6 is allowed if 6082 is not in stock", "Ø105 × 100 mm", "Housing"),
+    ("6082-T6 plate, same alloy as the bar", "5 mm, 110 × 110 mm", "Front cover and encoder lid"),
+    ("6082-T6 round, same alloy", "Ø12 × 40 mm", "Magnet holder"),
+    ("20MnCr5, annealed, one heat. 16MnCr5 is allowed", "Ø105 × 160 mm, one bar",
      "Ring-1, cartridge, carrier-1 rear, both carrier-2 halves"),
-    ("16MnCr5, annealed, one heat", "Ø65 × 35, Ø45 × 30, Ø35 × 120 mm",
+    ("20MnCr5, annealed, the same heat", "Ø65 × 35, Ø45 × 30, Ø35 × 120 mm",
      "Carrier-1 front and sun-2, sun-1, six planets"),
 ]
 
@@ -481,13 +481,13 @@ def write_quote(path, items):
     sty = styles()
     story = []
     story.append(P("VAYN shoulder actuator — milling quotation", sty["h1"]))
-    story.append(P("Pack A. Geometry revision 1.4. Quantity: one actuator. Units: millimetres. Date: 17 October 2026.", sty["body"]))
-    story.append(P("Quote the parts in section 1 only. The price should include the metal, machining, wire-EDM of the two internal gears, carburizing, nitriding, and clear anodize. Deliver finished parts. Section 4 is not part of the machining price.", sty["body"]))
+    story.append(P("Pack A. Geometry revision 1.4. Material revision 30 October 2026. Quantity: one actuator. Units: millimetres.", sty["body"]))
+    story.append(P("Quote the parts in section 1 only. The price should include the metal, machining, wire-EDM of the two internal gears, and one carburizing batch on the toothed parts. Do not include nitriding. Do not include anodize. Do not include gear grinding unless a tooth misses its span or pin measurement. Deliver finished parts. Section 4 is not part of the machining price.", sty["body"]))
     story.append(P("The STEP file is the geometric master. Each drawing controls the features printed on that sheet. Sizes with no tolerance on the sheet follow ISO 2768-1 class m and ISO 2768-2 class K.", sty["body"]))
     story.append(P("Part 08, the rear mount plate, is 3D-printed for this build and is not in the STEP. The housing is still machined with the Ø94.5 H7 bore and the eight radial screw holes, so a metal plate can replace the print later.", sty["body"]))
 
-    story.append(P("Three metals", sty["h2"]))
-    story.append(P("7075-T651 for the housing family: lid, magnet holder, housing, front cover. 16MnCr5, carburized, for every external gear, including carrier-1 front because sun-2 is cut on that part. 42CrMo4 (EN19), quenched and tempered, for ring-1, the cartridge, and the three carrier pieces that are not gears. Ring-1 and the cartridge are nitrided. The carriers are not.", sty["body"]))
+    story.append(P("Two metals", sty["h2"]))
+    story.append(P("6082-T6 for the housing family: lid, magnet holder, housing, front cover. 6061-T6 may replace 6082 if that is what the shop has; use one aluminium only. 20MnCr5, annealed, for every steel part. Carburize only the teeth: sun-1, both planet sets, ring-1, ring-2, and the sun on carrier-1 front. Mask the carrier-1 front plate. Leave carrier-1 rear and both carrier-2 halves annealed. 16MnCr5 may replace 20MnCr5. Do not use 7075, EN19, EN24, or a second steel.", sty["body"]))
 
     story.append(P("1. Parts to machine", sty["h2"]))
     by_name = {}
@@ -524,7 +524,7 @@ def write_quote(path, items):
         rows, [32, 12, 42, 22, 48, 55, 185], sty))
 
     story.append(P("2. Metal to buy for this one actuator", sty["h2"]))
-    story.append(P("One heat of 16MnCr5 covers every gear, so one carburizing coupon qualifies the batch. One EN19 bar covers the rings and the carriers. No EN24 and no 6061.", sty["body"]))
+    story.append(P("One aluminium covers the housing family. One heat of 20MnCr5 covers every steel part, so one carburizing coupon qualifies the teeth. A grade mark from the stockist is enough for this first article. No 7075, no EN19, no EN24, no nitriding, no anodize.", sty["body"]))
     story.append(section_table(
         ["Material", "Buy", "Used for"],
         [[a, b, c] for a, b, c in STOCK],
@@ -555,7 +555,7 @@ def write_quote(path, items):
     def footer(c, doc):
         c.saveState()
         c.setFont("Arial", 8)
-        c.drawString(14 * mm, 8 * mm, "VAYN shoulder milling pack A  ·  one actuator  ·  step/VAYN_shoulder_milling.step")
+        c.drawString(14 * mm, 8 * mm, "VAYN shoulder milling pack A  ·  two alloys  ·  30 Oct 2026  ·  step/VAYN_shoulder_milling.step")
         c.drawRightString(PAGE[0] - 14 * mm, 8 * mm, str(doc.page))
         c.restoreState()
 
@@ -594,7 +594,7 @@ def draw_sheet(path, row, sample):
     c.setFont("Arial-Bold", 13)
     c.drawString(12 * mm, height - 16 * mm, f"VAYN shoulder  ·  milling drawing  ·  {part_id}  {title}")
     c.setFont("Arial", 8)
-    c.drawRightString(width - 12 * mm, height - 15 * mm, "Pack A  ·  geometry Rev 1.4  ·  qty 1 actuator")
+    c.drawRightString(width - 12 * mm, height - 15 * mm, "Pack A  ·  geometry Rev 1.4  ·  materials 30 Oct 2026")
 
     # centre the solid so the views fill the sheet
     box = sample["box"]

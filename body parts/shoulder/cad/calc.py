@@ -185,8 +185,8 @@ for name, (tq, tilt, fr, fa) in CASES.items():
           f"sigH sun {hertz(ft1, 10, 14.4, 2, k1):5.0f}  ring {hertz(ft1, 10, 28.8, 2.5, k1, True):5.0f}")
     print(f"  S2 Ft {ft2:4.0f} N  lewis {ft2 / (10 * lewis_y(18)) * khb2:5.0f} MPa  f_ma {f_ma2:4.1f} um KHbeta {khb2:4.2f}  "
           f"sigH sun {hertz(ft2, 10, 18, 1.5, k2):5.0f}  ring {hertz(ft2, 10, 27, 72 / 27, k2, True):5.0f}")
-print("  allowables: 16MnCr5 case-hardened sigHlim 1500 / sigFlim 500 (x ZNT/YNT 1.6/2.5 static);"
-      " 42CrMo4 nitrided ring sigHlim 1000-1200")
+print("  allowables: 20MnCr5 case-hardened sigHlim 1500 / sigFlim 500 (x ZNT/YNT 1.6/2.5 static);"
+      " rings use the same case-hardened steel")
 ts2 = 30 / 4.75
 p_hk = 2 * 2 * ts2 / 0.018 / 3 * 1.2
 n_rel = (360 - 72) * 18 / 27
@@ -274,7 +274,7 @@ joint("arm -> output flange", 6, "M5", 8.0, 26.0, 20.0, 39, 0.15, 50, 50 + 0.15 
 joint("carrier-2 halves", 3, "M4", 4.0, 27.0, 19.5, 34.5, 0.15, 50, 0)
 joint("sun-1 -> rotor (pcd 25 worst)", 4, "M3", 0.8, 12.5, 10.0, 20.0, 0.15, 50 / (RATIO * ETA), 0)
 fm_m3 = preload("M3", 1.2)
-tau_al = 331.0  # 7075-t6 shear strength
+tau_al = 186.0  # 6082-T6 shear, 0.6 x Rm min 310 MPa (EN 755-2, bar 20-150 mm)
 for name, le in (("housing M3 x6 engage (cartridge)", 6.0), ("plate plug M3 x5.25 engage (radial)", 5.25)):
     a_sh = 0.75 * math.pi * 3.0 * le
     print(f"{name:36s} strip {a_sh * tau_al:5.0f} N vs FM {fm_m3:.0f} N  SF {a_sh * tau_al / fm_m3:.1f}")
@@ -282,7 +282,7 @@ for name, torque_nm, r, n, d, le in (("ring-1 dowels 2x D3 (slot 1.5 deep)", 50 
                                      ("cartridge dowels 2x D4 (backup)", 50 - 50 / 4.75, 47.0, 2, 4.0, 4.0)):
     f = torque_nm * 1000 / r / n
     print(f"{name:36s} {f:5.0f} N each  shear {f / (math.pi * d ** 2 / 4):5.0f} MPa  bearing(Al) {f / (d * le):4.0f} MPa")
-# rear plate plug (d94.5 H7/k6, both 7075) held by 8 x m3 csk radial screws; the csk centres sit 0.1 forward of the
+# rear plate plug (d94.5 H7/k6, both 6082-T6) held by 8 x m3 csk radial screws; the csk centres sit 0.1 forward of the
 # threads, so tightening draws the housing onto the plate rim and the joint has no play in the lift direction
 n_rad, r_rad, m_rear = 8, 48.5, 50 + 0.15 * Z_LOAD
 f_torque = 50e3 / r_rad / n_rad
@@ -290,7 +290,7 @@ f_lift = 4 * m_rear * 1e3 / (3 * n_rad * r_rad)  # pivot at the far rim edge, li
 f_rad = math.hypot(f_torque, f_lift)
 f_shear_cap = math.pi / 4 * 2.387 ** 2 * 0.6 * 1200  # m3 minor area x 12.9 shear
 print(f"plate plug 8x M3 radial: torque {f_torque:.0f} N + tilt {m_rear:.1f} N*m {f_lift:.0f} N -> {f_rad:.0f} N per screw; "
-      f"shear SF {f_shear_cap / f_rad:.1f}, wall bearing (1.25 straight) {f_rad / (3 * 1.25):.0f} MPa vs Rp0.2 503")
+      f"shear SF {f_shear_cap / f_rad:.1f}, wall bearing (1.25 straight) {f_rad / (3 * 1.25):.0f} MPa vs Rp0.2 260")
 f_post = 50 / 0.027 / 3
 print(f"carrier-2 post shear {f_post:.0f} N each, bending {32 * f_post * 5.5 / (math.pi * 15 ** 3):.0f} MPa")
 f_lip = f_max + 150
