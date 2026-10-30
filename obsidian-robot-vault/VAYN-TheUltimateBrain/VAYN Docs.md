@@ -25,6 +25,7 @@ A central index of the imported VAYN documents.
 - [Electronic integration with VAYN](Building VAYN - 6.2/VAYN Electronic.md)
 - [VAYN - Phase 1 Electronics for RT Core Architecture](Building VAYN - 6.2/VAYN — Phase 1 Electronics + RT Core Architecture.md)
 - [RT Core Implementation - VAYN 6.2.1](Building VAYN - 6.2/RT Core Implementation - VAYN 6.2.1.md)
+- [Safety MCU — Nucleo Build Guide](Building VAYN - 6.2/Safety MCU - Nucleo Build Guide.md)
 - [RT Core - From Fundamentals to Advanced](Building VAYN - 6.2/RT Core - From Fundamentals to Advanced.md)
 - [motor specification and actuator details](Building VAYN - 6.2/motor specification and actuator details.md)
 - [VAYN - Phase 1 Electronics + RT Core Architecture](Building VAYN - 6.2/VAYN - Phase 1 Electronics + RT Core Architecture.md)
