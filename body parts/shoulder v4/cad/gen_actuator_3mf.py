@@ -42,15 +42,19 @@ MOUNT = -27.5
 COVER_FACE = MOUNT - 13.2  # hex 6.7 + glued cover 6.5
 LID_OUTER = COVER_FACE - 6.2  # 1 mm air + 1.1 chip + 1.6 board + 0.5 air + 2 lid
 
-# discs stay 7 mm. the crank needle is a K 20x24x10, which is 10 mm wide,
-# so the two discs sit far enough apart for the needles, and the flange moves 3 mm.
-OD_R = 52.0  # 104 mm od, so an M5 has a wall outside the 92 mm motor
-Z_D1 = (16.4, 23.4)
-Z_N1 = (14.9, 24.9)  # 1.5 mm past each face of disc 1
-Z_D2 = (27.9, 34.9)
-Z_N2 = (26.4, 36.4)
-Z_BRG = ((4.4, 13.4), (37.2, 46.2))  # 61906, 30 x 47 x 9, C0 4.55 kN
-Z_FLANGE0, Z_FLANGE1 = 48.4, 54.4  # 6 mm arm flange, after the cover lip
+# discs stay 7 mm. each needle is 10 mm, with 1.5 mm sticking out of the disc.
+# the carrier plates sit outside the discs and clear those ends. flange is at 53.
+OD_R = 52.0
+Z_D1 = (16.2, 23.2)
+Z_N1 = (14.7, 24.7)
+Z_D2 = (27.4, 34.4)
+Z_N2 = (25.9, 35.9)  # 1.2 mm clear of needle 1, so the journals can overlap
+Z_REAR_PLATE = (13.3, 16.0)  # output pins are held here and at the front plate
+Z_FRONT_PLATE = (34.6, 37.4)
+Z_HOUSING_END = 34.5
+Z_BRG = ((4.2, 13.2), (37.8, 46.8))  # 61906, 30 x 47 x 9, C0 4.55 kN
+Z_FLANGE0, Z_FLANGE1 = 47.0, 53.0
+HUB_RO, HUB_RI = 14.95, 13.4  # 0.05 mm model gap to the 30 mm bearing bore
 
 MATERIALS = {
     "6082-T6": ("#B8BEC6", 2.70),
@@ -149,16 +153,18 @@ def build():
     # housing is open at the rear so the motor slides in, and open at the front
     # so the discs slide in. a lip at z = 0 stops the can. the front bearing
     # lives in a cover, not in a bore smaller than the discs.
-    h = cyl(OD_R, MOUNT, Z_BRG[1][0])
+    h = cyl(OD_R, MOUNT, Z_HOUSING_END)
     h = h - cyl(47.0, MOUNT - 0.2, 0.0)  # motor entry, 1 mm radial over the 92 mm can
-    h = h - cyl(20.0, -0.2, 4.2)  # crank and stub pass the lip
-    h = h - cyl(23.6, 4.2, 13.6)  # rear 61906 seat, filled from the front
-    h = h - cyl(46.4, 4.0, Z_BRG[1][0] + 0.2)  # open bore: discs and pins enter from the front
+    h = h - cyl(24.0, -0.2, 4.2)  # crank flange, 22 mm radius, passes this hole
+    h = h - cyl(23.6, Z_BRG[0][0], Z_BRG[0][1])  # rear 61906 seat
+    h = h - cyl(46.4, 4.0, Z_HOUSING_END + 0.2)  # discs enter from the front
     for i, a in enumerate(every(ZP, 3.9)):
         x, y = polar(PIN_R, a)
-        h = h - cyl(2.05, 0.0, 4.2, x, y)  # 0.05 mm radial over a 4 mm pin, not a nominal hole
-        add(f"02.{i + 1} Ring pin D4", "52100 bearing steel", cyl(PIN_RAD, 0.2, Z_D2[1], x, y))
-    h = h - holes(49, 5.2, MOUNT - 0.2, MOUNT + 8, every(6, 30))
+        h = h - cyl(2.05, 0.0, 4.0, x, y)  # rear support, 0.05 mm radial over the pin
+        add(f"02.{i + 1} Ring pin D4", "52100 bearing steel", cyl(PIN_RAD, 0.2, Z_FRONT_PLATE[1], x, y))
+    # m3 taps for the rear plate. inner edge stays outside the motor bore.
+    h = h - holes(49.5, 2.5, MOUNT - 0.2, MOUNT + 8, every(8, 22.5))
+    h = h - holes(49.5, 2.5, Z_HOUSING_END - 8, Z_HOUSING_END + 0.2, every(8, 22.5))
     add("01 Housing 6082-T6", "6082-T6", h)
 
     add("03 Cycloid disc A", "20MnCr5", disc(*Z_D1, ECC, 0.0))
@@ -166,31 +172,44 @@ def build():
     add("05 Needle K20x24x10 A", "Bearing (purchased)", tube(12.0, 10.08, *Z_N1).translate((ECC, 0, 0)))
     add("06 Needle K20x24x10 B", "Bearing (purchased)", tube(12.0, 10.08, *Z_N2).translate((-ECC, 0, 0)))
 
-    # the 20 mm journals overlap each other in the gap between the needles.
-    # a 12.4 mm shaft there would sit inside the needle bore and clash.
-    crank = cyl(12.4, 0.05, Z_N1[0] - 0.2)
-    crank = crank + cyl(10.0, Z_N1[0] - 1.2, 26.0, ECC, 0)
-    crank = crank + cyl(10.0, 25.0, Z_N2[1] + 0.4, -ECC, 0)
-    crank = crank - cyl(1.6, -1.0, 9.0)  # measured stub d2.9 x 8.9
-    crank = crank - holes(19, 2.2, -0.2, 3.5, every(4))  # 4 x M2 on the 38 mm circle
+    # flange reaches the measured m2 circle (radius 19). the old crank was only radius 12.4, so those holes missed it.
+    crank = cyl(22, 0.15, 3.4) - cyl(1.6, -0.2, 9.0)
+    crank = crank - holes(19, 2.4, 0.05, 3.5, every(4))
+    crank = crank - holes(19, 4.4, 2.0, 3.5, every(4))  # head counterbore
+    crank = crank + cyl(8, 3.2, Z_N1[0] - 0.1)
+    crank = crank + cyl(10.0, Z_N1[0] - 1.0, Z_N2[0] - 0.3, ECC, 0)
+    crank = crank + cyl(10.0, Z_N1[1] + 0.2, Z_N2[1] + 0.3, -ECC, 0)
     add("07 Crank", "20MnCr5", crank)
+    for i, a in enumerate(every(4)):
+        x, y = polar(19, a)
+        screw = cyl(0.9, -4.5, 2.0, x, y) + cyl(1.8, 2.0, 3.3, x, y)
+        add(f"22.{i + 1} Screw M2 crank to rotor", "52100 bearing steel", screw)
 
-    pins = pattern(lambda a: cyl(OUT_PIN_R, 14.0, Z_D2[1] + 1.8, *polar(OUT_R, a)), every(OUT_N))
-    plate = tube(36, 16, Z_D2[1], Z_D2[1] + 1.8)
-    hub = tube(14.9, 13.2, 4.4, 16.0) + tube(14.9, 13.2, Z_D2[1], Z_FLANGE1)
+    # one carrier: rear hub, rear plate, pins, front plate, front hub, flange.
+    pins = pattern(lambda a: cyl(OUT_PIN_R, Z_REAR_PLATE[0], Z_FRONT_PLATE[1], *polar(OUT_R, a)), every(OUT_N))
+    rear_plate = tube(36, HUB_RI, *Z_REAR_PLATE)
+    front_plate = tube(36, HUB_RI, *Z_FRONT_PLATE)
+    hub = tube(HUB_RO, HUB_RI, Z_BRG[0][0], Z_REAR_PLATE[1]) + tube(HUB_RO, HUB_RI, Z_FRONT_PLATE[0], Z_FLANGE1)
     flange = cyl(39, Z_FLANGE0, Z_FLANGE1) - cyl(20, Z_FLANGE1 - 2, Z_FLANGE1 + 0.2)
-    flange = flange - holes(26, 5.0, Z_FLANGE0 - 0.2, Z_FLANGE1 + 0.2, every(6, 30))
-    add("08 Output hub, pins and arm flange", "20MnCr5", pins + plate + hub + flange)
+    flange = flange - holes(26, 4.2, Z_FLANGE0 - 0.2, Z_FLANGE1 + 0.2, every(6, 30))  # m5 tap drill
+    add("08 Output hub, pins and arm flange", "20MnCr5", pins + rear_plate + front_plate + hub + flange)
     add("09 Rear output bearing 61906", "Bearing (purchased)", tube(23.5, 15, *Z_BRG[0]))
     add("10 Front output bearing 61906", "Bearing (purchased)", tube(23.5, 15, *Z_BRG[1]))
 
-    cover = tube(OD_R, 23.6, Z_BRG[1][0], Z_BRG[1][1]) + tube(OD_R, 20, Z_BRG[1][1], Z_FLANGE0)
-    cover = cover - holes(49, 5.2, Z_BRG[1][0] - 0.2, Z_FLANGE0 + 0.2, every(6, 30))
+    # cover closes the bore, holds the front ends of the ring pins, and the front bearing.
+    cover = cyl(OD_R, Z_HOUSING_END, Z_FLANGE0)
+    cover = cover - cyl(37.2, Z_HOUSING_END - 0.2, Z_BRG[1][0])
+    cover = cover - cyl(23.6, Z_BRG[1][0] - 0.2, Z_BRG[1][1])
+    cover = cover - cyl(16.0, Z_BRG[1][1], Z_FLANGE0 + 0.2)
+    for a in every(ZP, 3.9):
+        cover = cover - cyl(2.05, Z_HOUSING_END - 0.2, Z_FRONT_PLATE[1] + 0.2, *polar(PIN_R, a))
+    cover = cover - holes(49.5, 3.4, Z_HOUSING_END - 0.2, Z_HOUSING_END + 6, every(8, 22.5))
     add("15 Front cover", "6082-T6", cover)
 
     stator = cyl(46, MOUNT, 0) - cyl(8, MOUNT - 1, 1)
     add("11 LA8308 stator", "Motor envelope", stator)
     bell = cyl(46, -3, 0) + hex_prism(17.3, MOUNT - 6.7, MOUNT) + cyl(5, COVER_FACE, MOUNT - 6.6)
+    bell = bell - holes(19, 2.1, -6.0, 0.3, every(4))  # m2 clearance in the rotor face; the thread is cut in the metal
     add("12 LA8308 rotor", "Motor envelope", bell)
 
     # rear plate is the planetary one: lid, encoder pocket, cable groove, phase slot.
@@ -215,7 +234,7 @@ def build():
     plate = plate - box(24, 36, -7.5, 7.5, -1, z_face + 0.2).rotate((0, 0, lead))
     for a in every(4, 45):
         plate = plate - csk_hole(*polar(20, a), 8.0, 12.0, 4.0)
-    plate = plate - holes(49, 5.2, -0.2, z_face + 0.2, every(6, 30))
+    plate = plate - holes(49.5, 3.4, -0.2, z_face + 0.2, every(8, 22.5))
     shift = (0, 0, LID_OUTER)
     add("13 Rear plate 6082-T6", "6082-T6", plate.translate(shift))
     add("16 Encoder lid", "6082-T6", lid.translate(shift))
@@ -228,9 +247,13 @@ def build():
 
 
 def check(parts):
-    """Print mesh health and the envelope."""
+    """Print mesh health, disconnected shells, and the envelope."""
     bad = [n for n, _, s in parts if s.is_empty() or s.status().name != "NoError" or s.volume() <= 0]
     print(f"objects {len(parts)}  invalid {bad or 'none'}")
+    # the motor envelope omits the can between the hub and the rear cap, so it is two shells on purpose
+    split = [f"{n} ({len(s.decompose())})" for n, _, s in parts
+             if not n.startswith(("11", "12")) and len(s.decompose()) != 1]
+    print(f"disconnected {split or 'none'}")
     boxes = [s.bounding_box() for _, _, s in parts]
     lo = np.min([b[:3] for b in boxes], axis=0)
     hi = np.max([b[3:] for b in boxes], axis=0)
