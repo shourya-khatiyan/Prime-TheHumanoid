@@ -6,7 +6,7 @@ Status: Rev 2 = direct-drive EaglePower LA8308 KV90, built into the twin-plate a
 
 | Item | Rev 2 |
 |---|---|
-| Motor | EaglePower LA8308 KV90 (the MN5008 KV170 was unavailable): Ø92 × 32.5 measured, 336 g, 20 pole pairs, 84.6 mΩ phase (measured), Kt = 8.27 / KV = 0.0919 N·m/A ([ODrive](https://docs.odriverobotics.com/v/latest/articles/component-selection.html), [ODrive 0.5.4](https://docs.odriverobotics.com/v/0.5.4/commands.html)) |
+| Motor | EaglePower LA8308 KV90 (the MN5008 KV170 was unavailable): Ø92 × 27.5 flat-to-flat measured, 336 g, 20 pole pairs, 84.6 mΩ phase (measured), Kt = 8.27 / KV = 0.0919 N·m/A ([ODrive](https://docs.odriverobotics.com/v/latest/articles/component-selection.html), [ODrive 0.5.4](https://docs.odriverobotics.com/v/0.5.4/commands.html)) |
 | Reduction | None (direct drive) |
 | Load | Dummy hand 0.15 kg: 0.62 N·m hold (6.8 A, 6.6 W), 0.83 N·m moving, 1.39 N·m proof |
 | Continuous rating | 0.70–0.99 N·m for a thermal resistance of 4–2 K/W (stator 70 °C, ambient 35 °C); payload with the dummy hand 0.03–0.12 kg |

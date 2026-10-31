@@ -19,7 +19,7 @@ LAM = 0.55
 ECC = LAM * PIN_R / ZP
 DR = 0.12
 OUT_R, OUT_N, OUT_PIN_R, OUT_PLAY = 30.0, 8, 3.0, 0.25
-DISC_L = 12.0
+DISC_L = 7.0
 PIN_OVERSIZE = 0.006
 
 
@@ -55,7 +55,8 @@ def main():
                 worst_b = max(worst_b, load["f_brg"])
     proof_b = worst_b * t_proof / t_cont
     print(f"continuous pin {worst_f:.0f} N, p0 {worst_p:.0f} MPa on a flat (limit 1500 case-hardened)")
-    print(f"eccentric bearing force {worst_b:.0f} N continuous, {proof_b:.0f} N proof (6005 must cover this)")
+    print(f"eccentric bearing force {worst_b:.0f} N continuous, {proof_b:.0f} N proof")
+    print(f"61805 C0 2600 N: s0 continuous {2600 / worst_b:.2f}, proof {2600 / proof_b:.2f}")
 
 
 if __name__ == "__main__":

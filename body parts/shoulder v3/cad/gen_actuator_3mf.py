@@ -222,7 +222,7 @@ def build():
 
     # motor, inboard of the torso face, axis at x = 96. hub face at z = 1.
     z_hub = 1.0
-    z_mount = z_hub - 32.5
+    z_mount = z_hub - 27.5  # flat face to flat face. the old 32.5 figure is withdrawn.
     stator = cyl(46, z_mount, z_hub, MOTOR_X, 0) - cyl(8, z_mount - 1, z_hub + 1, MOTOR_X, 0)
     add("12 LA8308 envelope", "Motor envelope", stator)
     bell = cyl(46, z_hub - 3, z_hub, MOTOR_X, 0)

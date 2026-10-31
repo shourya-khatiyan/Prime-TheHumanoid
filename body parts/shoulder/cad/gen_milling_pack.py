@@ -211,7 +211,7 @@ OTHERS = [
      "Ø50 / Ø19.5 mm, 4 × Ø4.5 on Ø40 at 45°", "12.5 g for two 0.5 mm shims",
      "Stainless or spring-steel shim stock, flat within 0.02 mm",
      "Nominal pack is 1.0 mm. Not milled."),
-    ("Catalogue", "12 Motor", "1", "EaglePower LA8308, Ø92.0 × 32.5 mm", "336 g",
+    ("Catalogue", "12 Motor", "1", "EaglePower LA8308, Ø92.0 × 27.5 mm flat to flat", "336 g",
      "KV90, front stub Ø2.9 × 8.9, rear cap Ø17.4", "Purchase."),
     ("Catalogue", "02 Lid screws", "4", "M2 × 4 countersunk", "0.13 g each",
      "ISO 7046 or 14581, grade 8.8 or A2", "Purchase. Torque 0.3 N·m."),

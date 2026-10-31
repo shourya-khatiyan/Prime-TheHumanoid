@@ -232,10 +232,10 @@ def build():
     cart_dowel_ang = [11.25, 191.25]
     hall_ang = 270.0
 
-    # measured motor: mount face -> hub 32.5, od 92, stub d2.9 x 8.9.
+    # measured motor: flat face to flat face 27.5, od 92, stub d2.9 x 8.9.
     # hex cap stands 6.7 past the mount face toward the encoder. magnet cover d10 adds 6.5.
     # plate front is 18.4 so a 1.0 shim puts the mount face at 19.4 and the hub at 51.9.
-    motor_r, motor_h = 46.0, 32.5
+    motor_r, motor_h = 46.0, 27.5
     stub_r, stub_h = 1.45, 8.9
     lead_ang = 180.0
     shim_t = 1.0

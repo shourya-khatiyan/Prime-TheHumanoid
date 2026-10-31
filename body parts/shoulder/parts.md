@@ -24,10 +24,10 @@ Three classes for the fit-check print (unchanged files):
 
 ### Rev 1.4: motor fit (from the first build)
 
-The LA8308 was measured with a vernier: Ø92.0 mm, 32.5 mm from the mounting face to the rotor hub face, a Ø2.9 × 8.9 mm shaft stub on the front, and a Ø17.4 mm cap on the rear that turns with the rotor, has a plain centre hole, and stays inside the mounting face. The phase leads are flexible and leave the rear face at a radius of 32 mm, in a bundle about 13 mm across. Rev 1.3 had three faults against this motor:
+The LA8308 was measured with a vernier: Ø92.0 mm, 27.5 mm flat face to flat face (hub face to rear stator face; the stub and the hex are not in that 27.5), a Ø2.9 × 8.9 mm shaft stub on the front, and a hex cap on the rear. The older 32.5 mm body length is withdrawn. The phase leads are flexible and leave the rear face at a radius of 32 mm, in a bundle about 13 mm across. Rev 1.3 had three faults against this motor:
 
 1. **The motor could not go in.** The rear lip was Ø88 mm and the front was closed by the partition, so a Ø92 motor could not pass either end. Rev 1.4 moves the lip onto the rear plate. The plate becomes a Ø94.5 plug that goes into the housing's open rear bore, and eight radial M3 countersunk screws through the housing wall hold it. The body stays a plain Ø100 cylinder.
-2. **Sun-1 hit carrier-1 and the partition.** Rev 1.3 used the catalogue height of 28.5 mm; the real motor is 32.5 mm, which put sun-1 4 mm too far forward against gaps of 0.3–1.5 mm. (Sun-1 on the first build was already drilled for the stub, so the stub was not the cause.) Rev 1.4 uses the measured height, moves the gearbox forward 5.0 mm, bores sun-1 Ø3.5 × 10.5 for the 8.9 mm stub, and recesses carrier-1. Every axial gap is now 1.5 mm at the nominal shim. A shim pack (part 48) sets the axial position of the motor.
+2. **Sun-1 hit carrier-1 and the partition.** Rev 1.3 used the catalogue height of 28.5 mm. A later reading of 32.5 mm has been withdrawn. The flat-to-flat length is 27.5 mm. The generator uses 27.5. (Sun-1 on the first build was already drilled for the stub, so the stub was not the cause.) Rev 1.4 uses the measured height, moves the gearbox forward 5.0 mm, bores sun-1 Ø3.5 × 10.5 for the 8.9 mm stub, and recesses carrier-1. Every axial gap is now 1.5 mm at the nominal shim. A shim pack (part 48) sets the axial position of the motor.
 3. **The rear plate hole was smaller than the Ø17.4 cap.** That cap turns with the rotor, so the plate cannot use it to centre the motor. Rev 1.4 gives it a Ø19.5 relief, 1.05 mm radial clearance. The magnet holder now plugs into the cap's centre hole, so the magnet centres on the rotor axis.
 
 The gearbox, bearings, and gears are unchanged. They sit 5.0 mm further forward.
@@ -105,7 +105,7 @@ They clamp the motor stator to the rear plate on a Ø40 mm circle, heads toward 
 
 ## 12 Motor stator
 
-Purchase. Quantity 1. EaglePower LA8308, KV90, measured Ø92.0 × 32.5 mm (mounting face to rotor hub face), 336 g for the whole motor. The model is an envelope only and assigns this part no mass.
+Purchase. Quantity 1. EaglePower LA8308, KV90, measured Ø92.0 × 27.5 mm flat to flat, 336 g for the whole motor. The model is an envelope only and assigns this part no mass.
 
 It sits in the Ø94.5 housing bore with 1.25 mm radial clearance. The mounting face is at Z 11, on the 1.0 mm shim pack. The flexible phase leads leave the rear face at a radius of 32 mm, in a bundle about 13 mm across, at 180°. They pass through the 15 mm plate slot and bend into the rear groove.
 

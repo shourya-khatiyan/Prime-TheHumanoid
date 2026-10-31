@@ -10,20 +10,16 @@ A lower ratio gives more speed and an easier backdrive, and less output torque a
 
 ## What sets the length
 
-Behind the bolt face, 51.9 mm. That is the measured motor (32.5 mm hub to mount) plus the measured hex and magnet cover (13.2 mm) plus the encoder stack (6.2 mm). It is not a thick plate.
+The motor body is 27.5 mm flat to flat. Behind the hub face is 46.9 mm: 27.5 plus the hex and cover (13.2) plus the encoder (6.2). In front of the hub face is 51.4 mm. Overall 98.3 mm, against 100.5 mm for the two-stage planetary. The gearbox after the hub is 51 mm. On the planetary it was 57 mm. The motor and the encoder are the same length in both.
 
-In front of the bolt face, 62 mm.
+The discs are 7 mm because the eccentric bearing is a 61805, 25×37×7, static rating 2.6 kN ([SKF 61805](https://www.skf.com/group/products/rolling-bearings/ball-bearings/deep-groove-ball-bearings/productid-61805)). The proof load on one disc bearing is about 2.1 kN, so the static factor is about 1.2. Tooth contact at that thickness is a few hundred MPa, not the 1500 MPa steel limit, so the disc is not made thicker than the bearing.
 
-- 0.8 mm gap at the hub
-- two 12 mm discs, because each disc holds a 6005 bearing (25×47×12) and the proof load on that bearing is about 2.3 kN
-- 0.6 mm gaps
-- 8 mm pin plate, so a Ø6 output pin has a steel seat
-- two 50×65×7 output bearings with 14 mm between centres, then a 6 mm arm flange
+The output bearings are 61906, 30×47×9, static rating 4.55 kN. They sit on the two ends of the disc stack, so the span is about 27 mm and there is no empty spacer. The arm flange is 6 mm, which is the M5 thread. The housing stops at the front bearing. A 2 mm cover holds that bearing and is the part you remove to put the discs in.
 
-The old shoulder used 21 mm between bearing centres for its tilt case. This span is shorter. A heavy arm moment needs that check again before this flange is trusted with the old 65 N·m tilt.
+The rear of the housing is open at Ø94. The motor slides in until the hub face hits the lip. The rear cup goes on after the motor. The elbow failed this way: the bore was closed and the parts had to be hammered. This one does not.
 
 ## Fits
 
 The elbow jammed because grooves and holes were drawn at the pin's nominal size, and a printed hole came out smaller than the pin. This model uses the elbow's offset curve. Ring-pin relief is 0.12 mm. After an m6 pin's 0.006 mm radial oversize the swept gap stays about 0.10 mm. Output holes are pin radius + eccentricity + 0.25 mm, which is the pin's orbit, not an enlarged guess.
 
-Housing pin holes in a metal build are reamed H7. They are not left at a nominal that the pin cannot enter.
+The housing pin holes are drawn 0.05 mm larger in radius than the 4 mm pin, so the pin enters. The elbow holes were drawn at the pin's nominal size.

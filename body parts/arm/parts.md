@@ -77,7 +77,7 @@ Resin (Saturn). Plugs into the motor rear-cap centre hole and carries the Ø6 ×
 
 ## 240 Motor
 
-EaglePower LA8308 KV90, Ø92 × 32.5 measured (mounting face Y 12 to rotor face Y 44.5), 336 g, 20 pole pairs, 84.6 mΩ phase, Kt 0.0919 N·m/A. Phase leads exit the rear face at r 32 through the Ø17 hole at 135°. A 10k NTC bonded to a stator coil goes to the ODESC thermistor input. The measured stack from the magnet face to the old hub face is 48 mm; that is Y 7.25 to Y 55.25, which is where the old tube ended. The new end flange is at Y 63.7.
+EaglePower LA8308 KV90, Ø92 × 27.5 flat-to-flat measured (mounting face Y 12 to rotor face Y 39.5), 336 g, 20 pole pairs, 84.6 mΩ phase, Kt 0.0919 N·m/A. Phase leads exit the rear face at r 32 through the Ø17 hole at 135°. A 10k NTC bonded to a stator coil goes to the ODESC thermistor input. The measured stack from the magnet face to the old hub face is 48 mm; that is Y 7.25 to Y 55.25, which is where the old tube ended. The new end flange is at Y 63.7.
 
 ## 242 / 245 Encoder
 

@@ -36,17 +36,20 @@ DR = 0.12
 OUT_R, OUT_N, OUT_PIN_R, OUT_PLAY = 30.0, 8, 3.0, 0.25
 HOLE_R = OUT_PIN_R + ECC + OUT_PLAY
 
-# measured LA8308, mm. hub face is z = 0.
-MOUNT = -32.5
+# measured LA8308. z = 0 is the hub face. the body is 27.5 flat to flat.
+# the stub and the hex are not inside that 27.5.
+MOUNT = -27.5
 COVER_FACE = MOUNT - 13.2  # hex 6.7 + glued cover 6.5
-LID_OUTER = COVER_FACE - 6.2  # air 1 + chip 1.1 + board 1.6 + air 0.5 + lid 2
+LID_OUTER = COVER_FACE - 6.2  # 1 mm air + 1.1 chip + 1.6 board + 0.5 air + 2 lid
 
-# in front of the hub. disc width is the 6005 width.
-Z_D1 = (0.8, 12.8)
-Z_D2 = (13.4, 25.4)
-Z_PINS = (0.5, 34.0)
-Z_BRG = ((34.6, 41.6), (48.6, 55.6))
-Z_FLANGE = 61.6
+# discs are 7 mm because the eccentric bearing is a 61805 (25 x 37 x 7, C0 2.6 kN).
+# the two output bearings sit against the ends of the discs, so their span is the
+# disc stack and not an empty tube. the housing bore stays open at both ends.
+OD_R = 52.0  # 104 mm od, so an M5 has a wall outside the 92 mm motor
+Z_D1 = (16.4, 23.4)
+Z_D2 = (23.8, 30.8)
+Z_BRG = ((4.4, 13.4), (34.2, 43.2))  # 61906, 30 x 47 x 9, C0 4.55 kN
+Z_FLANGE0, Z_FLANGE1 = 45.4, 51.4  # 6 mm arm flange, after the cover lip
 
 MATERIALS = {
     "6082-T6": ("#B8BEC6", 2.70),
@@ -120,9 +123,9 @@ def hex_prism(across_flats, z0, z1):
 
 def disc(z0, z1, shift_x, rot_deg):
     """One cycloid disc on an eccentric journal."""
-    pts = cy.disc_profile(PIN_R, ECC, PIN_RAD, RATIO, n=800, dr=DR, rot_deg=rot_deg)
+    pts = cy.disc_profile(PIN_R, ECC, PIN_RAD, RATIO, n=1200, dr=DR, rot_deg=rot_deg)
     body = extrude_polygon(pts, z0, z1).translate((shift_x, 0, 0))
-    body = body - cyl(23.6, z0 - 0.2, z1 + 0.2, shift_x, 0)  # 6005 outer ring
+    body = body - cyl(18.6, z0 - 0.2, z1 + 0.2, shift_x, 0)  # 61805 outer ring, 37 mm
     for a in every(OUT_N):
         x, y = polar(OUT_R, a)
         body = body - cyl(HOLE_R, z0 - 0.2, z1 + 0.2, x + shift_x, y)
@@ -136,43 +139,58 @@ def build():
     def add(name, mat, solid):
         p.append((name, mat, solid))
 
-    # housing. od 100. motor bore clears the measured 92 mm can by 0.2 mm.
-    h = cyl(50, LID_OUTER, Z_FLANGE)
-    h = h - cyl(46.2, MOUNT, 0.2)  # motor
-    h = h - cyl(43.6, 0.4, 34.2)  # cycloid chamber, 0.6 mm over the disc sweep
-    h = h - cyl(36, 34.2, Z_FLANGE + 0.2)  # bearing bore 72 mm
-    h = h - holes(45, 5.2, -6, 4, every(6, 30))  # bolt face, M5, either pitch or yaw
-    for i, a in enumerate(every(ZP)):
+    # housing is open at the rear so the motor slides in, and open at the front
+    # so the discs slide in. a lip at z = 0 stops the can. the front bearing
+    # lives in a cover, not in a bore smaller than the discs.
+    h = cyl(OD_R, MOUNT, Z_BRG[1][0])
+    h = h - cyl(47.0, MOUNT - 0.2, 0.0)  # motor entry, 1 mm radial over the 92 mm can
+    h = h - cyl(20.0, -0.2, 4.2)  # crank and stub pass the lip
+    h = h - cyl(23.6, 4.2, 13.6)  # rear 61906 seat, filled from the front
+    h = h - cyl(46.4, 4.0, Z_BRG[1][0] + 0.2)  # open bore: discs and pins enter from the front
+    for i, a in enumerate(every(ZP, 3.9)):
         x, y = polar(PIN_R, a)
-        h = h - cyl(2.05, 0.2, 6.2, x, y)  # ream H7 in metal; model is 0.05 mm over the pin
-        add(f"02.{i + 1} Ring pin D4x32", "52100 bearing steel", cyl(PIN_RAD, 0.4, 32.4, x, y))
+        h = h - cyl(2.05, 0.0, 4.2, x, y)  # 0.05 mm radial over a 4 mm pin, not a nominal hole
+        add(f"02.{i + 1} Ring pin D4", "52100 bearing steel", cyl(PIN_RAD, 0.2, 31.2, x, y))
+    h = h - holes(49, 5.2, MOUNT - 0.2, MOUNT + 8, every(6, 30))
     add("01 Housing 6082-T6", "6082-T6", h)
 
     add("03 Cycloid disc A", "20MnCr5", disc(*Z_D1, ECC, 0.0))
     add("04 Cycloid disc B", "20MnCr5", disc(*Z_D2, -ECC, -180.0 / RATIO))
-    add("05 Eccentric bearing A 6005", "Bearing (purchased)", tube(23.5, 12.5, *Z_D1).translate((ECC, 0, 0)))
-    add("06 Eccentric bearing B 6005", "Bearing (purchased)", tube(23.5, 12.5, *Z_D2).translate((-ECC, 0, 0)))
+    add("05 Eccentric bearing A 61805", "Bearing (purchased)", tube(18.5, 12.5, *Z_D1).translate((ECC, 0, 0)))
+    add("06 Eccentric bearing B 61805", "Bearing (purchased)", tube(18.5, 12.5, *Z_D2).translate((-ECC, 0, 0)))
 
-    crank = cyl(12.5, 0.2, 26.0)
-    crank = crank + cyl(12.5, *Z_D1, ECC, 0) + cyl(12.5, *Z_D2, -ECC, 0)
-    crank = crank - cyl(1.6, -0.2, 8.0)  # motor stub clearance, measured d2.9
-    crank = crank - holes(19, 2.2, -0.2, 4.0, every(4))  # 4 x M2 on the measured 38 mm circle
+    crank = cyl(12.4, 0.05, Z_D1[0] - 0.05)
+    crank = crank + cyl(12.4, Z_D1[0] - 1.6, Z_D1[1] + 1.2, ECC, 0)
+    crank = crank + cyl(12.4, Z_D1[1] + 0.05, Z_D2[0] - 0.05)
+    crank = crank + cyl(12.4, Z_D2[0] - 1.6, Z_D2[1] + 1.2, -ECC, 0)
+    crank = crank + cyl(12.4, 31.0, 36.0)
+    crank = crank - cyl(1.6, -1.0, 9.0)  # measured stub d2.9 x 8.9
+    crank = crank - holes(19, 2.2, -0.2, 3.5, every(4))  # 4 x M2 on the 38 mm circle
     add("07 Crank", "20MnCr5", crank)
 
-    pins = pattern(lambda a: cyl(OUT_PIN_R, 8.0, 34.0, *polar(OUT_R, a)), every(OUT_N))
-    carrier = cyl(32, 26.0, 55.6) - cyl(16, 25.5, 56)
-    carrier = carrier - holes(OUT_R, OUT_PIN_R * 2, 25.5, 34.2, every(OUT_N))
-    flange = cyl(39, 55.6, Z_FLANGE) - cyl(20, Z_FLANGE - 2, Z_FLANGE + 0.2)
-    flange = flange - holes(26, 5.0, 55.0, Z_FLANGE + 0.2, every(6, 30))
-    add("08 Output and arm flange", "20MnCr5", pins + carrier + flange)
-    add("09 Rear output bearing 50x65x7", "Bearing (purchased)", tube(32.5, 25, *Z_BRG[0]))
-    add("10 Front output bearing 50x65x7", "Bearing (purchased)", tube(32.5, 25, *Z_BRG[1]))
+    pins = pattern(lambda a: cyl(OUT_PIN_R, 14.0, 33.8, *polar(OUT_R, a)), every(OUT_N))
+    plate = tube(36, 16, 31.0, 33.8)
+    hub = tube(14.9, 13.2, 4.4, 16.0) + tube(14.9, 13.2, 33.6, Z_FLANGE1)
+    flange = cyl(39, Z_FLANGE0, Z_FLANGE1) - cyl(20, Z_FLANGE1 - 2, Z_FLANGE1 + 0.2)
+    flange = flange - holes(26, 5.0, Z_FLANGE0 - 0.2, Z_FLANGE1 + 0.2, every(6, 30))
+    add("08 Output hub, pins and arm flange", "20MnCr5", pins + plate + hub + flange)
+    add("09 Rear output bearing 61906", "Bearing (purchased)", tube(23.5, 15, *Z_BRG[0]))
+    add("10 Front output bearing 61906", "Bearing (purchased)", tube(23.5, 15, *Z_BRG[1]))
 
-    stator = cyl(46, MOUNT, 0, ) - cyl(8, MOUNT - 1, 1)
+    cover = tube(OD_R, 23.6, Z_BRG[1][0], Z_BRG[1][1]) + tube(OD_R, 20, Z_BRG[1][1], Z_FLANGE0)
+    cover = cover - holes(49, 5.2, Z_BRG[1][0] - 0.2, Z_FLANGE0 + 0.2, every(6, 30))
+    add("15 Front cover", "6082-T6", cover)
+
+    stator = cyl(46, MOUNT, 0) - cyl(8, MOUNT - 1, 1)
     add("11 LA8308 stator", "Motor envelope", stator)
     bell = cyl(46, -3, 0) + hex_prism(17.3, MOUNT - 6.7, MOUNT) + cyl(5, COVER_FACE, MOUNT - 6.6)
     add("12 LA8308 rotor", "Motor envelope", bell)
-    add("13 Encoder lid", "6082-T6", tube(24, 8, LID_OUTER, LID_OUTER + 2))
+
+    # rear cup bolts on after the motor is in. it is open toward the motor.
+    cup = cyl(OD_R, LID_OUTER, MOUNT) - cyl(47, LID_OUTER + 2.5, MOUNT + 0.2)
+    cup = cup - cyl(11, COVER_FACE, MOUNT + 0.2) - cyl(6, COVER_FACE - 1, COVER_FACE + 0.2)
+    cup = cup - holes(49, 5.2, LID_OUTER - 0.2, MOUNT + 0.2, every(6, 30))
+    add("13 Rear cup and encoder lid", "6082-T6", cup)
     add("14 Meukron board", "Electronics", box(-15, 15, -15, 15, COVER_FACE - 2.6, COVER_FACE - 1.0))
     return p
 

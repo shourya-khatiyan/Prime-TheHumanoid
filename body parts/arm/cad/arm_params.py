@@ -46,7 +46,7 @@ M4_HEAD_RELIEF = dict(r=4.5, depth=0.4)
 M5 = dict(hole_r=5.15 / 2, washer=dict(od=10.0, id=5.3, t=1.0), screw_l=14.0, torque=2.0)  # iso 7089 washer; 14 mm keeps 6 mm in the 8 mm tap through the 7 mm plate
 
 # ---------------------------------------------------------------- elbow motor (eaglepower la8308 kv90; shoulder parts.md rev 1.4 measurements)
-MOTOR = dict(r=46.0, h=32.5, mass=336.0, kv=90.0, r_phase=0.0846, l=37e-6, pp=20, i_cont=22.0, i_peak=40.0)
+MOTOR = dict(r=46.0, h=27.5, mass=336.0, kv=90.0, r_phase=0.0846, l=37e-6, pp=20, i_cont=22.0, i_peak=40.0)
 MOTOR_BASE = dict(pcd_r=20.0, ang=[0.0, 90.0, 180.0, 270.0], d=4.0, thread=6.0)  # 4 x m4 on d40 (angles vs the lead exit: measure)
 ROTOR = dict(pcd_r=15.5, ang=[45.0, 135.0, 225.0, 315.0], d=3.0, thread=5.0, stub_r=1.75, stub_l=10.5, cap_r=8.7)
 LEAD = dict(r=32.0, ang=135.0, hole_r=8.5)  # phase-lead bundle (13 across) leaves the rear face here: up and back, never swept

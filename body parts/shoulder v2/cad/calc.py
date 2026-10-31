@@ -347,7 +347,7 @@ for gap in (1.2, 1.4, 2.0):
 
 # ---------------------------------------------------------------- 9 motor fit + encoder
 line("9 motor fit, axial stack and encoder centring")
-MOTOR_D, MOTOR_H, STUB_H, CAP_D = 92.0, 32.5, 8.9, 17.4  # vernier: od, mount face -> hub face, front stub, rear cap
+MOTOR_D, MOTOR_H, STUB_H, CAP_D = 92.0, 27.5, 8.9, 17.4  # flat face to flat face is 27.5. stub and hex are extra.
 print(f"motor d{MOTOR_D} in housing bore d94.5: radial {(94.5 - MOTOR_D) / 2:.2f}; rotor bell to bore {(94.5 - MOTOR_D) / 2:.2f}")
 print(f"rear cap d{CAP_D} (rotates) in plate relief d19.5: radial {(19.5 - CAP_D) / 2:.2f}; it is not a pilot")
 print(f"front stub {STUB_H} long in sun-1 bore d3.5 x 10.5: end clearance {10.5 - STUB_H:.1f}, radial {(3.5 - 2.9) / 2:.2f}")

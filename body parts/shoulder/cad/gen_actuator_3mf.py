@@ -209,9 +209,9 @@ def build():
     cart_dowel_ang = [11.25, 191.25]
     hall_ang = 270.0
 
-    # motor as measured with a vernier: mount face -> rotor hub face 32.5, od 92, front shaft stub d2.9 x 8.9,
+    # motor flat face to flat face is 27.5 (hub face to rear stator face). stub and hex are extra. od 92.
     # rear cap d17.4 turns with the rotor (plain centre hole), flexible phase leads leave the rear face at r 32 (13 bundle)
-    motor_r, motor_h = 46.0, 32.5
+    motor_r, motor_h = 46.0, 27.5
     stub_r, stub_h, cap_r = 1.45, 8.9, 8.7
     lead_ang = 180.0  # phase lead exit angle
     shim_t = 1.0  # fitted pack, 0.5..1.5; moves only the motor and sun-1
