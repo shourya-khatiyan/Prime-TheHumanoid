@@ -32,7 +32,7 @@ PIN_R = 44.0
 PIN_RAD = 2.0
 LAM = 0.55
 ECC = LAM * PIN_R / ZP
-DR = 0.12
+DR = 0.08  # metal pin is only 0.006 mm over size. 0.12 mm was taking teeth out of contact
 OUT_R, OUT_N, OUT_PIN_R, OUT_PLAY = 30.0, 8, 3.0, 0.25
 HOLE_R = OUT_PIN_R + ECC + OUT_PLAY
 
@@ -42,14 +42,15 @@ MOUNT = -27.5
 COVER_FACE = MOUNT - 13.2  # hex 6.7 + glued cover 6.5
 LID_OUTER = COVER_FACE - 6.2  # 1 mm air + 1.1 chip + 1.6 board + 0.5 air + 2 lid
 
-# discs are 7 mm because the eccentric bearing is a 61805 (25 x 37 x 7, C0 2.6 kN).
-# the two output bearings sit against the ends of the discs, so their span is the
-# disc stack and not an empty tube. the housing bore stays open at both ends.
+# discs stay 7 mm. the crank needle is a K 20x24x10, which is 10 mm wide,
+# so the two discs sit far enough apart for the needles, and the flange moves 3 mm.
 OD_R = 52.0  # 104 mm od, so an M5 has a wall outside the 92 mm motor
 Z_D1 = (16.4, 23.4)
-Z_D2 = (23.8, 30.8)
-Z_BRG = ((4.4, 13.4), (34.2, 43.2))  # 61906, 30 x 47 x 9, C0 4.55 kN
-Z_FLANGE0, Z_FLANGE1 = 45.4, 51.4  # 6 mm arm flange, after the cover lip
+Z_N1 = (14.9, 24.9)  # 1.5 mm past each face of disc 1
+Z_D2 = (27.9, 34.9)
+Z_N2 = (26.4, 36.4)
+Z_BRG = ((4.4, 13.4), (37.2, 46.2))  # 61906, 30 x 47 x 9, C0 4.55 kN
+Z_FLANGE0, Z_FLANGE1 = 48.4, 54.4  # 6 mm arm flange, after the cover lip
 
 MATERIALS = {
     "6082-T6": ("#B8BEC6", 2.70),
@@ -131,7 +132,7 @@ def disc(z0, z1, shift_x, rot_deg):
     """One cycloid disc on an eccentric journal."""
     pts = cy.disc_profile(PIN_R, ECC, PIN_RAD, RATIO, n=1200, dr=DR, rot_deg=rot_deg)
     body = extrude_polygon(pts, z0, z1).translate((shift_x, 0, 0))
-    body = body - cyl(18.6, z0 - 0.2, z1 + 0.2, shift_x, 0)  # 61805 outer ring, 37 mm
+    body = body - cyl(12.2, z0 - 0.2, z1 + 0.2, shift_x, 0)  # race for the 24 mm needle
     for a in every(OUT_N):
         x, y = polar(OUT_R, a)
         body = body - cyl(HOLE_R, z0 - 0.2, z1 + 0.2, x + shift_x, y)
@@ -156,27 +157,27 @@ def build():
     for i, a in enumerate(every(ZP, 3.9)):
         x, y = polar(PIN_R, a)
         h = h - cyl(2.05, 0.0, 4.2, x, y)  # 0.05 mm radial over a 4 mm pin, not a nominal hole
-        add(f"02.{i + 1} Ring pin D4", "52100 bearing steel", cyl(PIN_RAD, 0.2, 31.2, x, y))
+        add(f"02.{i + 1} Ring pin D4", "52100 bearing steel", cyl(PIN_RAD, 0.2, Z_D2[1], x, y))
     h = h - holes(49, 5.2, MOUNT - 0.2, MOUNT + 8, every(6, 30))
     add("01 Housing 6082-T6", "6082-T6", h)
 
     add("03 Cycloid disc A", "20MnCr5", disc(*Z_D1, ECC, 0.0))
     add("04 Cycloid disc B", "20MnCr5", disc(*Z_D2, -ECC, -180.0 / RATIO))
-    add("05 Eccentric bearing A 61805", "Bearing (purchased)", tube(18.5, 12.5, *Z_D1).translate((ECC, 0, 0)))
-    add("06 Eccentric bearing B 61805", "Bearing (purchased)", tube(18.5, 12.5, *Z_D2).translate((-ECC, 0, 0)))
+    add("05 Needle K20x24x10 A", "Bearing (purchased)", tube(12.0, 10.08, *Z_N1).translate((ECC, 0, 0)))
+    add("06 Needle K20x24x10 B", "Bearing (purchased)", tube(12.0, 10.08, *Z_N2).translate((-ECC, 0, 0)))
 
-    crank = cyl(12.4, 0.05, Z_D1[0] - 0.05)
-    crank = crank + cyl(12.4, Z_D1[0] - 1.6, Z_D1[1] + 1.2, ECC, 0)
-    crank = crank + cyl(12.4, Z_D1[1] + 0.05, Z_D2[0] - 0.05)
-    crank = crank + cyl(12.4, Z_D2[0] - 1.6, Z_D2[1] + 1.2, -ECC, 0)
-    crank = crank + cyl(12.4, 31.0, 36.0)
+    # the 20 mm journals overlap each other in the gap between the needles.
+    # a 12.4 mm shaft there would sit inside the needle bore and clash.
+    crank = cyl(12.4, 0.05, Z_N1[0] - 0.2)
+    crank = crank + cyl(10.0, Z_N1[0] - 1.2, 26.0, ECC, 0)
+    crank = crank + cyl(10.0, 25.0, Z_N2[1] + 0.4, -ECC, 0)
     crank = crank - cyl(1.6, -1.0, 9.0)  # measured stub d2.9 x 8.9
     crank = crank - holes(19, 2.2, -0.2, 3.5, every(4))  # 4 x M2 on the 38 mm circle
     add("07 Crank", "20MnCr5", crank)
 
-    pins = pattern(lambda a: cyl(OUT_PIN_R, 14.0, 33.8, *polar(OUT_R, a)), every(OUT_N))
-    plate = tube(36, 16, 31.0, 33.8)
-    hub = tube(14.9, 13.2, 4.4, 16.0) + tube(14.9, 13.2, 33.6, Z_FLANGE1)
+    pins = pattern(lambda a: cyl(OUT_PIN_R, 14.0, Z_D2[1] + 1.8, *polar(OUT_R, a)), every(OUT_N))
+    plate = tube(36, 16, Z_D2[1], Z_D2[1] + 1.8)
+    hub = tube(14.9, 13.2, 4.4, 16.0) + tube(14.9, 13.2, Z_D2[1], Z_FLANGE1)
     flange = cyl(39, Z_FLANGE0, Z_FLANGE1) - cyl(20, Z_FLANGE1 - 2, Z_FLANGE1 + 0.2)
     flange = flange - holes(26, 5.0, Z_FLANGE0 - 0.2, Z_FLANGE1 + 0.2, every(6, 30))
     add("08 Output hub, pins and arm flange", "20MnCr5", pins + plate + hub + flange)
