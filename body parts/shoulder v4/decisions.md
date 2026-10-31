@@ -16,7 +16,7 @@ The discs are 7 mm because the eccentric bearing is a 61805, 25×37×7, static r
 
 The output bearings are 61906, 30×47×9, static rating 4.55 kN. They sit on the two ends of the disc stack, so the span is about 27 mm and there is no empty spacer. The arm flange is 6 mm, which is the M5 thread. The housing stops at the front bearing. A 2 mm cover holds that bearing and is the part you remove to put the discs in.
 
-The rear of the housing is open at Ø94. The motor slides in until the hub face hits the lip. The rear cup goes on after the motor. The elbow failed this way: the bore was closed and the parts had to be hammered. This one does not.
+The rear of the housing is open at Ø94. The motor slides in until the hub face hits the lip. The rear plate is the planetary one: a 2 mm encoder lid, a 30 mm board pocket on the measured Meukron rhombus, a cable groove at 0°, and a 15 mm phase-lead slot at 180° with a groove out to the rim. The elbow failed this way: the bore was closed and the parts had to be hammered. This one does not.
 
 ## Fits
 

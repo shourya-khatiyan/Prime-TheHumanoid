@@ -104,6 +104,12 @@ def holes(r_pcd, d, z0, z1, angles):
     return pattern(lambda a: cyl(d / 2, z0, z1, *polar(r_pcd, a)), angles)
 
 
+def csk_hole(x, y, z_face, depth, d):
+    """Countersink opening toward -z is the head. The hole runs toward +z."""
+    head = Manifold.cylinder(d / 2, d, d / 2 + 0.1, segs(d)).translate((x, y, z_face))
+    return head + cyl(d / 2 + 0.1, z_face, z_face + depth, x, y)
+
+
 def extrude_polygon(pts, z0, z1):
     """Extrude a closed polygon from z0 to z1."""
     arr = np.asarray(pts, dtype=float)
@@ -186,12 +192,37 @@ def build():
     bell = cyl(46, -3, 0) + hex_prism(17.3, MOUNT - 6.7, MOUNT) + cyl(5, COVER_FACE, MOUNT - 6.6)
     add("12 LA8308 rotor", "Motor envelope", bell)
 
-    # rear cup bolts on after the motor is in. it is open toward the motor.
-    cup = cyl(OD_R, LID_OUTER, MOUNT) - cyl(47, LID_OUTER + 2.5, MOUNT + 0.2)
-    cup = cup - cyl(11, COVER_FACE, MOUNT + 0.2) - cyl(6, COVER_FACE - 1, COVER_FACE + 0.2)
-    cup = cup - holes(49, 5.2, LID_OUTER - 0.2, MOUNT + 0.2, every(6, 30))
-    add("13 Rear cup and encoder lid", "6082-T6", cup)
-    add("14 Meukron board", "Electronics", box(-15, 15, -15, 15, COVER_FACE - 2.6, COVER_FACE - 1.0))
+    # rear plate is the planetary one: lid, encoder pocket, cable groove, phase slot.
+    # drawn with the outer face at local z = 0, then shifted so that face is LID_OUTER.
+    lead = 180.0
+    enc = ((12.0, 45.0), (12.0, 225.0), (9.5, 135.0), (9.5, 315.0))
+    z_face = MOUNT - LID_OUTER  # 19.4 mm, motor rear face
+    lid = cyl(29.9, 0, 2) - cyl(18, 0.5, 2.1)
+    lid = lid - box(24, 31, -2, 2, -1, 3) - box(24, 31, -7.5, 7.5, -1, 3).rotate((0, 0, lead))
+    lid = lid - holes(27, 2.4, -0.2, 2.2, every(4, 45))
+    plate = cyl(OD_R, 0, 2) + cyl(OD_R, 1.99, z_face)
+    plate = plate - cyl(30.05, -1, 2)  # lid sits in this recess
+    plate = plate - box(-15.3, 15.3, -15.3, 15.3, 1.9, 6.3)  # encoder pocket
+    plate = plate - cyl(5.5, 6.0, 12.7) - cyl(10.55, 12.2, z_face + 0.1)  # cover, then hex
+    for r, a in enc:
+        x, y = polar(r, a)
+        plate = plate + cyl(3.5, 4.1, 6.4, x, y) - cyl(1.7, 4.0, 8.0, x, y)
+    plate = plate - holes(27, 2.0, 1.9, 6.0, every(4, 45))
+    # encoder cable at 0 deg, phase leads at 180 deg. same paths as the planetary plate.
+    plate = plate - box(24, OD_R + 1, -2, 2, -1, 3)
+    plate = plate - box(24, OD_R + 1, -7.5, 7.5, -1, 5.5).rotate((0, 0, lead))
+    plate = plate - box(24, 36, -7.5, 7.5, -1, z_face + 0.2).rotate((0, 0, lead))
+    for a in every(4, 45):
+        plate = plate - csk_hole(*polar(20, a), 8.0, 12.0, 4.0)
+    plate = plate - holes(49, 5.2, -0.2, z_face + 0.2, every(6, 30))
+    shift = (0, 0, LID_OUTER)
+    add("13 Rear plate 6082-T6", "6082-T6", plate.translate(shift))
+    add("16 Encoder lid", "6082-T6", lid.translate(shift))
+    board = box(-15, 15, -15, 15, 2.5, 4.1)
+    for r, a in enc:
+        board = board - cyl(1.7, 2.4, 4.2, *polar(r, a))
+    add("14 Meukron board", "Electronics", board.translate(shift))
+    add("17 Encoder chip", "Electronics", box(-2.5, 2.5, -2.2, 2.2, 4.1, 5.2).translate(shift))
     return p
 
 
