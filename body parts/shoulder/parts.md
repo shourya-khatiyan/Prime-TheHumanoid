@@ -46,9 +46,9 @@ They sit in the lid, heads at Z 0, threaded into the rear plate. Torque 0.3 N·m
 
 ## 03 Encoder PCB
 
-Purchase. Quantity 1. The model assigns no mass. Size 30 × 30 × 1.6 mm FR4, four Ø2.7 mm holes on a Ø34 mm circle.
+Purchase. Quantity 1. The model assigns no mass. Size 30 × 30 × 1.6 mm FR4. The four holes are a rhombus: diagonals 24 mm and 19 mm, centre to centre. An M3 screw passes freely (Ø3.4 in the model).
 
-It sits in the rear-plate pocket, rotated 45°, from Z 2.5 to Z 4.1, on the motor axis. It carries the AS5047P. The holes are the ISO 273 fine clearance for M2.5, so the board is centred within ±0.1 mm by its screws. A shielded SPI cable leaves through the plate groove. Keep grease off this board.
+It sits in the rear-plate pocket, square to the axes, from Z 2.5 to Z 4.1, on the motor axis. The 24 mm pair runs corner to corner of the board. It carries the AS5047P. A shielded SPI cable leaves through the plate groove. Keep grease off this board.
 
 ## 04 Encoder IC
 
@@ -58,9 +58,9 @@ It is soldered on the PCB, centred on the axis, from Z 4.1 to Z 5. The gap from 
 
 ## 05 PCB screws
 
-Purchase. Quantity 4. Mass 0.46 g each. M2.5 × 5 pan head, ISO 7045 or ISO 14583.
+Purchase. Quantity 4. Mass 0.46 g each. M3 × 6 pan head, ISO 7045 or ISO 14583.
 
-They clamp the PCB to four bosses in the rear plate. Torque 0.4 N·m. No threadlocker.
+They clamp the PCB to four bosses in the rear plate, on the 24 mm and 19 mm diagonals. Torque 0.6 N·m. No threadlocker.
 
 ## 06 Magnet holder
 

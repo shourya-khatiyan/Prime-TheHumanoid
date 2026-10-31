@@ -19,8 +19,8 @@ The board in the photos is a black square Meukron PCB. Silkscreen shows U1, 3.3V
 | Item | Shoulder CAD | Arm CAD | Status |
 |---|---|---|---|
 | Board size | 30 × 30 × 1.6 | 30 × 30 × 1.6 | Outline 30 × 30 is now measured. Thickness 1.6 is still assumed |
-| Mounting holes | 4 × Ø2.7 on a Ø34 circle, square, for M2.5 | Ø3.2 at the 24 / 19 diagonals | Shoulder pattern and M2.5 are wrong. Arm spacing is right. Arm Ø3.2 matches a close M3 fit |
-| Screws | M2.5 × 5 pan into tapped bosses | M2.5 with a nut under the board | ASSUMED. The board takes an M3 screw |
+| Mounting holes | Rhombus, diagonals 24 and 19, M3 free fit (Ø3.4) | Ø3.2 at the 24 / 19 diagonals | Shoulder generator now uses the measured rhombus. Arm spacing is the same rhombus. Arm Ø3.2 is a close M3 fit |
+| Screws | M3 × 6 pan into tapped bosses | M2.5 with a nut under the board | The board takes an M3 screw |
 | Chip | AS5047P, TSSOP-14, 5.0 × 4.4 × 1.1 | Same, top 1.1 above the board | CATALOGUE name. The photo chip was not identified |
 | Magnet | Inside the cover already glued on the motor | — | The loose magnet size is no longer the interface |
 | Magnet cover on the motor | Ø10, 6.5 past the hex face (13.2 past the mounting face) | MEASURED | Glued on. Both CAD holders (pin into the cap hole) are wrong |

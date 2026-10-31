@@ -363,7 +363,7 @@ for le in (4.5, 5.0, 5.5):
 # radial offset of the magnet axis from the ic centre, mm
 budget = {"magnet in holder bore": 0.03, "holder pin in cap hole": 0.05, "cap hole runout vs rotor axis": 0.05,
           "rotor axis vs stator holes (motor)": 0.10, "stator CSK screws in plate": 0.10,
-          "PCB holes d2.7 on M2.5": 0.10, "PCB boss positions": 0.02, "IC on PCB": 0.10}
+          "PCB holes d3.4 on M3": 0.20, "PCB boss positions": 0.02, "IC on PCB": 0.10}
 for k, v in budget.items():
     print(f"  {k:36s} {v:.2f}")
 wc, rss = sum(budget.values()), math.sqrt(sum(v ** 2 for v in budget.values()))

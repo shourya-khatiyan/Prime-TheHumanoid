@@ -92,7 +92,7 @@ Stock sizes below include ≈ 5 mm on the diameter and ≈ 5 mm on the length fo
 | P09 | 07 | Motor encoder magnet | 1 (+1) | Ø6 × 2.5 NdFeB, **diametrically** magnetised | Bomatec **AS5000-MD6H-2** (ams kit magnet) [S10] | Size required by the AS5047P | Gap to IC 1.25 at the nominal shim, 0.75–1.75 across the shim range (0.5–3.0 allowed); centred ≤ 0.5 mm [S10], budget 0.22 RSS (calc §9) |
 | P10 | 44 | Homing magnet | 1 (+2) | Ø3 × 2 NdFeB **N52**, axially magnetised | Any N52 disc | Gives 97–201 mT at 1.2–2.0 mm (calc §7) | Glue radially into the flange rim (M13) with the pole facing outward |
 | P11 | 04 | Motor encoder IC | 1 (+1) | **AS5047P-ATSM** (TSSOP-14) | ams-OSRAM / distributor stock | 14-bit absolute angle; needed for FOC | Field 35–70 mT at the die [S11] |
-| P12 | 03 | Encoder PCB | 1 (+2) | 30 × 30 × 1.6 FR4, 2-layer, 4 × Ø2.7 holes (M2.5 fine clearance, centres ±0.1) on PCD 34 | Any PCB fab | Carries the AS5047P on the motor axis | Shielded SPI cable out through the plate groove |
+| P12 | 03 | Encoder PCB | 1 (+2) | 30 × 30 × 1.6 FR4. Holes are a rhombus, diagonals 24 mm and 19 mm, M3 free fit | The Meukron board | Carries the AS5047P on the motor axis | Shielded SPI cable out through the plate groove |
 | P13 | 46 | Homing hall sensor | 1 (+2) | **TI DRV5033FAQDBZR** (SOT-23, omnipolar, 30 kHz, open-drain) | DRV5033AJ (less sensitive, also OK) | **Replaces DRV5032FB (5 Hz, too slow)**, see Section 0 [S7][S8][S9] | 10 kΩ pull-up to 3.3 V; 3-wire lead |
 | P14 | — | Winding thermistor | 1 (+1) | 10 kΩ NTC, β ≈ 3435–3950, glass bead or epoxy | Any | Feeds the ODrive motor-thermistor input [spec 6.5] | Bond to the end winding with thermal epoxy |
 | P15 | — | Motor controller (system item) | 1 | ODrive / ODESC class, ≥ 20 A phase current | — | Required by the design's current limits [spec 12] | Settings: `torque_constant 0.0919`, `current_lim ≤ 20 A` |
@@ -102,7 +102,7 @@ Stock sizes below include ≈ 5 mm on the diameter and ≈ 5 mm on the length fo
 | ID | Model # | Fastener | Standard | Qty (+spare) | Joint | Torque (N·m) | Threadlocker |
 |---|---|---|---|---|---|---|---|
 | F01 | 02 | M2 × 4 countersunk | ISO 7046 / ISO 14581 (grade 8.8 or A2 is fine) | 4 (+4) | Lid to plate | 0.3 | None |
-| F02 | 05 | M2.5 × 5 pan | ISO 7045 / ISO 14583 | 4 (+4) | PCB to plate bosses | 0.4 | None |
+| F02 | 05 | M3 × 6 pan | ISO 7045 / ISO 14583 | 4 (+4) | PCB to plate bosses, rhombus 24 / 19 | 0.6 | None |
 | F03 | 09 | M3 × 8 countersunk | ISO 10642 12.9 | 8 (+4) | Housing wall to plate plug, radial, heads flush with Ø100 | **1.2** (calc §6: 258 N shear each at proof, SF 12.5; strip SF 2.9 in 6082-T6) | Loctite 243 |
 | F04 | 11 | M4 × 10 countersunk | ISO 10642 (10.9 standard) | 4 (+2) | Stator to plate through the shim pack (engagement 6.0 − shim = 4.5–5.5; motor holes ≥ 6 deep) | Per motor maker; ≤ 2.0 into an aluminium base (strip SF ≥ 2.9, calc §9) | Loctite 243 |
 | F05 | 19 | M3 × 5 countersunk | ISO 10642 | 4 (+4) | Sun-1 to rotor face (use the PCD that matches the rotor) | **0.8** (calc §6: slip SF 6.4 on PCD 25; only ≈ 2 mm thread in the rotor) | Loctite 243 |

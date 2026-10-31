@@ -237,6 +237,9 @@ def build():
     cap = cap + cyl(28, z_mount - 24, z_mount - 22, MOTOR_X, 0)
     add("15 Encoder cap 6082-T6", "6082-T6", cap)
     board = box(MOTOR_X - 15, MOTOR_X + 15, -15, 15, z_mount - 22, z_mount - 20.4)
+    for r, a in ((12.0, 45.0), (12.0, 225.0), (9.5, 135.0), (9.5, 315.0)):
+        x, y = polar(r, a)
+        board = board - cyl(1.7, z_mount - 22.2, z_mount - 20.2, MOTOR_X + x, y)
     add("16 Meukron board", "Electronics", board)
     return p
 

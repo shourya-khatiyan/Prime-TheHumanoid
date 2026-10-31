@@ -205,6 +205,8 @@ def build():
     rotor_pcd, rotor_ang = 15.5, every(4)  # 4 x m3 on pcd 31 (eaglepower 83xx default)
     rotor_alt = (12.5, every(4, 45))  # 4 x m3 on pcd 25 (8308 alternate), cut in sun-1 only
     rear_ang = every(6, 30)  # plate->housing m3 and torso m4
+    # meukron board: diagonals 24 mm and 19 mm, not a square on a 34 mm circle. m3.
+    enc_holes = ((12.0, 45.0), (12.0, 225.0), (9.5, 135.0), (9.5, 315.0))
     flange_ang, cover_ang = every(8), every(8, 22.5)
     cart_dowel_ang = [11.25, 191.25]
     hall_ang = 270.0
@@ -228,19 +230,21 @@ def build():
         return s.rotate((0, -90, 0)).translate((0, 0, z)).rotate((0, 0, a))
 
     # ---- rear plate, encoder, lid (Z 0-10)
-    lid = cyl(29.9, 0, 2) - holes(17, 5.6, 0.5, 2.1, every(4)) - box(24, 31, -2, 2, -1, 3)
+    lid = cyl(29.9, 0, 2) - cyl(16, 0.5, 2.1) - box(24, 31, -2, 2, -1, 3)
     lid = lid - box(25.5, 31, -7.5, 7.5, -1, 3).rotate((0, 0, lead_ang))  # notch beside the phase lead slot
     for a in every(4, 45):
         lid = lid - csk_hole(*polar(27, a), 0.0, 2.0, 2.0, 1)
     add("01 Encoder lid 6082-T6 D59.8x2", "6082-T6", lid)
     for i, a in enumerate(every(4, 45)):
         add(f"02.{i + 1} Screw M2x4 CSK lid", "Steel 12.9 fastener", csk(*polar(27, a), 0.0, 4.0, 2.0, 1))
-    pcb = (box(-15, 15, -15, 15, 2.5, 4.1).rotate((0, 0, 45))) - holes(17, 2.7, 2, 5, every(4))  # m2.5 fine clearance: +/-0.1 centring
-    add("03 Motor encoder PCB 30x30x1.6 (AS5047P)", "Electronics", pcb)
+    pcb = box(-15, 15, -15, 15, 2.5, 4.1)
+    for r, a in enc_holes:
+        pcb = pcb - cyl(1.7, 2.4, 4.2, *polar(r, a))  # m3 free fit
+    add("03 Motor encoder PCB 30x30x1.6 (Meukron)", "Electronics", pcb)
     add("04 AS5047P IC (TSSOP-14 envelope)", "Electronics", box(-2.5, 2.5, -2.2, 2.2, 4.1, z_ic))
-    for i, a in enumerate(every(4)):
-        x, y = polar(17, a)
-        add(f"05.{i + 1} Screw M2.5x5 pan PCB", "Steel 12.9 fastener", cyl(2.5, 0.75, 2.5, x, y) + cyl(1.25, 2.49, 7.5, x, y))
+    for i, (r, a) in enumerate(enc_holes):
+        x, y = polar(r, a)
+        add(f"05.{i + 1} Screw M3x6 pan PCB", "Steel 12.9 fastener", cyl(3.0, 1.7, 4.1, x, y) + cyl(1.5, 4.05, 8.5, x, y))
     z_mag = z_mount - 4.75  # holder length 4.75: magnet-ic gap 1.25 at the nominal pack, 0.75..1.75 over the shim range
     holder = cyl(5, z_mag, z_mount) - cyl(3, z_mag - 0.1, z_mag + 2.5) + cyl(1.4, z_mount - 0.01, z_mount + 2.0)
     add("06 Magnet holder 6082-T6 D10, pin D2.8 into the rotor cap", "6082-T6", holder)
@@ -248,7 +252,9 @@ def build():
     plate = cyl(50, 0, z_plug) + cyl(plug_r, z_plug - 0.01, 10)  # d100 seat rim + d94.5 k6 plug
     plate = plate - cyl(30.05, -1, 2) - cyl(25, 1.9, 6.0) - cyl(7, 5.9, 11)
     plate = plate - cyl(9.75, 8.5, 10.1)  # relief for the rotating d17.4 cap
-    plate = plate + holes(17, 5.0, 4.1, 6.05, every(4)) - holes(17, 2.5, 4.0, 8.0, every(4))  # pcb bosses m2.5
+    for r, a in enc_holes:
+        x, y = polar(r, a)
+        plate = plate + cyl(3.5, 4.1, 6.05, x, y) - cyl(1.25, 4.0, 8.0, x, y)  # m3 bosses on the rhombus
     plate = plate - holes(27, 2.0, 1.9, 6.0, every(4, 45))  # lid m2 tapped
     plate = plate - holes(38, 5.0, -1, 7.0, rear_ang) - holes(38, 4.0, -1, 6.0, [120, 300])  # torso helicoil m4 + dowel
     plate = plate - pattern(lambda a: radial(cyl(1.5, -plug_r - 1, -41.25), a, rad_z), rad_ang)  # radial m3 tapped 6 deep
