@@ -185,14 +185,30 @@ def build():
         screw = cyl(0.9, -4.5, 2.0, x, y) + cyl(1.8, 2.0, 3.3, x, y)
         add(f"22.{i + 1} Screw M2 crank to rotor", "52100 bearing steel", screw)
 
-    # one carrier: rear hub, rear plate, pins, front plate, front hub, flange.
-    pins = pattern(lambda a: cyl(OUT_PIN_R, Z_REAR_PLATE[0], Z_FRONT_PLATE[1], *polar(OUT_R, a)), every(OUT_N))
+    # rear plate and pins only. the front is open so both discs slide on from the front.
+    pins = pattern(lambda a: cyl(OUT_PIN_R, Z_REAR_PLATE[0], Z_FRONT_PLATE[0] + 1.6, *polar(OUT_R, a)), every(OUT_N))
     rear_plate = tube(36, HUB_RI, *Z_REAR_PLATE)
-    front_plate = tube(36, HUB_RI, *Z_FRONT_PLATE)
-    hub = tube(HUB_RO, HUB_RI, Z_BRG[0][0], Z_REAR_PLATE[1]) + tube(HUB_RO, HUB_RI, Z_FRONT_PLATE[0], Z_FLANGE1)
-    flange = cyl(39, Z_FLANGE0, Z_FLANGE1) - cyl(20, Z_FLANGE1 - 2, Z_FLANGE1 + 0.2)
-    flange = flange - holes(26, 4.2, Z_FLANGE0 - 0.2, Z_FLANGE1 + 0.2, every(6, 30))  # m5 tap drill
-    add("08 Output hub, pins and arm flange", "20MnCr5", pins + rear_plate + front_plate + hub + flange)
+    rear_hub = tube(HUB_RO, HUB_RI, Z_BRG[0][0], Z_REAR_PLATE[1])
+    add("08 Rear carrier", "20MnCr5", pins + rear_plate + rear_hub)
+
+    # front plate and hub slide on after the discs. bearing slides on from the arm end, then the flange.
+    front = tube(36, HUB_RI, *Z_FRONT_PLATE) + tube(HUB_RO, HUB_RI, Z_FRONT_PLATE[0], Z_FLANGE1)
+    front = front - cyl(2.05, -22, 22).rotate((0, -90, 0)).translate((0, 0, 50.0))  # cross pin
+    for i, a in enumerate(every(OUT_N)):
+        x, y = polar(OUT_R, a)
+        front = front - cyl(3.08, Z_FRONT_PLATE[0] - 0.2, Z_FRONT_PLATE[0] + 1.6, x, y)
+        front = front - cyl(1.7, Z_FRONT_PLATE[0] + 1.4, Z_FRONT_PLATE[1] + 0.1, x, y)
+        front = front - cyl(2.55, Z_FRONT_PLATE[1] - 1.25, Z_FRONT_PLATE[1] + 0.1, x, y)
+        shank = cyl(1.2, Z_FRONT_PLATE[0] + 0.4, Z_FRONT_PLATE[1] - 1.2, x, y)
+        head = cyl(2.3, Z_FRONT_PLATE[1] - 1.2, Z_FRONT_PLATE[1] - 0.1, x, y)
+        add(f"24.{i + 1} Screw M3 pin plate", "52100 bearing steel", shank + head)
+    add("23 Front plate and hub", "20MnCr5", front)
+    flange = cyl(39, Z_FLANGE0, Z_FLANGE1) - cyl(HUB_RO + 0.12, Z_FLANGE0 - 0.2, Z_FLANGE1 + 0.2)
+    flange = flange - cyl(20, Z_FLANGE1 - 2, Z_FLANGE1 + 0.2)
+    flange = flange - holes(26, 4.2, Z_FLANGE0 - 0.2, Z_FLANGE1 + 0.2, every(6, 30))
+    flange = flange - cyl(2.05, -22, 22).rotate((0, -90, 0)).translate((0, 0, 50.0))
+    add("25 Arm flange", "20MnCr5", flange)
+    add("26 Cross pin D4", "52100 bearing steel", cyl(2.0, -18, 18).rotate((0, -90, 0)).translate((0, 0, 50.0)))
     add("09 Rear output bearing 61906", "Bearing (purchased)", tube(23.5, 15, *Z_BRG[0]))
     add("10 Front output bearing 61906", "Bearing (purchased)", tube(23.5, 15, *Z_BRG[1]))
 

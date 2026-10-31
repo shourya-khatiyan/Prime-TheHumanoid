@@ -78,16 +78,17 @@ PARTS = [
     ("01", "01_encoder_lid.pdf", "Encoder lid", 1, "6082-T6", "Housing family",
      "Ø59.8 × 2 mm", "5 mm 6082-T6 plate, shared with the cover",
      "CNC mill", "No anodize",
-     ["4 × M2 countersunk on Ø54 mm.", "Cable slot at 0°. Notch at 180° for the phase-lead slot.",
+     ["4 × M2 countersunk on Ø54 mm.", "Ø32 centre opening. The encoder screws are in the rear plate.",
+      "Cable slot at 0°. Notch at 180° for the phase-lead slot.",
       "Screws are a light joint, 0.3 N·m."]),
     ("15", "15_housing.pdf", "Housing", 1, "6082-T6", "Housing family",
-     "Ø100 × 87 mm", "Ø105 × 100 mm 6082-T6 bar",
+     "Ø100 × 90.4 mm, from Z 2 to Z 92.4", "Ø105 × 100 mm 6082-T6 bar",
      "CNC lathe and mill, 4th axis for the radial holes",
      "No anodize. Leave the fits and the threads bare.",
      ["Rear bore Ø94.5, open through the rear face. Plate plug seats from Z 2 to Z 18.4.",
       "8 × Ø3.2 radial holes with 90° countersinks at Z 6.1, centres 0.1 mm forward of the plug threads.",
       "Rear-face notches 4 × 1 mm at 0° and 15 × 3 mm at 180°.",
-      "Partition 2.5 mm at Z 45–47.5. Labyrinth Ø41.0 H8.",
+      "Partition 2.5 mm, Z 48.4 to Z 50.9. Labyrinth Ø41.0 H8.",
       "Ring-1 bore Ø85 K6. Cartridge bore Ø89 G7.",
       "12 cooling slots, 3 × 20 mm. Two ring-1 dowel slots, width 3.02–3.04 mm, 1.5 mm deep.",
       "8 × M3 in the front face, 6 mm thread engagement."]),
@@ -174,13 +175,13 @@ PARTS = [
       "Pilot Ø40 H7 × 2 mm. Runout within 0.02 mm TIR. Face flatness within 0.03 mm.",
       "3 × Ø8 mm R7 holes, blind 6.3 mm deep.",
       "3 × M4 counterbores on Ø54 mm.",
-      "Ø3 mm radial hole in the rim at Z 98.75 for the homing magnet."]),
+      "Ø3 mm radial hole in the rim at Z 102.15 for the homing magnet."]),
 ]
 
 # not in the step. listed so the actuator is complete on paper.
 OTHERS = [
     ("3D-printed this order", "08 Rear mount plate", "1",
-     "Rim Ø100 × 2 mm plus plug Ø94.5 × 8 mm", "130 g",
+     "Rim Ø100 × 2 mm plus plug Ø94.5 from Z 2 to Z 18.4", "130 g",
      "Printed plastic this build. A later metal plate is 6082-T6.",
      "Not milled. The housing is still cut to accept a metal plug later."),
     ("Bought shaft, cut to length", "26 Planet pins 1", "3",
@@ -474,7 +475,7 @@ def write_quote(path, items):
     sty = styles()
     story = []
     story.append(P("VAYN shoulder actuator — milling quotation", sty["h1"]))
-    story.append(P("Pack A. Geometry revision 1.4. Material revision 30 October 2026. Quantity: one actuator. Units: millimetres.", sty["body"]))
+    story.append(P("Pack A. Geometry revision 1.4, sheets redrawn 31 October 2026 for the measured 27.5 mm motor. Material revision 30 October 2026. Quantity: one actuator. Units: millimetres.", sty["body"]))
     story.append(P("Quote the parts in section 1 only. The price should include the metal, machining, wire-EDM of the two internal gears, and one carburizing batch on the toothed parts. Do not include nitriding. Do not include anodize. Do not include gear grinding unless a tooth misses its span or pin measurement. Deliver finished parts. Section 4 is not part of the machining price.", sty["body"]))
     story.append(P("The STEP file is the geometric master. Each drawing controls the features printed on that sheet. Sizes with no tolerance on the sheet follow ISO 2768-1 class m and ISO 2768-2 class K.", sty["body"]))
     story.append(P("Part 08, the rear mount plate, is 3D-printed for this build and is not in the STEP. The housing is still machined with the Ø94.5 H7 bore and the eight radial screw holes, so a metal plate can replace the print later.", sty["body"]))
@@ -548,7 +549,7 @@ def write_quote(path, items):
     def footer(c, doc):
         c.saveState()
         c.setFont("Arial", 8)
-        c.drawString(14 * mm, 8 * mm, "VAYN shoulder milling pack A  ·  two alloys  ·  30 Oct 2026  ·  step/VAYN_shoulder_milling.step")
+        c.drawString(14 * mm, 8 * mm, "VAYN shoulder milling pack A  ·  redrawn 31 Oct 2026  ·  step/VAYN_shoulder_milling.step")
         c.drawRightString(PAGE[0] - 14 * mm, 8 * mm, str(doc.page))
         c.restoreState()
 
@@ -587,7 +588,7 @@ def draw_sheet(path, row, sample):
     c.setFont("Arial-Bold", 13)
     c.drawString(12 * mm, height - 16 * mm, f"VAYN shoulder  ·  milling drawing  ·  {part_id}  {title}")
     c.setFont("Arial", 8)
-    c.drawRightString(width - 12 * mm, height - 15 * mm, "Pack A  ·  geometry Rev 1.4  ·  materials 30 Oct 2026")
+    c.drawRightString(width - 12 * mm, height - 15 * mm, "Pack A  ·  Rev 1.4  ·  redrawn 31 Oct 2026")
 
     # centre the solid so the views fill the sheet
     box = sample["box"]

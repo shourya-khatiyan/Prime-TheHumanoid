@@ -21,7 +21,7 @@ CASES = {
 
 # 61813 (skf): c, c0, f0, ball pitch dia, assumed ball set
 C_DYN, C0, F0, DPW, Z_BALLS, DW = 11900.0, 9650.0, 17.0, 75.0, 24, 5.5
-Z_REAR_BRG, Z_FRONT_BRG, Z_LOAD = 70.5, 91.5, 100.5  # bearing centres, flange face
+Z_REAR_BRG, Z_FRONT_BRG, Z_LOAD = 73.9, 94.9, 103.9  # bearing centres, flange face
 SKF_E_Y = [(0.172, 0.19, 2.30), (0.345, 0.22, 1.99), (0.689, 0.26, 1.71), (1.03, 0.28, 1.55),
            (1.38, 0.30, 1.45), (2.07, 0.34, 1.31), (3.45, 0.38, 1.15), (5.17, 0.42, 1.04), (6.89, 0.44, 1.00)]
 
