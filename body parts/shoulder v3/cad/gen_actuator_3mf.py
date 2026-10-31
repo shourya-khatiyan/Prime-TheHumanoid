@@ -11,11 +11,15 @@ import math
 import os
 import re
 import struct
+import sys
 import zipfile
 
 import lib3mf
 import numpy as np
 from manifold3d import CrossSection, Manifold, OpType
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "elbow v0", "cad"))
+import cycloid as cy  # same curve and clearance math as the elbow
 
 REV = "3.0"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "actuator.3mf")
@@ -28,7 +32,7 @@ RATIO = PIN_N - 1
 PIN_R = 38.0
 PIN_RAD = 2.0
 ECC = 0.65 * PIN_R / PIN_N
-PROFILE_GROW = 0.08  # extra roller radius in the curve, so the disc clears the pins
+PROFILE_GROW = 0.12  # radial pin clearance. 0.08 was the elbow value that a real pin and a small hole ate up
 OUT_R = 22.0
 OUT_PIN_R = 3.0
 OUT_N = 8
@@ -145,36 +149,25 @@ def hex_prism(across_flats, z0, z1):
     return extrude_polygon(pts, z0, z1)
 
 
-def cycloid_points(n_pts=900):
-    """Disc profile in the disc's own centre. Assemble it shifted by +ECC on x."""
-    rr = PIN_RAD + PROFILE_GROW
-    pts = []
-    for i in range(n_pts):
-        phi = 2 * math.pi * i / n_pts
-        gamma = math.atan2(math.sin((1 - PIN_N) * phi), (PIN_R / (ECC * PIN_N)) - math.cos((1 - PIN_N) * phi))
-        x = PIN_R * math.cos(phi) - rr * math.cos(phi + gamma) - ECC * math.cos(PIN_N * phi)
-        y = -PIN_R * math.sin(phi) + rr * math.sin(phi + gamma) + ECC * math.sin(PIN_N * phi)
-        pts.append((x, y))
-    return pts
-
-
-def rotate_pts(pts, deg):
-    """Rotate xy points about the origin by deg."""
-    a = math.radians(deg)
-    c, s = math.cos(a), math.sin(a)
-    return [(c * x - s * y, s * x + c * y) for x, y in pts]
+def cycloid_points(rot_deg=0.0):
+    """Disc outline from the elbow offset curve, in the disc's own centre."""
+    pts = cy.disc_profile(PIN_R, ECC, PIN_RAD, RATIO, n=2500, dr=PROFILE_GROW, rot_deg=rot_deg)
+    return [tuple(p) for p in pts]
 
 
 def cycloid_disc(z0, z1, shift_x, rot_deg):
-    """One cycloid disc, centre shifted by shift_x, profile rotated by rot_deg."""
-    pts = rotate_pts(cycloid_points(), rot_deg)
+    """One cycloid disc, centre shifted by shift_x, profile rotated by rot_deg.
+
+    Output holes are pin radius + eccentricity + 0.20 mm. That is the orbit
+    of the pin in the disc, plus play. An earlier hole added an extra
+    R*sin(180/ratio) term and was about 1.7 mm too large in radius.
+    """
+    pts = cycloid_points(rot_deg)
     body = extrude_polygon(pts, z0, z1).translate((shift_x, 0, 0))
     body = body - cyl(11.0, z0 - 0.2, z1 + 0.2, shift_x, 0)
-    # the two discs are 180 deg apart on the crank, so one hole pattern
-    # sits about R*sin(180/ratio) off the shared output pins. the holes are opened to suit.
-    hole_r = OUT_PIN_R + ECC + OUT_R * math.sin(math.radians(180.0 / RATIO)) + 0.3
+    hole_r = OUT_PIN_R + ECC + 0.20
     for a in every(OUT_N):
-        x, y = polar(OUT_R, a + rot_deg)
+        x, y = polar(OUT_R, a)
         body = body - cyl(hole_r, z0 - 0.2, z1 + 0.2, x + shift_x, y)
     return body
 
@@ -207,7 +200,7 @@ def build():
 
     # two discs, eccentrics opposite, second disc turned by half a turn of the crank
     add("03 Cycloid disc A 45 lobe", "20MnCr5", cycloid_disc(17, 25, ECC, 0.0))
-    add("04 Cycloid disc B 45 lobe", "20MnCr5", cycloid_disc(27, 35, -ECC, 180.0 / RATIO))
+    add("04 Cycloid disc B 45 lobe", "20MnCr5", cycloid_disc(27, 35, -ECC, -180.0 / RATIO))
     for name, z0, sx in (("05 Eccentric bearing A", 17, ECC), ("06 Eccentric bearing B", 27, -ECC)):
         add(name, "Bearing (purchased)", tube(11, 8, z0, z0 + 8).translate((sx, 0, 0)))
 
