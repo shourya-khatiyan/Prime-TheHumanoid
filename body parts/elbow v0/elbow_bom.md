@@ -1,5 +1,7 @@
 # VAYN Elbow Actuator — BOM, Print and Sourcing Guide, Rev 1.0
 
+**Do not reprint this actuator.** The build jammed: the dowels were tight in the housing grooves and in the holes, the discs had to be hammered in, and the joint would not turn. Fit check: [`fit-failure.md`](fit-failure.md).
+
 **Purpose:** print, buy and assemble one elbow actuator without opening the CAD.
 
 **Source of truth:**

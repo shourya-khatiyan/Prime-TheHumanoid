@@ -1,6 +1,6 @@
 # Elbow actuator: research
 
-Status: CAD Rev 1.0 done. The part specification is in [`parts.md`](parts.md), ordering and print in [`bom.md`](bom.md), and the model and calc in `cad/`. Values below marked "CAD" come from `cad/calc.txt` and replace the earlier estimates. Arm geometry, structure and the shoulder re-check are in [`../arm/research.md`](../arm/research.md).
+Status: CAD Rev 1.0 was printed once and jammed on assembly. Do not reprint it. The fit check is in [`fit-failure.md`](fit-failure.md). The part specification is in [`parts.md`](parts.md), ordering and print in [`elbow_bom.md`](elbow_bom.md), and the model and calc in `cad/`. Values below marked "CAD" come from `cad/calc.txt` and replace the earlier estimates. Arm geometry, structure and the shoulder re-check are in [`../arm/research.md`](../arm/research.md).
 
 ## 1. Summary
 
