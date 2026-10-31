@@ -346,25 +346,32 @@ for gap in (1.2, 1.4, 2.0):
 
 # ---------------------------------------------------------------- 9 motor fit + encoder
 line("9 motor fit, axial stack and encoder centring")
-MOTOR_D, MOTOR_H, STUB_H, CAP_D = 92.0, 27.5, 8.9, 17.4  # flat face to flat face is 27.5. stub and hex are extra.
+MOTOR_D, MOTOR_H, STUB_H = 92.0, 27.5, 8.9  # flat face to flat face is 27.5. stub and hex are extra.
+HEX_AF, HEX_CORNER, HEX_BORE, COVER_D, COVER_BORE = 17.3, 20.1, 21.1, 10.0, 11.0
 print(f"motor d{MOTOR_D} in housing bore d94.5: radial {(94.5 - MOTOR_D) / 2:.2f}; rotor bell to bore {(94.5 - MOTOR_D) / 2:.2f}")
-print(f"rear cap d{CAP_D} (rotates) in plate relief d19.5: radial {(19.5 - CAP_D) / 2:.2f}; it is not a pilot")
+print(f"hex across flats {HEX_AF}, across corners {HEX_CORNER} (flats x 2 / sqrt(3)), in plate bore d{HEX_BORE}: "
+      f"radial {(HEX_BORE - HEX_CORNER) / 2:.2f}; it is not a pilot")
+print(f"magnet cover d{COVER_D} in plate bore d{COVER_BORE}: radial {(COVER_BORE - COVER_D) / 2:.2f}; "
+      "the centre hole is covered, so there is no pin")
 print(f"front stub {STUB_H} long in sun-1 bore d3.5 x 10.5: end clearance {10.5 - STUB_H:.1f}, radial {(3.5 - 2.9) / 2:.2f}")
-print("shim  partition  sun tip-C1F  sun disc-C1R  magnet-IC  planet-1 face  M4 engage")
+print("plate motor face at 18.4, mount face at 19.4 with the 1.0 shim. hex stands 6.7 proud (z 12.7 to 19.4). "
+      "cover face at 6.2, which is 13.2 behind the mount face. chip ends at 5.2, so air to the cover face is 1.0. "
+      "the cover wall is not measured, so this is not the magnet-to-chip gap")
+print("shim  partition  sun tip-C1F  sun disc-C1R  cover-IC air  planet-1 face  M4 engage")
 for s in (0.5, 1.0, 1.5):
     ds = s - 1.0  # motor + sun-1 offset from nominal
-    cover = 10.0 - max(0.0, abs(ds) - 0.2)  # sun 10.4 face over the 10.0 planet
-    print(f"{s:4.1f}  {1.5 - ds:9.2f}  {1.5 - ds:11.2f}  {1.5 - ds:12.2f}  {1.25 + ds:9.2f}  {cover:13.1f}  {6.0 - s:9.1f}")
-print("shim choice: mount the motor with 1.0, measure plate front face -> rotor hub face; shim = 1.0 + (33.5 - reading)")
+    face = 10.0 - max(0.0, abs(ds) - 0.2)  # sun 10.4 face over the 10.0 planet
+    print(f"{s:4.1f}  {1.5 - ds:9.2f}  {1.5 - ds:11.2f}  {1.5 - ds:12.2f}  {1.0 + ds:11.2f}  {face:13.1f}  {5.6 - s:9.1f}")
+print("shim choice: mount the motor with 1.0, measure plate front face -> rotor hub face; shim = 1.0 + (28.5 - reading)")
 fm_m4 = preload("M4", 2.0)
-for le in (4.5, 5.0, 5.5):
+for le in (4.1, 4.6, 5.1):
     a_sh = 0.75 * math.pi * 4.0 * le
     print(f"stator M4 x{le} engage in motor base (Al, tau 207): strip {a_sh * 207:5.0f} N vs FM {fm_m4:.0f} N @2.0 N*m  SF {a_sh * 207 / fm_m4:.1f}")
-# radial offset of the magnet axis from the ic centre, mm
-budget = {"magnet in holder bore": 0.03, "holder pin in cap hole": 0.05, "cap hole runout vs rotor axis": 0.05,
-          "rotor axis vs stator holes (motor)": 0.10, "stator CSK screws in plate": 0.10,
+# radial offset of the magnet axis from the ic centre, mm. the glued cover runout is not measured.
+budget = {"rotor axis vs stator holes (motor)": 0.10, "stator CSK screws in plate": 0.10,
           "PCB holes d3.4 on M3": 0.20, "PCB boss positions": 0.02, "IC on PCB": 0.10}
 for k, v in budget.items():
     print(f"  {k:36s} {v:.2f}")
 wc, rss = sum(budget.values()), math.sqrt(sum(v ** 2 for v in budget.values()))
-print(f"encoder centring: worst case {wc:.2f} mm, RSS {rss:.2f} mm vs 0.5 mm allowed (ams AS5047P board manual)")
+print(f"encoder centring without the glued cover: worst case {wc:.2f} mm, RSS {rss:.2f} mm. "
+      "cover runout is not measured, so this does not close the 0.5 mm allowance")

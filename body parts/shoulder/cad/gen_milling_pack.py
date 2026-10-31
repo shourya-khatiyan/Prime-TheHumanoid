@@ -56,7 +56,7 @@ DENSITY = {"6082-T6": 2.70, "20MnCr5": 7.85}  # g/cm3
 
 # model material key that build() must still be using
 MODEL_MAT = {
-    "01": "6082-T6", "06": "6082-T6", "15": "6082-T6", "45": "6082-T6",
+    "01": "6082-T6", "15": "6082-T6", "45": "6082-T6",
     "18": "20MnCr5", "22": "20MnCr5",
     "24": "20MnCr5", "36": "20MnCr5",
     "16": "20MnCr5", "33": "20MnCr5",
@@ -80,18 +80,11 @@ PARTS = [
      "CNC mill", "No anodize",
      ["4 × M2 countersunk on Ø54 mm.", "Cable slot at 0°. Notch at 180° for the phase-lead slot.",
       "Screws are a light joint, 0.3 N·m."]),
-    ("06", "06_magnet_holder.pdf", "Magnet holder", 1, "6082-T6", "Housing family",
-     "Ø10 × 4.75 mm, pin Ø2.8 × 2 mm", "Ø12 × 40 mm 6082-T6 bar",
-     "CNC lathe", "No anodize",
-     ["Must stay non-magnetic. 6082 is an aluminium-silicon-magnesium alloy and is non-magnetic.",
-      "Magnet pocket Ø6 × 2.5 mm in the rear face.",
-      "Pin Ø2.8 is a stand-in. Turn the pin to the measured rotor-cap hole, clearance 0–0.02 mm.",
-      "Pocket concentric to the pin within 0.03 mm TIR."]),
     ("15", "15_housing.pdf", "Housing", 1, "6082-T6", "Housing family",
      "Ø100 × 87 mm", "Ø105 × 100 mm 6082-T6 bar",
      "CNC lathe and mill, 4th axis for the radial holes",
      "No anodize. Leave the fits and the threads bare.",
-     ["Rear bore Ø94.5, rear 8 mm H7, open through the rear face (future metal plate).",
+     ["Rear bore Ø94.5, open through the rear face. Plate plug seats from Z 2 to Z 18.4.",
       "8 × Ø3.2 radial holes with 90° countersinks at Z 6.1, centres 0.1 mm forward of the plug threads.",
       "Rear-face notches 4 × 1 mm at 0° and 15 × 3 mm at 180°.",
       "Partition 2.5 mm at Z 45–47.5. Labyrinth Ø41.0 H8.",
@@ -208,11 +201,11 @@ OTHERS = [
      "DIN 988 8 × 14 × 0.3, or the same strip",
      "Bore must spin free on the Ø8 h6 pin. Check one sample first."),
     ("Shim stock", "48 Motor shims", "a 0.25 and 0.5 mm set",
-     "Ø50 / Ø19.5 mm, 4 × Ø4.5 on Ø40 at 45°", "12.5 g for two 0.5 mm shims",
+     "Ø50 / Ø21.1 mm, 4 × Ø4.5 on Ø40 at 45°", "nominal pack 1.0 mm",
      "Stainless or spring-steel shim stock, flat within 0.02 mm",
      "Nominal pack is 1.0 mm. Not milled."),
     ("Catalogue", "12 Motor", "1", "EaglePower LA8308, Ø92.0 × 27.5 mm flat to flat", "336 g",
-     "KV90, front stub Ø2.9 × 8.9, rear cap Ø17.4", "Purchase."),
+     "KV90, stub Ø2.9 × 8.9, hex 17.3 across flats, 6.7 proud, Ø10 cover", "Purchase."),
     ("Catalogue", "02 Lid screws", "4", "M2 × 4 countersunk", "0.13 g each",
      "ISO 7046 or 14581, grade 8.8 or A2", "Purchase. Torque 0.3 N·m."),
     ("Catalogue", "03 Encoder PCB", "1", "30 × 30 × 1.6 mm", "—",
@@ -220,11 +213,11 @@ OTHERS = [
     ("Catalogue", "04 Encoder IC", "1", "TSSOP-14", "—", "AS5047P-ATSM", "Purchase."),
     ("Catalogue", "05 PCB screws", "4", "M3 × 6 pan head, rhombus 24/19", "0.46 g each",
      "ISO 7045 or 14583", "Purchase. Torque 0.4 N·m."),
-    ("Catalogue", "07 Encoder magnet", "1", "Ø6 × 2.5 mm, diametric", "0.53 g",
-     "NdFeB, AS5000-MD6H-2", "Purchase. Glue into the magnet holder."),
+    ("Catalogue", "07 Encoder magnet", "0", "already under the Ø10 cover", "—",
+     "Glued on the motor hex", "Do not buy a second magnet. Do not pin the covered hole."),
     ("Catalogue", "09 Plate screws", "8", "M3 × 8 countersunk", "0.55 g each",
      "ISO 10642, grade 12.9", "Purchase. Used when the metal plate is fitted. Torque 1.2 N·m."),
-    ("Catalogue", "11 Stator screws", "4", "M4 × 10 countersunk", "1.24 g each",
+    ("Catalogue", "11 Stator screws", "4", "M4 × 16 countersunk", "—",
      "ISO 10642", "Purchase. 2.0 N·m maximum into the motor."),
     ("Catalogue", "17 Ring-1 dowels", "2", "Ø3 × 8 mm m6", "0.44 g each",
      "ISO 8734, hardened", "Purchase. Pressed into ring-1, sliding in the housing slot."),
@@ -276,7 +269,7 @@ FITS = [
 STOCK = [
     ("6082-T6 round. 6061-T6 is allowed if 6082 is not in stock", "Ø105 × 100 mm", "Housing"),
     ("6082-T6 plate, same alloy as the bar", "5 mm, 110 × 110 mm", "Front cover and encoder lid"),
-    ("6082-T6 round, same alloy", "Ø12 × 40 mm", "Magnet holder"),
+    ("6082-T6 round, same alloy", "none", "No magnet holder. The magnet is already on the motor"),
     ("20MnCr5, annealed, one heat. 16MnCr5 is allowed", "Ø105 × 160 mm, one bar",
      "Ring-1, cartridge, carrier-1 rear, both carrier-2 halves"),
     ("20MnCr5, annealed, the same heat", "Ø65 × 35, Ø45 × 30, Ø35 × 120 mm",
@@ -487,7 +480,7 @@ def write_quote(path, items):
     story.append(P("Part 08, the rear mount plate, is 3D-printed for this build and is not in the STEP. The housing is still machined with the Ø94.5 H7 bore and the eight radial screw holes, so a metal plate can replace the print later.", sty["body"]))
 
     story.append(P("Two metals", sty["h2"]))
-    story.append(P("6082-T6 for the housing family: lid, magnet holder, housing, front cover. 6061-T6 may replace 6082 if that is what the shop has; use one aluminium only. 20MnCr5, annealed, for every steel part. Carburize only the teeth: sun-1, both planet sets, ring-1, ring-2, and the sun on carrier-1 front. Mask the carrier-1 front plate. Leave carrier-1 rear and both carrier-2 halves annealed. 16MnCr5 may replace 20MnCr5. Do not use 7075, EN19, EN24, or a second steel.", sty["body"]))
+    story.append(P("6082-T6 for the housing family: lid, housing, front cover. 6061-T6 may replace 6082 if that is what the shop has; use one aluminium only. 20MnCr5, annealed, for every steel part. Carburize only the teeth: sun-1, both planet sets, ring-1, ring-2, and the sun on carrier-1 front. Mask the carrier-1 front plate. Leave carrier-1 rear and both carrier-2 halves annealed. 16MnCr5 may replace 20MnCr5. Do not use 7075, EN19, EN24, or a second steel.", sty["body"]))
 
     story.append(P("1. Parts to machine", sty["h2"]))
     by_name = {}
@@ -549,8 +542,8 @@ def write_quote(path, items):
         ["Item", "Qty", "Size", "Mass", "Material or spec", "Why it is not milled"],
         other_rows, [48, 28, 62, 32, 100, 126], sty))
 
-    story.append(P("5. Still open before the pin is finished", sty["h2"]))
-    story.append(P("The plain hole in the motor rear cap is not measured yet. The model uses Ø3 mm, at least 2 mm deep. Machine the magnet-holder pocket now, and turn the pin after that hole is measured. The cartridge bore Ø85 is machined after the two 61813 bearings are measured.", sty["body"]))
+    story.append(P("5. Still open", sty["h2"]))
+    story.append(P("The magnet is already glued under the Ø10 cover. Do not machine a holder and do not turn a pin into the covered hole. The cover wall thickness is still unmeasured. The cartridge bore Ø85 is machined after the two 61813 bearings are measured.", sty["body"]))
 
     def footer(c, doc):
         c.saveState()

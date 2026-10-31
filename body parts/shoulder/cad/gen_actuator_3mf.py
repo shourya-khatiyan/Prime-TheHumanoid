@@ -64,6 +64,14 @@ def box(x0, x1, y0, y1, z0, z1):
     return Manifold.cube((x1 - x0, y1 - y0, z1 - z0)).translate((x0, y0, z0))
 
 
+def hex_prism(across_flats, z0, z1):
+    """Regular hex prism. across_flats is the flat-to-flat width."""
+    radius = across_flats / math.sqrt(3.0)
+    pts = [(radius * math.cos(math.radians(60 * i + 30)),
+            radius * math.sin(math.radians(60 * i + 30))) for i in range(6)]
+    return Manifold.extrude(CrossSection([pts]), z1 - z0).translate((0, 0, z0))
+
+
 def polar(r, deg):
     """Return (x, y) for radius r at angle deg."""
     a = math.radians(deg)
@@ -211,19 +219,19 @@ def build():
     cart_dowel_ang = [11.25, 191.25]
     hall_ang = 270.0
 
-    # motor flat face to flat face is 27.5 (hub face to rear stator face). stub and hex are extra. od 92.
-    # rear cap d17.4 turns with the rotor (plain centre hole), flexible phase leads leave the rear face at r 32 (13 bundle)
+    # motor flat face to flat face is 27.5. hex stands 6.7 past the rear face, cover adds 6.5.
     motor_r, motor_h = 46.0, 27.5
-    stub_r, stub_h, cap_r = 1.45, 8.9, 8.7
+    stub_r, stub_h = 1.45, 8.9
     lead_ang = 180.0  # phase lead exit angle
     shim_t = 1.0  # fitted pack, 0.5..1.5; moves only the motor and sun-1
-    z_mount = 10.0 + shim_t
+    z_face = 18.4  # plate is this long so the hex and the magnet cover fit behind the motor
+    z_mount = z_face + shim_t
     z_hub = z_mount + motor_h
-    z_hub0 = 10.0 + 1.0 + motor_h  # hub face at the nominal 1.0 pack; housing and gearbox are drawn against it
+    z_hub0 = z_face + 1.0 + motor_h
     ds = z_hub - z_hub0  # motor + sun-1 offset from nominal
     dz = z_hub0 - 38.5  # gearbox shift against rev 1.3
     plug_r, z_plug, rad_z, rad_ang = 47.25, 2.0, 6.0, every(8, 22.5)  # plate plug in the housing bore, radial m3 ring
-    z_ic = 5.0  # ic top face
+    z_ic = 5.2  # chip is 1.1 thick on a board that ends at 4.1
 
     def radial(s, a, z):
         """Turn a part drawn along +z from z = -50 into one pointing inward from r 50 at angle a, height z."""
@@ -244,41 +252,39 @@ def build():
     add("04 AS5047P IC (TSSOP-14 envelope)", "Electronics", box(-2.5, 2.5, -2.2, 2.2, 4.1, z_ic))
     for i, (r, a) in enumerate(enc_holes):
         x, y = polar(r, a)
-        add(f"05.{i + 1} Screw M3x6 pan PCB", "Steel 12.9 fastener", cyl(3.0, 1.7, 4.1, x, y) + cyl(1.5, 4.05, 8.5, x, y))
-    z_mag = z_mount - 4.75  # holder length 4.75: magnet-ic gap 1.25 at the nominal pack, 0.75..1.75 over the shim range
-    holder = cyl(5, z_mag, z_mount) - cyl(3, z_mag - 0.1, z_mag + 2.5) + cyl(1.4, z_mount - 0.01, z_mount + 2.0)
-    add("06 Magnet holder 6082-T6 D10, pin D2.8 into the rotor cap", "6082-T6", holder)
-    add("07 Encoder magnet D6x2.5 diametric", "NdFeB magnet", cyl(3, z_mag, z_mag + 2.5))
-    plate = cyl(50, 0, z_plug) + cyl(plug_r, z_plug - 0.01, 10)  # d100 seat rim + d94.5 k6 plug
-    plate = plate - cyl(30.05, -1, 2) - cyl(25, 1.9, 6.0) - cyl(7, 5.9, 11)
-    plate = plate - cyl(9.75, 8.5, 10.1)  # relief for the rotating d17.4 cap
+        add(f"05.{i + 1} Screw M3x6 pan PCB", "Steel 12.9 fastener", cyl(2.75, 0.55, 2.5, x, y) + cyl(1.5, 2.45, 8.5, x, y))
+    plate = cyl(50, 0, z_plug) + cyl(plug_r, z_plug - 0.01, z_face)  # d100 seat rim + d94.5 k6 plug
+    plate = plate - cyl(30.05, -1, 2) - box(-15.3, 15.3, -15.3, 15.3, 1.9, 6.3)
+    # hex corners are 20.1 mm across. bore is 21.1. the cover is a smaller bore in front of that.
+    plate = plate - cyl(5.5, 6.0, 12.7) - cyl(10.55, 12.2, z_face + 0.1)
     for r, a in enc_holes:
         x, y = polar(r, a)
-        plate = plate + cyl(3.5, 4.1, 6.05, x, y) - cyl(1.25, 4.0, 8.0, x, y)  # m3 bosses on the rhombus
+        plate = plate + cyl(3.5, 4.1, 6.45, x, y) - cyl(1.25, 4.0, 8.0, x, y)  # m3 bosses on the rhombus
     plate = plate - holes(27, 2.0, 1.9, 6.0, every(4, 45))  # lid m2 tapped
     plate = plate - holes(38, 5.0, -1, 7.0, rear_ang) - holes(38, 4.0, -1, 6.0, [120, 300])  # torso helicoil m4 + dowel
     plate = plate - pattern(lambda a: radial(cyl(1.5, -plug_r - 1, -41.25), a, rad_z), rad_ang)  # radial m3 tapped 6 deep
     grooves = [box(24, 57, -2, 2, -1, 3.0),  # encoder cable groove
                box(25, 57, -7.5, 7.5, -1, 5).rotate((0, 0, lead_ang))]  # phase lead rear groove
-    plate = plate - grooves[0] - grooves[1] - box(25, 39, -7.5, 7.5, -1, 11).rotate((0, 0, lead_ang))  # lead slot through
-    plate = plate - tube(40, 26, 7.5, 10.1)  # front lightening pocket
+    plate = plate - grooves[0] - grooves[1] - box(25, 39, -7.5, 7.5, -1, z_face + 0.2).rotate((0, 0, lead_ang))  # lead slot through
+    plate = plate - tube(40, 26, z_face - 3, z_face + 0.1)  # front lightening pocket
     for a in stator_ang:
-        plate = plate - csk_hole(*polar(stator_pcd, a), 6.0, 4.0, 4.0, 1)
+        plate = plate - csk_hole(*polar(stator_pcd, a), 8.0, 12.0, 4.0, 1)
     add("08 Rear mount plate 6082-T6 (D100 rim + D94.5 plug)", "6082-T6", plate)
     for i, a in enumerate(rad_ang):
         add(f"09.{i + 1} Screw M3x8 CSK radial housing->plate", "Steel 12.9 fastener", radial(csk(0, 0, -50, 8.0, 3.0, 1), a, rad_z))
     for i, a in enumerate(stator_ang):
-        add(f"11.{i + 1} Screw M4x10 CSK stator", "Steel 12.9 fastener", csk(*polar(stator_pcd, a), 6.0, 10.0, 4.0, 1))
-    shim = tube(25, 9.75, 10.0, z_mount) - holes(stator_pcd, 4.5, 9.9, z_mount + 0.1, stator_ang)
-    add("48 Motor shim pack 2x0.5 D50/D19.5", "Spring steel", shim)
+        add(f"11.{i + 1} Screw M4x16 CSK stator", "Steel 12.9 fastener", csk(*polar(stator_pcd, a), 8.0, 16.0, 4.0, 1))
+    shim = tube(25, 10.55, z_face, z_mount) - holes(stator_pcd, 4.5, z_face - 0.1, z_mount + 0.1, stator_ang)
+    add("48 Motor shim pack 2x0.5 D50/D21.1", "Spring steel", shim)
 
     # ---- motor envelope (mount face z_mount, hub face z_hub)
     stator = cyl(motor_r, z_mount, z_mount + 3) + cyl(43, z_mount + 3, z_hub - 3)
-    stator = stator - cyl(cap_r + 0.3, z_mount - 1, z_hub) - holes(stator_pcd, 4.0, z_mount - 0.1, z_mount + 6, stator_ang)
+    stator = stator - holes(stator_pcd, 4.0, z_mount - 0.1, z_mount + 6, stator_ang)
     add("12 LA8308 stator + base (envelope, measured)", "Motor envelope", stator)
     bell = tube(motor_r, 44.5, z_mount + 3.5, z_hub - 2) + cyl(motor_r, z_hub - 2, z_hub) - holes(rotor_pcd, 3.0, z_hub - 2.1, z_hub + 0.1, rotor_ang)
-    bell = bell + cyl(stub_r, z_hub - 0.1, z_hub + stub_h) + cyl(cap_r, z_mount, z_mount + 3) - cyl(1.5, z_mount - 1, z_mount + 2.1)
-    add("13 LA8308 rotor bell + front stub + rear cap (envelope, measured)", "Motor envelope", bell)
+    bell = bell + cyl(stub_r, z_hub - 0.1, z_hub + stub_h)
+    bell = bell + hex_prism(17.3, z_mount - 6.7, z_mount) + cyl(5.0, z_mount - 13.2, z_mount - 6.65)
+    add("13 LA8308 rotor bell + hex cap + magnet cover", "Motor envelope", bell)
     add("14 LA8308 shaft D6", "52100 bearing steel", cyl(3, z_mount + 3, z_hub - 2))
 
     # ---- housing (Z 2-84+dz): d100 tube, d94.5 bore open at the rear over the plate plug
@@ -387,7 +393,7 @@ SHOULDER_MESHES = [("18 Sun-1", "24.1 Planet-1"), ("24.1 Planet-1", "16 Ring-1")
                    ("22 Carrier-1 front", "36.1 Planet-2"), ("36.1 Planet-2", "33 Bearing cartridge"),
                    ("13 LA8308 rotor", "15 Housing"), ("18 Sun-1", "15 Housing"), ("18 Sun-1", "21 Carrier-1 rear"),
                    ("18 Sun-1", "22 Carrier-1 front"), ("13 LA8308 rotor", "08 Rear"),
-                   ("06 Magnet holder", "08 Rear"), ("07 Encoder magnet", "04 AS5047P")]
+                   ("04 AS5047P", "13 LA8308")]
 
 
 def check(parts, meshes=SHOULDER_MESHES, motor_g=336):

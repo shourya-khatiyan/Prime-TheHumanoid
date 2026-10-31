@@ -195,6 +195,15 @@ def ring_gear(n, m, r_od, z0, z1, rot_deg=0.0):
     return cyl(r_od, z0, z1) - cut.translate((0, 0, z0 - 1))
 
 
+def hex_prism(across_flats, z0, z1):
+    """Regular hex prism. across_flats is the flat-to-flat width."""
+    radius = across_flats / math.sqrt(3.0)
+    pts = [cq.Vector(radius * math.cos(math.radians(60 * i + 30)),
+                     radius * math.sin(math.radians(60 * i + 30)), 0) for i in range(6)]
+    solid = cq.Solid.extrudeLinear(cq.Wire.makePolygon(pts, close=True), [], cq.Vector(0, 0, z1 - z0))
+    return Solid(solid).translate((0, 0, z0))
+
+
 def ball_bearing(d, D, B, z0, d1, D1, nballs, dball, seals=False):
     """Deep-groove ball bearing: rings with toroidal grooves, ball set, seals."""
     zc = z0 + B / 2
@@ -224,7 +233,8 @@ def write_step(parts, path, assy_name=f"VAYN_Shoulder_Actuator_Rev{g.REV}"):
 def use_occ_kernel():
     """Point build() in gen_actuator_3mf at the OpenCascade primitives."""
     for name, fn in dict(cyl=cyl, tube=tube, box=box, pattern=pattern, ext_gear=ext_gear,
-                         ring_gear=ring_gear, ball_bearing=ball_bearing, Manifold=Kernel).items():
+                         ring_gear=ring_gear, hex_prism=hex_prism, ball_bearing=ball_bearing,
+                         Manifold=Kernel).items():
         setattr(g, name, fn)
 
 

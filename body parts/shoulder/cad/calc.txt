@@ -100,22 +100,21 @@ homing magnet D3x2 N52 on-axis field at 2.0 mm: 97 mT (DRV5033FA BOP max 6.8 mT)
 
 === 9 motor fit, axial stack and encoder centring ===============
 motor d92.0 in housing bore d94.5: radial 1.25; rotor bell to bore 1.25
-rear cap d17.4 (rotates) in plate relief d19.5: radial 1.05; it is not a pilot
+hex across flats 17.3, across corners 20.1 (flats x 2 / sqrt(3)), in plate bore d21.1: radial 0.50; it is not a pilot
+magnet cover d10.0 in plate bore d11.0: radial 0.50; the centre hole is covered, so there is no pin
 front stub 8.9 long in sun-1 bore d3.5 x 10.5: end clearance 1.6, radial 0.30
-shim  partition  sun tip-C1F  sun disc-C1R  magnet-IC  planet-1 face  M4 engage
- 0.5       2.00         2.00          2.00       0.75            9.7        5.5
- 1.0       1.50         1.50          1.50       1.25           10.0        5.0
- 1.5       1.00         1.00          1.00       1.75            9.7        4.5
-shim choice: mount the motor with 1.0, measure plate front face -> rotor hub face; shim = 1.0 + (33.5 - reading)
-stator M4 x4.5 engage in motor base (Al, tau 207): strip  8779 N vs FM 2980 N @2.0 N*m  SF 2.9
-stator M4 x5.0 engage in motor base (Al, tau 207): strip  9755 N vs FM 2980 N @2.0 N*m  SF 3.3
-stator M4 x5.5 engage in motor base (Al, tau 207): strip 10730 N vs FM 2980 N @2.0 N*m  SF 3.6
-  magnet in holder bore                0.03
-  holder pin in cap hole               0.05
-  cap hole runout vs rotor axis        0.05
+plate motor face at 18.4, mount face at 19.4 with the 1.0 shim. hex stands 6.7 proud (z 12.7 to 19.4). cover face at 6.2, which is 13.2 behind the mount face. chip ends at 5.2, so air to the cover face is 1.0. the cover wall is not measured, so this is not the magnet-to-chip gap
+shim  partition  sun tip-C1F  sun disc-C1R  cover-IC air  planet-1 face  M4 engage
+ 0.5       2.00         2.00          2.00         0.50            9.7        5.1
+ 1.0       1.50         1.50          1.50         1.00           10.0        4.6
+ 1.5       1.00         1.00          1.00         1.50            9.7        4.1
+shim choice: mount the motor with 1.0, measure plate front face -> rotor hub face; shim = 1.0 + (28.5 - reading)
+stator M4 x4.1 engage in motor base (Al, tau 207): strip  7999 N vs FM 2980 N @2.0 N*m  SF 2.7
+stator M4 x4.6 engage in motor base (Al, tau 207): strip  8974 N vs FM 2980 N @2.0 N*m  SF 3.0
+stator M4 x5.1 engage in motor base (Al, tau 207): strip  9950 N vs FM 2980 N @2.0 N*m  SF 3.3
   rotor axis vs stator holes (motor)   0.10
   stator CSK screws in plate           0.10
-  PCB holes d2.7 on M2.5               0.10
+  PCB holes d3.4 on M3                 0.20
   PCB boss positions                   0.02
   IC on PCB                            0.10
-encoder centring: worst case 0.55 mm, RSS 0.22 mm vs 0.5 mm allowed (ams AS5047P board manual)
+encoder centring without the glued cover: worst case 0.52 mm, RSS 0.27 mm. cover runout is not measured, so this does not close the 0.5 mm allowance

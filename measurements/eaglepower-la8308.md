@@ -29,15 +29,15 @@ Drawing rule: the mounting face is Z = 0. Positive Z goes toward the rotor hub (
 
 ## Used in CAD and not measured
 
-These are in `body parts/shoulder/cad/gen_actuator_3mf.py` and `body parts/arm/cad/arm_params.py`. Do not copy them into a new design.
+These are in `body parts/shoulder/cad/gen_actuator_3mf.py` and `body parts/arm/cad/arm_params.py`. Rows marked assumed are still not measurements. Do not copy those into a new design.
 
 | Item | CAD value | Status |
 |---|---|---|
-| Flat face to flat face | 32.5 | Wrong. Measured value is 27.5, and that length excludes the stub and the hex cap |
+| Flat face to flat face | 27.5 in the shoulder and arm generators | Corrected. This length still excludes the stub and the hex cap |
 | Body between the two end faces | Ø86 | ASSUMED |
 | Mounting-flange thickness | 3 | ASSUMED |
 | Rotor bell inner diameter | Ø89 | ASSUMED |
-| Rear cap | Drawn as a Ø17.4 cylinder, 3 long, inside the mounting face, with a Ø3 pin hole | ASSUMED. Wrong. The real cap is a hex, 6.7 proud, and the hole is covered |
+| Rear cap | Shoulder generator: hex 17.3 across flats, 6.7 proud of the rear face, Ø10 cover to 13.2, plate bores Ø21.1 and Ø11 | Corrected in `body parts/shoulder/cad/gen_actuator_3mf.py`. Cover wall thickness is still not measured |
 | Shaft inside the motor | Ø6 | ASSUMED |
 | Rotor bolts | Drawn as M3 on Ø31 and on Ø25 | ASSUMED. Wrong. Real holes are M2 on a 38 circle, deeper than 6 |
 | Hub face | Drawn with a recess for a boss | ASSUMED. The real face is flat apart from the stub |

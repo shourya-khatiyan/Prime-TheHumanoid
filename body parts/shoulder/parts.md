@@ -4,7 +4,7 @@ Z = 0 is the rear face. The axis is Z, pointing toward the arm. Masses of machin
 
 ## Summary
 
-This is a two-stage planetary shoulder joint, 30:1 overall (6:1 then 5:1). The envelope is a plain Ø100 mm cylinder, 100.5 mm long. Modelled parts weigh about 2,406 g at the 6082-T6 density of 2.70 g/cm³. The motor adds 336 g, so the actuator is about 2.74 kg.
+This is a two-stage planetary shoulder joint, 30:1 overall (6:1 then 5:1). The envelope is a plain Ø100 mm cylinder, 103.9 mm long. Modelled parts weigh about 2,568 g at the 6082-T6 density of 2.70 g/cm³. The motor adds 336 g, so the actuator is about 2.90 kg.
 
 At 24 V the motor runs at 2,160 rpm, the first carrier at 360 rpm, and the output at 72 rpm. Continuous output is 30 N·m. Proof torque is 50 N·m, including a 50 N·m tilt case. The motor torque constant used in the calc is 0.0919 N·m/A, so 30 N·m needs about 12.1 A and 50 N·m needs about 20.2 A.
 
@@ -12,14 +12,14 @@ The real actuator is metal. The stage-2 sun sees about 1,350 MPa contact stress 
 
 Milling pack A (`shoulder/cad/milling/`) is the file set for the first metal quotation. Geometry is still Rev 1.4. Materials were revised on 30 October 2026 to two alloys:
 
-- **6082-T6:** encoder lid, magnet holder, housing, front cover. 6061-T6 may replace it if that is what the shop has. Use one aluminium only. 6082 is non-magnetic, so the magnet holder still satisfies the encoder rule. No anodize on this order.
+- **6082-T6:** encoder lid, housing, front cover. 6061-T6 may replace it if that is what the shop has. Use one aluminium only. No anodize on this order.
 - **20MnCr5, one heat:** every steel part. Carburize the teeth only: sun-1, both planet sets, both rings, and the sun on carrier-1 front. Mask that carrier plate. Leave carrier-1 rear and both carrier-2 halves annealed. 16MnCr5 may replace 20MnCr5. No second steel, no nitriding, no tooth grinding.
 
 The rear plate (08) is 3D-printed for this build and is not in the milling STEP. The housing is still machined for the metal plug, so a 6082-T6 plate can replace the print later. Planet pins stay purchased 52100 shaft. They are the needle race and are not a third milled alloy.
 
 Three classes for the fit-check print (unchanged files):
 
-- **3D print, then CNC:** 01, 06, 15, 16, 18, 21, 22, 24, 32, 33, 36, 42, 45. The print file is `shoulder/cad/actuator_print.zip`. Part 08 is printed for this build and is not sent for milling.
+- **3D print, then CNC:** 01, 15, 16, 18, 21, 22, 24, 32, 33, 36, 42, 45. The print file is `shoulder/cad/actuator_print.zip`. Part 08 is printed for this build and is not sent for milling.
 - **Purchase:** everything else. Shop links are given only for the bearings and the wave spring.
 
 ### Rev 1.4: motor fit (from the first build)
@@ -28,9 +28,9 @@ The LA8308 was measured with a vernier: Ø92.0 mm, 27.5 mm flat face to flat fac
 
 1. **The motor could not go in.** The rear lip was Ø88 mm and the front was closed by the partition, so a Ø92 motor could not pass either end. Rev 1.4 moves the lip onto the rear plate. The plate becomes a Ø94.5 plug that goes into the housing's open rear bore, and eight radial M3 countersunk screws through the housing wall hold it. The body stays a plain Ø100 cylinder.
 2. **Sun-1 hit carrier-1 and the partition.** Rev 1.3 used the catalogue height of 28.5 mm. A later reading of 32.5 mm has been withdrawn. The flat-to-flat length is 27.5 mm. The generator uses 27.5. (Sun-1 on the first build was already drilled for the stub, so the stub was not the cause.) Rev 1.4 uses the measured height, moves the gearbox forward 5.0 mm, bores sun-1 Ø3.5 × 10.5 for the 8.9 mm stub, and recesses carrier-1. Every axial gap is now 1.5 mm at the nominal shim. A shim pack (part 48) sets the axial position of the motor.
-3. **The rear plate hole was smaller than the Ø17.4 cap.** That cap turns with the rotor, so the plate cannot use it to centre the motor. Rev 1.4 gives it a Ø19.5 relief, 1.05 mm radial clearance. The magnet holder now plugs into the cap's centre hole, so the magnet centres on the rotor axis.
+3. **The rear cap is a hex that stands out of the motor.** Across flats it is 17.2–17.4 mm, so the corners are 20.1 mm. It stands 6.7 mm past the rear stator face. A Ø10 mm cover is glued on the hex and adds 6.5 mm, so the cover face is 13.2 mm past that face. The centre hole is under the cover. The plate bore is Ø21.1 mm over the hex and Ø11 mm over the cover. The plate motor face is at Z 18.4 so the cover face (Z 6.2) stays 1.0 mm clear of the chip.
 
-The gearbox, bearings, and gears are unchanged. They sit 5.0 mm further forward.
+The gearbox, bearings, and gears are unchanged. They move forward with the hub. The hub face is at Z 46.9.
 
 ## 01 Encoder lid
 
@@ -54,7 +54,7 @@ It sits in the rear-plate pocket, square to the axes, from Z 2.5 to Z 4.1, on th
 
 Purchase. Quantity 1. The model assigns no mass. Package TSSOP-14, part AS5047P-ATSM.
 
-It is soldered on the PCB, centred on the axis, from Z 4.1 to Z 5. The gap from the magnet to the IC is 1.25 mm with the nominal 1.0 mm shim pack, and 0.75–1.75 mm across the shim range (0.5–3.0 mm allowed). The die wants 35–70 mT. The centring budget is 0.55 mm worst case and 0.22 mm RSS, against 0.5 mm allowed (calc §9). The largest single items are the motor's own stator-hole accuracy, the countersunk stator screws, the PCB holes, and IC placement, each 0.1 mm.
+It is soldered on the PCB, centred on the axis, from Z 4.1 to Z 5.2. With the 1.0 mm shim the cover face is at Z 6.2, so the air from the chip to the cover face is 1.0 mm (0.5–1.5 mm across the shim range). The cover wall thickness is not measured, so that air gap is not the magnet-to-chip gap. The die wants 35–70 mT. The glued cover's runout is not measured, so the 0.5 mm centring allowance is not closed (calc §9).
 
 ## 05 PCB screws
 
@@ -64,19 +64,15 @@ They clamp the PCB to four bosses in the rear plate, on the 24 mm and 19 mm diag
 
 ## 06 Magnet holder
 
-3D print for the fit check, then CNC from 6082-T6. Quantity 1. Mass 0.85 g. Body Ø10 mm × 4.75 mm with a Ø6 × 2.5 mm magnet pocket in the rear face. A Ø2.8 × 2 mm pin is on the front face. 6082 is non-magnetic, which this part requires.
-
-It sits on the motor's rear cap, which turns with the rotor, from Z 6.25 to Z 11. The pin goes into the cap's plain centre hole, and that pin is what centres the magnet on the rotor axis. The model assumes a Ø3 hole at least 2 mm deep. Measure it, then turn the pin to the hole with 0–0.02 mm clearance. Glue the face and the pin with structural epoxy. The holder must be non-magnetic. Concentricity of pin to pocket within 0.03 mm TIR. No anodize required.
+Not in this actuator. The magnet is already glued under the motor's Ø10 mm cover. Do not machine a holder and do not put a pin in the covered centre hole.
 
 ## 07 Encoder magnet
 
-Purchase. Quantity 1. Mass 0.53 g in the model. Size Ø6 × 2.5 mm NdFeB, diametrically magnetised. The ams kit magnet is AS5000-MD6H-2.
-
-It sits in the holder, from Z 6.25 to Z 8.75. Glue it with structural epoxy. Keep it below about 80 °C.
+Not a separate part. It is inside the glued Ø10 mm cover on the hex. Do not fit a second magnet.
 
 ## 08 Rear mount plate
 
-3D-printed for milling pack A. Not in the milling STEP. A later metal plate is 6082-T6, the same alloy as the housing. Quantity 1. Mass 124.6 g. A Ø100 × 2 mm rim (Z 0–2) and a Ø94.5 × 8 mm plug (Z 2–10).
+3D-printed for milling pack A. Not in the milling STEP. A later metal plate is 6082-T6, the same alloy as the housing. Quantity 1. A Ø100 × 2 mm rim (Z 0–2) and a Ø94.5 plug from Z 2 to Z 18.4.
 
 It is the part that bolts to the torso. The plug takes the place of the old housing lip: the motor is screwed to the plug's front face, and the plate and motor slide into the housing's open rear bore together. The rim seats on the housing's rear face at Z 2. The plug is Ø94.5 k6 in the housing's H7 bore (−25 to +32 µm). Both parts are 6082-T6, so the fit does not change with temperature. Eight M3 radial holes, tapped 6 mm deep at Z 6 on 22.5° + 45° steps, take the housing screws. It carries:
 
@@ -85,7 +81,7 @@ It is the part that bolts to the torso. The plug takes the place of the old hous
 - the encoder pocket, and the encoder cable groove at 0°;
 - the phase-lead slot at 180°: through the plate at a radius of 25–39 mm, 15 mm wide. It continues as a 5 mm deep groove in the rear face out to the rim. Bend the flexible leads flat into this groove.
 
-A Ø19.5 × 1.5 mm relief in the front face clears the rotating Ø17.4 mm motor cap by 1.05 mm radially. The plate does not pilot the motor. The countersunk stator screws centre it. The stator hole pattern and the torso holes are unchanged from Rev 1.3, where they fitted the real motor. Two M4 jack-screw holes in the rim are worth adding so the plug can be pushed out. No anodize when the metal plate is made.
+The motor face of the plate is bored Ø21.1 mm for the hex (corners 20.1 mm, 0.50 mm radial clearance) and Ø11 mm for the Ø10 mm cover (0.50 mm radial). The hex bore runs from Z 12.2 to the motor face. The cover bore runs from Z 6.0 to Z 12.7. The plate does not pilot the motor. The countersunk stator screws centre it. The cable groove at 0° and the phase-lead slot at 180° stay. The stator hole pattern and the torso holes are unchanged from Rev 1.3, where they fitted the real motor. Two M4 jack-screw holes in the rim are worth adding so the plug can be pushed out. No anodize when the metal plate is made.
 
 ## 09 Plate screws
 
@@ -99,33 +95,33 @@ The plate dowels are gone. The radial screws locate the plate.
 
 ## 11 Stator screws
 
-Purchase. Quantity 4. Mass 1.24 g each. M4 × 10 countersunk, ISO 10642.
+Purchase. Quantity 4. M4 × 16 countersunk, ISO 10642.
 
-They clamp the motor stator to the rear plate on a Ø40 mm circle, heads toward the encoder, through the shim pack. Thread engagement in the motor is 6.0 mm minus the shim pack: 5.5, 5.0 or 4.5 mm. The motor's M4 holes must be at least 6 mm deep, so measure them. At 4.5 mm engagement and 2.0 N·m, the strip safety factor is 2.9. Use the motor maker's torque, not more than 2.0 N·m into an aluminium base. Loctite 243.
+They clamp the motor stator to the rear plate on a Ø40 mm circle, heads toward the encoder at Z 8, through the shim pack. Thread engagement in the motor is 5.6 mm minus the shim pack: 5.1, 4.6 or 4.1 mm. The motor's M4 holes are deeper than 6 mm. At 4.1 mm engagement and 2.0 N·m the strip safety factor is 2.7 (calc §9). Use the motor maker's torque, not more than 2.0 N·m into an aluminium base. Loctite 243.
 
 ## 12 Motor stator
 
 Purchase. Quantity 1. EaglePower LA8308, KV90, measured Ø92.0 × 27.5 mm flat to flat, 336 g for the whole motor. The model is an envelope only and assigns this part no mass.
 
-It sits in the Ø94.5 housing bore with 1.25 mm radial clearance. The mounting face is at Z 11, on the 1.0 mm shim pack. The flexible phase leads leave the rear face at a radius of 32 mm, in a bundle about 13 mm across, at 180°. They pass through the 15 mm plate slot and bend into the rear groove.
+It sits in the Ø94.5 housing bore with 1.25 mm radial clearance. The mounting face is at Z 19.4, on the 1.0 mm shim pack. The hub face is at Z 46.9. The flexible phase leads leave the rear face about 30 mm from the axis, under a cover about 11 × 5 mm, and can be bent. In this model they pass through the 15 mm plate slot at 180° and bend into the rear groove. The angle around the motor has not been measured.
 
 ## 13 Motor rotor
 
 Purchase. Quantity 1. Part of the same LA8308. The model is an envelope and assigns no mass.
 
-The bell runs from Z 14.5 to Z 43.5 around the stator, 1.25 mm radially inside the housing bore. Sun-1 bolts to the rotor hub face at Z 43.5, which is 1.5 mm behind the partition. The Ø2.9 × 8.9 mm front shaft stub sits in sun-1's Ø3.5 × 10.5 bore with 1.6 mm to spare. The Ø17.4 mm rear cap rotates inside the mounting face and carries the magnet holder. Sun-1 is drilled with 4 × M3 on a Ø31 mm circle and on a Ø25 mm circle. These four screws use whichever circle the real rotor has.
+The bell runs around the stator, 1.25 mm radially inside the housing bore. Sun-1 bolts to the rotor hub face at Z 46.9, which is 1.5 mm behind the partition. The Ø2.9 × 8.9 mm front shaft stub sits in sun-1's Ø3.5 × 10.5 bore with 1.6 mm to spare. The rear cap is a hex, 17.3 mm across flats in the model (measured 17.2–17.4), standing from Z 12.7 to the mounting face at Z 19.4. The Ø10 mm magnet cover continues to Z 6.2. Sun-1 in this model is still drilled 4 × M3 on Ø31 and on Ø25. The measured rotor holes are 4 × M2 on a 38 mm circle.
 
 ## 14 Motor shaft
 
-Purchase. Quantity 1. It is part of the motor. The model shows a Ø6 mm rod from Z 14 to Z 41.5 and gives that rod a mass of 6.0 g. That is not the motor weight.
+Purchase. Quantity 1. It is part of the motor. The model shows a Ø6 mm rod from Z 22.4 to Z 44.9. That rod's mass is not the motor weight.
 
-The rear end is under the rear cap. The front end comes out as the Ø2.9 stub.
+The rear end is inside the motor. The hex and the magnet cover are on the rotor, outside the rear face. The front end comes out as the Ø2.9 stub.
 
 ## 15 Housing
 
 3D print for the fit check, then CNC from 6082-T6 bar. Quantity 1. Mass 341.6 g. Ø100 mm × 87 mm, no flange.
 
-It is the structural tube from Z 2 to Z 89. The rear is open: the Ø94.5 bore runs through the rear face, so the motor, already screwed to the plate, slides in from behind. The rear 8 mm of the bore is H7 for the plate plug. Eight Ø3.2 holes with 90° countersinks, at Z 6.1 on 22.5° + 45° steps, take the radial plate screws. Two notches in the rear face match the plate's cable grooves: 4 × 1 mm at 0° and 15 × 3 mm at 180°.
+It is the structural tube. The rear is open: the Ø94.5 bore runs through the rear face, so the motor, already screwed to the plate, slides in from behind. The plate plug fills that bore from Z 2 to Z 18.4. Eight Ø3.2 holes with 90° countersinks, at Z 6.1 on 22.5° + 45° steps, take the radial plate screws. Two notches in the rear face match the plate's cable grooves: 4 × 1 mm at 0° and 15 × 3 mm at 180°.
 
 Inside, from back to front:
 
@@ -133,6 +129,8 @@ Inside, from back to front:
 - a 2.5 mm partition (Z 45–47.5) with the Ø41.0 mm H8 labyrinth;
 - the Ø85 mm K6 bore for ring-1;
 - the Ø89 mm G7 bore for the cartridge.
+
+The stations in that list are from the older stack. In the current model the partition rear face is at Z 48.4, 1.5 mm ahead of the hub face. Use `shoulder/cad/actuator.step` for every station past the plug.
 
 Twelve cooling slots, 3 mm × 20 mm at Z 19–39, pierce the motor-bore wall. Two radial slots in the front face of the partition, 3.02–3.04 mm wide and 1.5 mm deep, let the ring-1 dowels slide as the aluminium grows. The thinnest section is the 2.75 mm wall at the motor bore. At 50 N·m it sees 1.4 MPa in torsion, and 3.7 MPa in bending at the 65 N·m tilt case, so the section is set by stiffness, not by strength. The plate-screw bearing stress is 69 MPa, against a 260 MPa yield for this bar. No anodize.
 
@@ -342,6 +340,6 @@ They clamp the cover to the cartridge. The cartridge threads are M2.5 and must b
 
 ## 48 Motor shims
 
-Purchase, or laser-cut from shim stock. Quantity: a set of 0.25 mm and 0.5 mm shims, enough to stack 0.5–1.5 mm. The nominal pack is 2 × 0.5 mm, 12.5 g in the model. Size Ø50 / Ø19.5 mm, four Ø4.5 mm holes on a Ø40 mm circle at 45°. Stainless or spring-steel shim stock.
+Purchase, or laser-cut from shim stock. Quantity: a set of 0.25 mm and 0.5 mm shims, enough to stack 0.5–1.5 mm. The nominal pack is 2 × 0.5 mm. Size Ø50 / Ø21.1 mm, four Ø4.5 mm holes on a Ø40 mm circle at 45°. Stainless or spring-steel shim stock. The bore is Ø21.1 so it clears the hex corners.
 
-They sit between the rear plate (Z 10) and the motor mounting face, and set where the motor and sun-1 sit axially without moving the gearbox. To choose the pack: screw the motor to the plate on the nominal 1.0 mm pack and measure from the plate front face to the rotor hub face. The pack is 1.0 + (33.5 − reading) mm, rounded to 0.25 mm. Across 0.5–1.5 mm every axial gap (rotor to partition, sun-1 to both carrier-1 plates) stays between 1.0 and 2.0 mm. The magnet gap stays between 0.75 and 1.75 mm (calc §9).
+They sit between the rear plate (Z 18.4) and the motor mounting face (Z 19.4 at the 1.0 mm pack), and set where the motor and sun-1 sit axially without moving the gearbox. To choose the pack: screw the motor to the plate on the nominal 1.0 mm pack and measure from the plate front face to the rotor hub face. The pack is 1.0 + (28.5 − reading) mm, rounded to 0.25 mm. Across 0.5–1.5 mm every axial gap (rotor to partition, sun-1 to both carrier-1 plates) stays between 1.0 and 2.0 mm. The air from the chip to the cover face stays between 0.5 and 1.5 mm (calc §9).
