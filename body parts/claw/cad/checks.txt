@@ -1,3 +1,5 @@
+motion: servo turns the horn, the horn turns the cam, the spiral slots push the three pins, the jaws slide out
+closed shelf diameter 30.5 mm, open diameter 50.0 mm, cam turn 75 deg
 preload 1.59 N
 full stroke 2.50 N
 side push 0.53 N
@@ -6,9 +8,14 @@ min spring length 15.0 mm, solid 9.6 mm
 mast-carriage: 0.45 mm
 carriage-servo: 0.00 mm
 horn-cam: 0.00 mm
-mast-servo: 3.00 mm
+mast-servo: 2.50 mm
 jaws-housing: 0.40 mm
 ring-jaws: 0.00 mm
-jaws-cam open: 0.40 mm
-jaws-cam closed: 0.40 mm
+jaws-cam open: 1.10 mm
+jaws-cam closed: 1.10 mm
+open jaws vs guides: 0.40 mm
+open jaws vs retainer: 1.10 mm
+jaws-cam halfway: 1.10 mm
+halfway jaws vs guides: 0.40 mm
+carriage on stop: 0.00 mm
 collapsed carriage: 0.45 mm

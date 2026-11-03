@@ -636,10 +636,36 @@ def main():
     os.makedirs(stl_dir, exist_ok=True)
     for name, pose in posed.items():
         cq.exporters.export(pose, os.path.join(stl_dir, f"{name}.stl"), tolerance=0.08, angularTolerance=0.2)
+    # one STL per piece, not one per shape. three tower layers need three files.
+    qty = {
+        "fit_coupon": 1,
+        "tower_back": 3,
+        "tower_front": 3,
+        "beam_x": 6,
+        "beam_y": 4,
+        "beam_center": 1,
+        "coupler": 6,
+        "corner": 4,
+        "saddle": 1,
+        "foot": 1,
+        "clamp_lower": 1,
+        "clamp_upper": 1,
+        "odrive_plate": 1,
+    }
+    missing = set(posed) - set(qty)
+    extra = set(qty) - set(posed)
+    if missing or extra:
+        raise SystemExit(f"print list does not match the parts: missing {missing}, extra {extra}")
     zip_path = os.path.join(HERE, "stand_print.zip")
+    listing = ["file, copies"]
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
-        for name in posed:
-            archive.write(os.path.join(stl_dir, f"{name}.stl"), f"{name}.stl")
+        for name, copies in qty.items():
+            listing.append(f"{name}, {copies}")
+            src = os.path.join(stl_dir, f"{name}.stl")
+            for index in range(1, copies + 1):
+                archive.write(src, f"{name}_{index}.stl" if copies > 1 else f"{name}.stl")
+        archive.writestr("print_list.txt", "\n".join(listing) + "\n")
+    print(f"zip files {sum(qty.values())} from {len(qty)} shapes")
 
     assy = cq.Assembly(name="arm-test-stand")
     preview = []

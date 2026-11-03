@@ -8,7 +8,7 @@ Bambu P2S. Longest piece is 212 mm. The bed allows 246 mm. Sizes are in `cad/ass
 
 Print `fit_coupon` first, in PETG. The plug must slide into the pocket. If it binds, the first layer is squashed. Sand that face, or open the gap by 0.1 mm, before printing the stand.
 
-The STL files in `cad/stand_print.zip` are already lying down. Tower halves lie on their side so the beads run up the stand.
+`cad/stand_print.zip` has 33 STL files, one for every piece. A shape used more than once is numbered (`tower_back_1` through `tower_back_3`). They are already lying down. Tower halves lie on their side so the beads run up the stand.
 
 | File | Qty | What it is |
 |---|---|---|
