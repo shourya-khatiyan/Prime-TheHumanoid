@@ -1,0 +1,11 @@
+part, print x mm, print y mm, print z mm, fits 246 mm bed
+tower_back, 84.0, 200.0, 41.8, yes
+tower_front, 84.0, 200.0, 41.8, yes
+beam_200, 200.0, 24.0, 32.0, yes
+beam_160, 160.0, 24.0, 32.0, yes
+beam_196, 196.0, 24.0, 32.0, yes
+joint_plate, 44.0, 28.0, 5.0, yes
+foot, 120.0, 120.0, 20.0, yes
+clamp_lower, 130.0, 61.0, 79.0, yes
+clamp_upper, 130.0, 67.0, 50.0, yes
+odrive_plate, 160.0, 8.0, 80.0, yes

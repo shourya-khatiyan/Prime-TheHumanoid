@@ -319,8 +319,23 @@ def write_stl_zip(parts, path):
     print(f"wrote {path}")
 
 
+# stand-ins to print. ring pins included. no bearings, motor, encoder, or screws.
+PRINT_PARTS = {1, 2, 3, 4, 7, 8, 13, 15, 23, 25, 26}
+
+
+def part_no(name):
+    """Leading part number, so 02.1 and 02.2 both count as 2."""
+    return int(name.split()[0].split(".")[0])
+
+
+def print_parts(parts):
+    """Return the parts to 3D-print."""
+    return [p for p in parts if part_no(p[0]) in PRINT_PARTS]
+
+
 if __name__ == "__main__":
     model = build()
     check(model)
     write_3mf(model, OUT)
     write_stl_zip(model, OUT.replace(".3mf", "_stl.zip"))
+    write_stl_zip(print_parts(model), OUT.replace(".3mf", "_print.zip"))

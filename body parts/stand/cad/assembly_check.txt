@@ -1,0 +1,40 @@
+assembly check
+
+ok  brace front a: 3490 mm3 inside the frame
+ok  brace front b: 3490 mm3 inside the frame
+ok  brace side a: 3888 mm3 inside the frame
+ok  brace side b: 3888 mm3 inside the frame
+ok  brace beam: 2737 mm3 inside the frame
+ok  fit   shell into foot: plug 2688 mm3, sticks out 0.0 mm3
+ok  fit   shell into shell: plug 2688 mm3, sticks out 0.0 mm3
+ok  fit   front into back: plug 21840 mm3, sticks out 0.0 mm3
+ok  fit   beam into coupler: plug 3456 mm3, sticks out 0.0 mm3
+
+ok  bed   tower_back: 86 x 212 x 28 mm
+ok  bed   tower_front: 84 x 200 x 70 mm
+ok  bed   beam_x: 172 x 28 x 36 mm
+ok  bed   beam_y: 164 x 28 x 36 mm
+ok  bed   coupler: 32 x 36 x 36 mm
+ok  bed   corner: 44 x 44 x 36 mm
+ok  bed   foot: 130 x 150 x 20 mm
+ok  bed   clamp_lower: 138 x 62 x 158 mm
+ok  bed   clamp_upper: 138 x 65 x 50 mm
+ok  bed   odrive_plate: 90 x 6 x 80 mm
+ok  bed   fit_coupon: 40 x 36 x 46 mm
+ok  bed   beam_center: 149 x 28 x 36 mm
+ok  bed   saddle: 44 x 40 x 44 mm
+ok  clear base frame: no two base pieces occupy the same space
+
+ok  fit   center beam into foot: plug 3456 mm3, sticks out 0.0 mm3
+ok  fit   center beam into saddle: plug 3456 mm3, sticks out 0.0 mm3
+
+ok  clear stick vs foot: overlap 0.0 mm3
+ok  clear stick vs tower_back: overlap 0.0 mm3
+ok  clear stick vs tower_back: overlap 0.0 mm3
+ok  clear stick vs tower_back: overlap 0.0 mm3
+ok  clear housing vs clamp: overlap 0.0 mm3
+ok  clear back 0 vs back 1: overlap 0.0 mm3
+ok  clear back 1 vs back 2: overlap 0.0 mm3
+ok  clear back vs front: overlap 0.0 mm3
+ok  clear back vs front: overlap 0.0 mm3
+ok  clear back vs front: overlap 0.0 mm3
