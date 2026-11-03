@@ -1,4 +1,4 @@
-motion: servo turns the horn, the horn turns the cam, the spiral slots push the three pins, the jaws slide out
+motion: feet stop the drone on the ground, the guide gathers the cap, then the servo turns the horn, the horn turns the cam, and the slots slide the jaws under the ring
 closed shelf diameter 30.5 mm, open diameter 50.0 mm, cam turn 75 deg
 preload 1.59 N
 full stroke 2.50 N
@@ -17,5 +17,27 @@ open jaws vs guides: 0.40 mm
 open jaws vs retainer: 1.10 mm
 jaws-cam halfway: 1.10 mm
 halfway jaws vs guides: 0.40 mm
+100 mm probe in mouth: 1.84 mm
+114 mm probe in mouth: 0.00 mm
+shelf above feet: 132.00 mm
+foot to prop disk: 19.57 mm
 carriage on stop: 0.00 mm
 collapsed carriage: 0.45 mm
+solid PLA 240 g
+about 15 percent infill, printed guess 108 g
+pickup guess 463 g, limit 500 g
+bed 01_mast: 86 x 72 x 103 mm
+bed 02_carriage: 101 x 101 x 30 mm
+bed 03_stop: 86 x 16 x 5 mm
+bed 04_cam: 88 x 88 x 5 mm
+bed 05_housing: 119 x 115 x 40 mm
+bed 06_jaw_1: 32 x 23 x 28 mm
+bed 06_jaw_2: 32 x 23 x 28 mm
+bed 06_jaw_3: 32 x 23 x 28 mm
+bed 07_retainer: 131 x 127 x 3 mm
+bed 08_guide: 113 x 113 x 29 mm
+bed 09_foot_1: 14 x 14 x 92 mm
+bed 09_foot_2: 14 x 14 x 92 mm
+bed 09_foot_3: 14 x 14 x 92 mm
+bed 09_foot_4: 14 x 14 x 92 mm
+guide wall 1.60 mm, load wall minimum 1.35

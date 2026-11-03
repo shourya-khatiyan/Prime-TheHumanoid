@@ -1,6 +1,8 @@
 # Neck claw — parts to buy
 
-One claw. Printed parts are the STEP and the 3MF, in PETG. This list is only the parts you buy or already have.
+One claw. Printed parts are the STEP and the 3MF, in PLA. This list is only the parts you buy or already have.
+
+Print at 15% gyroid, 3 walls, 0.2 mm layers, 0.4 mm nozzle. Do not print solid. A solid print is about 191 g and, with the servo and a full 250 ml bottle, goes over the 500 g limit.
 
 | Qty | Part | Size | Where it goes |
 |---|---|---|---|
@@ -18,8 +20,12 @@ One claw. Printed parts are the STEP and the 3MF, in PETG. This list is only the
 | 4 | M3 × 8 button screw | — | cam into the metal horn. The horn holes are already threaded |
 | 3 | M3 × 12 button screw | — | retainer into the housing |
 | 3 | M3 nut | — | pockets in the housing, under the retainer |
+| 3 | M3 × 8 button screw | — | guide into the housing |
+| 3 | M3 nut | — | pockets in the housing, under the guide |
+| 4 | M3 × 8 button screw | — | feet into the guide |
+| 4 | M3 nut | — | under the foot ears |
 | 1 | Cable tie | 2.5 mm | servo lead on the carriage |
-| 300 g | PETG | — | all printed parts. The model is 232 g before support and purge |
+| 120 g | PLA | — | all printed parts at 15% infill. The solid model is about 191 g |
 
 The MG995 mounting screws in the servo bag are too small for these holes. Use the M3 screws above. The four ear holes are slots, so a clone whose holes are about 1 mm off still bolts on.
 

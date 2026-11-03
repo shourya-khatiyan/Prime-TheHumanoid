@@ -1,0 +1,12 @@
+stand-lite check
+
+ok  base_a: 191 x 208 x 8 mm, 66 g
+ok  base_b: 179 x 208 x 8 mm, 65 g
+ok  stick_front: 41 x 200 x 17 mm, 10 g
+ok  stick_back: 41 x 200 x 13 mm, 10 g
+ok  base halves overlap 0.0 mm3
+ok  tongue sticks out of the slot by 0.0 mm3
+
+base 131 g
+one stick segment 21 g, three segments 63 g
+all printed plastic 194 g

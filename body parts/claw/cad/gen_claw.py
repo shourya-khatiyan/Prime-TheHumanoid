@@ -57,7 +57,19 @@ SPRING_GAP = 35.0
 BLADE_T, BLADE_W, BLADE_L = 3.0, 8.0, 40.0
 STOP_GAP = 6.0
 SHOE_DEG = 35.0
-PLA = 1.24e-3  # g/mm3, solid. Low infill prints lighter than this.
+# bottle height is a listing, not a vernier reading. checks.txt says so.
+BOTTLE_H = 150.0
+# shelf sits this far above the ground when the feet are down, near the neck ring
+SHELF_ABOVE_GROUND = 132.0
+GUIDE_TOP_R = 27.0
+GUIDE_MOUTH_R = 55.0
+GUIDE_WALL = 1.6
+GUIDE_H = 28.0
+WALL_LOAD = 1.35
+BED = 246.0
+PAYLOAD_LIMIT = 500.0
+PROP_R = 127.0
+PLA = 1.24e-3  # g/cm3 as g/mm3. solid mass. infill is a separate line.
 
 
 def k_one_spring():
@@ -296,6 +308,158 @@ def make_horn(meta):
     return horn, meta
 
 
+def screw_plus(x, y, z_head, length):
+    """Screw with the head at z_head and the thread running toward +Z."""
+    return cyl_z(x, y, z_head, 1.5, length).union(cyl_z(x, y, z_head - 2.2, 2.8, 2.2))
+
+
+def screw_minus(x, y, z_head, length):
+    """Screw with the head at z_head and the thread running toward -Z."""
+    return cyl_z(x, y, z_head - length, 1.5, length).union(cyl_z(x, y, z_head, 2.8, 2.2))
+
+
+def nut(x, y, z0):
+    """M3 hex nut. Not printed."""
+    return cq.Workplane("XY").polygon(6, 6.4).extrude(2.4).translate((x, y, z0))
+
+
+def make_springs(meta):
+    """Two bought springs, sitting in the carriage tubes."""
+    z_carriage_top = meta["z_carriage"] - PLATE_T / 2
+    z0 = z_carriage_top - SPRING_GAP
+    parts = []
+    for i, y in enumerate((-24.0, 24.0)):
+        wall = cyl_z(0, y, z0, SPRING_OD / 2, SPRING_GAP)
+        wall = wall.cut(cyl_z(0, y, z0 - 0.4, SPRING_OD / 2 - 0.55, SPRING_GAP + 0.8))
+        parts.append((f"spring_{i + 1}", wall))
+    return parts
+
+
+def make_fasteners(meta):
+    """Bought screws and nuts. Not printed."""
+    parts = []
+    for i, (x, y) in enumerate(((22, 16), (22, -16), (-22, 16), (-22, -16))):
+        parts.append((f"screw_drone_{i + 1}", screw_plus(x, y, 0.0, 8)))
+        parts.append((f"nut_drone_{i + 1}", nut(x, y, 3.6)))
+    for i, x in enumerate((-RAIL_PITCH / 2, RAIL_PITCH / 2)):
+        parts.append((f"screw_stop_{i + 1}", screw_minus(x, 0, meta["z_rail1"] - 4, 12)))
+        parts.append((f"nut_stop_{i + 1}", nut(x, 0, meta["z_rail1"] - 8)))
+    for i, (sx, sy) in enumerate(((-1, -1), (-1, 1), (1, -1), (1, 1))):
+        x, y = sx * SERVO_HOLE_X / 2, sy * SERVO_HOLE_Y / 2
+        parts.append((f"screw_servo_{i + 1}", screw_minus(x, y, meta["carriage_bottom"] + 2, 10)))
+        parts.append((f"nut_servo_{i + 1}", nut(x, y, meta["carriage_bottom"] - 6)))
+    for i in range(3):
+        a = math.radians(60 + 120 * i)
+        x, y = 50 * math.cos(a), 50 * math.sin(a)
+        parts.append((f"screw_post_{i + 1}", screw_plus(x, y, meta["z_carriage"] - PLATE_T / 2, 16)))
+        parts.append((f"nut_post_{i + 1}", nut(x, y, meta["carriage_bottom"] + 4)))
+    z_cam = meta["z_horn_face"] + CAM_T
+    for i in range(4):
+        a = math.radians(45 + 90 * i)
+        x, y = (HORN_PCD / 2) * math.cos(a), (HORN_PCD / 2) * math.sin(a)
+        parts.append((f"screw_cam_{i + 1}", screw_minus(x, y, z_cam, 8)))
+    z_jaw = meta["z_jaw0"]
+    for i in range(3):
+        a = math.radians(60 + 120 * i)
+        x, y = 57 * math.cos(a), 57 * math.sin(a)
+        parts.append((f"screw_retainer_{i + 1}", screw_plus(x, y, z_jaw, 10)))
+        parts.append((f"nut_retainer_{i + 1}", nut(x, y, z_jaw + 6)))
+    z_g = meta["z_floor"] + 3.2
+    for i in range(3):
+        a = math.radians(120 * i)
+        x, y = 36 * math.cos(a), 36 * math.sin(a)
+        parts.append((f"screw_guide_{i + 1}", screw_plus(x, y, z_g, 8)))
+        parts.append((f"nut_guide_{i + 1}", nut(x, y, meta["z_floor"] + 1.2)))
+    z_foot = z_g + GUIDE_H - 3
+    for i, deg in enumerate((45, 135, 225, 315)):
+        a = math.radians(deg)
+        x, y = 62 * math.cos(a), 62 * math.sin(a)
+        parts.append((f"screw_foot_{i + 1}", screw_plus(x, y, z_foot, 8)))
+        parts.append((f"nut_foot_{i + 1}", nut(x, y, z_foot + 3)))
+    return parts
+
+
+def make_guide(meta):
+    """Wide mouth under the jaws. Narrow end bolts to the housing.
+
+    The wall leans 45 degrees, so it prints from the wide rim without support.
+    """
+    z0 = meta["z_floor"] + 3.2
+    outer = (
+        cq.Workplane("XY").circle(GUIDE_TOP_R + GUIDE_WALL).workplane(offset=GUIDE_H).circle(GUIDE_MOUTH_R + GUIDE_WALL).loft()
+    )
+    inner = (
+        cq.Workplane("XY").circle(GUIDE_TOP_R - 0.4).workplane(offset=GUIDE_H + 0.6).circle(GUIDE_MOUTH_R + 0.2).loft()
+    )
+    guide = outer.cut(inner).translate((0, 0, z0))
+    flange = cyl_z(0, 0, z0, 42, 3.2).cut(cyl_z(0, 0, z0 - 0.4, GUIDE_TOP_R - 0.2, 4.2))
+    guide = guide.union(flange)
+    pts = []
+    for i in range(3):
+        a = math.radians(120 * i)
+        x, y = 36 * math.cos(a), 36 * math.sin(a)
+        pts.append((x, y))
+        guide = guide.union(cyl_z(x, y, z0, 6, 3.2))
+    guide = cut_holes(guide, pts, M3_CLEAR, z0, 3.2, "guide", "guide")
+    # four ears for the feet, outside the mouth
+    for i, deg in enumerate((45, 135, 225, 315)):
+        a = math.radians(deg)
+        x, y = 62 * math.cos(a), 62 * math.sin(a)
+        guide = guide.union(cyl_z(x, y, z0 + GUIDE_H - 3, 7, 4))
+        guide = cut_holes(guide, [(x, y)], M3_CLEAR, z0 + GUIDE_H - 3, 4, "foot", "guide")
+    meta = dict(meta)
+    meta["z_guide_mouth"] = z0 + GUIDE_H
+    return guide, meta
+
+
+def make_foot():
+    """One leg. The ear sits on the bed, the tube prints upward."""
+    ear = box(0, 0, 2, 16, 14, 4)
+    ear = ear.cut(hole_z(0, 0, 0, M3_CLEAR / 2, 5))
+    tube = cyl_z(0, 0, 4, 4, 8).cut(cyl_z(0, 0, 3.5, 2.4, 9))
+    return ear.union(tube)
+
+
+def place_foot(index, z_ear, z_tip):
+    """Stand a foot on the guide ear. The tube is lengthened to the ground line."""
+    deg = 45 + 90 * index
+    a = math.radians(deg)
+    x, y = 62 * math.cos(a), 62 * math.sin(a)
+    length = z_tip - (z_ear + 4)
+    tube = cyl_z(x, y, z_ear + 4, 4, length).cut(cyl_z(x, y, z_ear + 3.5, 2.4, length + 1))
+    ear = box(x, y, z_ear + 2, 14, 14, 4)
+    ear = ear.cut(hole_z(x, y, z_ear, M3_CLEAR / 2, 5))
+    return ear.union(tube)
+
+
+def make_drone_dummy():
+    """Size dummy of the TBS 500 as a V-tail. Not printed.
+
+    Specs from the frame listing: 500 mm wheelbase, arms 220 x 40 mm,
+    motor-mount holes 3 mm. Forward is +X. The 500 mm is the span
+    between the two front motors. The rear pair is the V.
+    Props are the usual 10 inch size for this wheelbase.
+    """
+    plate = box(0, 0, -1.5, 160, 120, 3)
+    tail = box(-70, 0, -1.5, 80, 70, 3)
+    parts = [("drone_plate", plate.union(tail))]
+    # front span is the 500 mm wheelbase. rear motors sit close, forming the V.
+    motors = ((110, 250), (110, -250), (-190, 80), (-190, -80))
+    for i, (mx, my) in enumerate(motors):
+        length = math.hypot(mx, my)
+        ang = math.degrees(math.atan2(my, mx))
+        arm = box(length - 110, 0, -1.5, 220, 40, 4)
+        arm = rot_z(arm, ang)
+        mount = cyl_z(mx, my, -6, 16, 3).cut(cyl_z(mx, my, -7, 1.5, 5))
+        motor = cyl_z(mx, my, -28, 14, 22)
+        prop = cyl_z(mx, my, -31, 127, 2)
+        parts.append((f"drone_arm_{i + 1}", arm))
+        parts.append((f"drone_mount_{i + 1}", mount))
+        parts.append((f"drone_motor_{i + 1}", motor))
+        parts.append((f"drone_prop_{i + 1}", prop))
+    return parts
+
+
 def make_cam(meta, angle):
     """Spiral disk. angle 0 is closed. Negative angle opens the jaws."""
     z0 = meta["z_horn_face"]
@@ -376,6 +540,12 @@ def make_housing(meta):
         floor = floor.cut(hole_z(x, y, z_floor - 1, M3_CLEAR / 2, 6))
         floor = floor.cut(nut_slot(x, y, z_floor + 1.8, "z"))
         HOLES.append(("housing", "retainer", i, (x, y, z_floor + 2), M3_CLEAR))
+    for i in range(3):
+        a = math.radians(120 * i)
+        x, y = 36 * math.cos(a), 36 * math.sin(a)
+        floor = floor.cut(hole_z(x, y, z_floor - 1, M3_CLEAR / 2, 6))
+        floor = floor.cut(nut_slot(x, y, z_floor + 1.6, "z"))
+        HOLES.append(("housing", "guide", i, (x, y, z_floor + 1.6), M3_CLEAR))
     housing = floor.union(fences).union(posts)
     meta = dict(meta)
     meta["z_jaw0"] = z_jaw0
@@ -455,6 +625,34 @@ def write_print_3mf(parts, path):
     model.QueryWriter("3mf").WriteToFile(path)
 
 
+def draw_change(guide, feet, jaws, path):
+    """Save a shaded view of the guide, the feet, and the open jaws."""
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+    def faces(shape, color):
+        verts, tris = shape.val().tessellate(0.6, 0.6)
+        pts = [v.toTuple() for v in verts]
+        tri = [[pts[i] for i in t] for t in tris]
+        return tri, color
+
+    meshes = [faces(guide, (0.93, 0.72, 0.25)), faces(jaws, (0.9, 0.45, 0.1))]
+    meshes += [faces(foot, (0.75, 0.45, 0.15)) for foot in feet]
+    fig = plt.figure(figsize=(8, 8), facecolor="white")
+    ax = fig.add_subplot(111, projection="3d")
+    for tri, rgb in meshes:
+        ax.add_collection3d(Poly3DCollection(tri, facecolor=rgb, edgecolor="none", alpha=0.95))
+    ax.view_init(elev=18, azim=-60)
+    ax.set_xlim(-80, 80)
+    ax.set_ylim(-80, 80)
+    ax.set_zlim(100, 280)
+    ax.set_box_aspect((1, 1, 1.4))
+    ax.set_axis_off()
+    fig.tight_layout()
+    fig.savefig(path, dpi=110)
+    plt.close(fig)
+
+
 def export_stl(shape, name):
     """Write one print STL in the part's own print orientation."""
     os.makedirs(STL_DIR, exist_ok=True)
@@ -487,6 +685,9 @@ def main():
     housing, meta = make_housing(meta)
     jaws = place_jaws(meta, 0)
     retainer = make_retainer(meta)
+    guide, meta = make_guide(meta)
+    z_tip = meta["z_jaw0"] + SHELF_ABOVE_GROUND
+    feet = [place_foot(i, meta["z_guide_mouth"] + 1, z_tip) for i in range(4)]
     ring = make_ring().translate((0, 0, meta["z_jaw0"] - 2.0))
 
     pairs = {
@@ -510,6 +711,8 @@ def main():
         ("cam to horn", "M3x6", 4, "cam", "cam"),
         ("stop to mast", "M3x12", 2, "stop", "stop"),
         ("housing to carriage", "M3x12", 3, "carriage", "housing"),
+        ("guide to housing", "M3x8", 3, "guide", "guide"),
+        ("feet to guide", "M3x8", 4, "guide", "foot"),
     ]
     for label, screw, count, part_a, name in screw_checks:
         found = [h for h in HOLES if h[0] == part_a and h[1] == name]
@@ -545,6 +748,35 @@ def main():
     gaps["halfway jaws vs guides"] = g_mid_house
     if g_mid_house < 0.25:
         problems.append(f"jaws hit the guides halfway, gap {g_mid_house:.2f}")
+    mouth_z = meta["z_guide_mouth"] - 2
+    g_fit = gap(cyl_z(0, 0, mouth_z, 50, 3), guide)
+    g_clash = gap(cyl_z(0, 0, mouth_z, 57, 3), guide)
+    gaps["100 mm probe in mouth"] = g_fit
+    gaps["114 mm probe in mouth"] = g_clash
+    if g_fit < 0.3:
+        problems.append(f"mouth will not pass a 100 mm probe, gap {g_fit:.2f}")
+    if g_clash > 0.2:
+        problems.append(f"mouth is larger than 110 mm, 114 mm probe gap {g_clash:.2f}")
+    drop = max(f.val().BoundingBox().zmax for f in feet) - meta["z_jaw0"]
+    gaps["shelf above feet"] = drop
+    if abs(drop - SHELF_ABOVE_GROUND) > 2:
+        problems.append(f"shelf is {drop:.1f} mm above the feet, wanted {SHELF_ABOVE_GROUND:.0f}")
+    motors = ((110, 250), (110, -250), (-190, 80), (-190, -80))
+    prop_clear = 999.0
+    for i in range(4):
+        a = math.radians(45 + 90 * i)
+        fx, fy = 62 * math.cos(a), 62 * math.sin(a)
+        for mx, my in motors:
+            prop_clear = min(prop_clear, math.hypot(fx - mx, fy - my) - PROP_R - 4)
+    gaps["foot to prop disk"] = prop_clear
+    if prop_clear < 8:
+        problems.append(f"foot is {prop_clear:.1f} mm from a prop disk, wanted at least 8")
+    for i, foot in enumerate(feet):
+        buried = vol(foot.intersect(guide))
+        if buried > 20:
+            problems.append(f"foot {i + 1} is inside the guide by {buried:.0f} mm3")
+    if GUIDE_WALL < WALL_LOAD:
+        problems.append(f"guide wall {GUIDE_WALL:.2f} mm is under {WALL_LOAD:.2f}")
 
     # collapsed mast: carriage and springs move up by STROKE, tubes must miss the block
     carriage_up = carriage.translate((0, 0, -STROKE))
@@ -567,6 +799,8 @@ def main():
         "05_housing": housing,
         "06_jaw": make_jaw(0, 0),
         "07_retainer": retainer,
+        "08_guide": guide,
+        "09_foot": feet[0],
     }
     for name, shape in printed.items():
         if vol(shape) < 10:
@@ -575,7 +809,7 @@ def main():
             problems.append(f"{name} is {solid_count(shape)} separate pieces")
 
     report = [
-        "motion: servo turns the horn, the horn turns the cam, the spiral slots push the three pins, the jaws slide out",
+        "motion: feet stop the drone on the ground, the guide gathers the cap, then the servo turns the horn, the horn turns the cam, and the slots slide the jaws under the ring",
         f"closed shelf diameter {2 * SHELF_R:.1f} mm, open diameter {2 * OPEN_R:.1f} mm, cam turn {CAM_TURN:.0f} deg",
         f"preload {f0:.2f} N", f"full stroke {fmax:.2f} N", f"side push {lateral:.2f} N",
         f"spring rate {k:.3f} N/mm for two", f"min spring length {length_min:.1f} mm, solid {solid:.1f} mm",
@@ -588,8 +822,8 @@ def main():
     if problems:
         raise SystemExit(1)
 
-    # printable parts only, shown open so the three jaws are apart
-    assy = cq.Assembly(name="Bisleri250_neck_claw_printable")
+    # full reference assembly. the 3mf and stl stay printable parts only
+    assy = cq.Assembly(name="Bisleri250_neck_claw")
     named = [
         ("mast", mast, cq.Color(0.85, 0.55, 0.15)),
         ("carriage", carriage, cq.Color(0.9, 0.7, 0.2)),
@@ -597,9 +831,22 @@ def main():
         ("cam", cam_open, cq.Color(0.95, 0.75, 0.2)),
         ("housing", housing, cq.Color(0.85, 0.55, 0.15)),
         ("retainer", retainer, cq.Color(0.7, 0.45, 0.1)),
+        ("guide", guide, cq.Color(0.95, 0.8, 0.3)),
+        ("servo", servo, cq.Color(0.15, 0.15, 0.15)),
+        ("horn", horn, cq.Color(0.75, 0.78, 0.82)),
     ]
     for i in range(3):
         named.append((f"jaw_{i + 1}", make_jaw(i, PIN_TRAVEL).translate((0, 0, meta["z_jaw0"])), cq.Color(0.95, 0.6, 0.1)))
+    for i, foot in enumerate(feet):
+        named.append((f"foot_{i + 1}", foot, cq.Color(0.85, 0.55, 0.15)))
+    for name, shape in make_springs(meta):
+        named.append((name, shape, cq.Color(0.75, 0.75, 0.78)))
+    for name, shape in make_fasteners(meta):
+        color = cq.Color(0.55, 0.56, 0.58) if name.startswith("screw") else cq.Color(0.35, 0.36, 0.38)
+        named.append((name, shape, color))
+    for name, shape in make_drone_dummy():
+        color = cq.Color(0.25, 0.25, 0.28) if "prop" not in name else cq.Color(0.15, 0.15, 0.16)
+        named.append((name, shape, color))
     for name, shape, color in named:
         assy.add(shape, name=name, color=color)
     step_path = os.path.join(HERE, "claw.step")
@@ -607,7 +854,7 @@ def main():
     print("step", os.path.getsize(step_path))
 
     masses = {n: vol(s) * PLA for n, s in printed.items()}
-    total = sum(masses.values()) + masses["06_jaw"] * 2
+    total = sum(masses.values()) + masses["06_jaw"] * 2 + masses["09_foot"] * 3
     print("grams solid PLA", {n: round(m, 1) for n, m in masses.items()})
     print("total solid PLA", round(total, 1))
     hardware = 55 + 4 + 4 + 12
@@ -618,8 +865,10 @@ def main():
     report.append(f"pickup guess {printed_guess + hardware + bottle:.0f} g, limit 500 g")
     with open(os.path.join(HERE, "checks.txt"), "w", encoding="utf-8") as f:
         f.write("\n".join(report) + "\n")
-    if total > 210:
-        problems.append(f"solid PLA {total:.0f} g is over 210 g")
+    if printed_guess + hardware + bottle > PAYLOAD_LIMIT:
+        problems.append(
+            f"pickup guess {printed_guess + hardware + bottle:.0f} g is over {PAYLOAD_LIMIT:.0f} g"
+        )
         print("\n".join(problems))
         raise SystemExit(1)
     bed_parts = [
@@ -632,7 +881,25 @@ def main():
         ("06_jaw_2", on_bed(make_jaw(0, 0), 180)),
         ("06_jaw_3", on_bed(make_jaw(0, 0), 180)),
         ("07_retainer", on_bed(retainer)),
+        ("08_guide", on_bed(guide, 180)),
+        ("09_foot_1", on_bed(feet[0])),
+        ("09_foot_2", on_bed(feet[1])),
+        ("09_foot_3", on_bed(feet[2])),
+        ("09_foot_4", on_bed(feet[3])),
     ]
+    for name, shape in bed_parts:
+        bb = shape.val().BoundingBox()
+        sides = (bb.xmax - bb.xmin, bb.ymax - bb.ymin, bb.zmax - bb.zmin)
+        report.append(f"bed {name}: {sides[0]:.0f} x {sides[1]:.0f} x {sides[2]:.0f} mm")
+        if max(sides) > BED:
+            problems.append(f"{name} is {max(sides):.0f} mm, bed limit {BED:.0f}")
+    report.append(f"guide wall {GUIDE_WALL:.2f} mm, load wall minimum {WALL_LOAD:.2f}")
+    with open(os.path.join(HERE, "checks.txt"), "w", encoding="utf-8") as f:
+        f.write("\n".join(report + problems) + "\n")
+    if problems:
+        print("\n".join(problems))
+        raise SystemExit(1)
+    draw_change(guide, feet, jaws_open, os.path.join(HERE, "claw_preview.png"))
     write_print_3mf(bed_parts, os.path.join(HERE, "claw_print.3mf"))
     zip_path = os.path.join(HERE, "claw_print_stl.zip")
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
