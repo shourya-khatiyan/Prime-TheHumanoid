@@ -286,11 +286,18 @@ static void service_pattern() {
   g_thr_s = on ? SHOULDER_TIME_THROTTLE : 0.0f;
 
   float joint = g_el.unwrapped_deg - g_drive_from;
-  if (joint > PATTERN_ABORT_DEG) {
-    g_thr_s = 0.0f;
+  if (joint > PATTERN_RELEASE_DEG) {
     g_thr_e = 0.0f;
-    g_stage = STAGE_ARMED;
-    Serial.println(F("CUT pattern past stop"));
+    if (g_sweep_phase == SWEEP_DRIVE) {
+      g_loops_done++;
+      Serial.print(F("top "));
+      Serial.println(g_loops_done);
+      g_end_down = g_loops_done >= g_loops_left;
+      g_sweep_phase = SWEEP_COAST;
+      g_coast_t0 = millis();
+      g_coast_mark = joint;
+      g_coast_still = millis();
+    }
     return;
   }
   if (g_sweep_phase == SWEEP_DRIVE) {

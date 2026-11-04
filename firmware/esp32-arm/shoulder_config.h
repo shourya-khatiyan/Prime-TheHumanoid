@@ -17,9 +17,9 @@
 // Shoulder can only drive one way.
 #define PATTERN_LOOPS 40
 #define PATTERN_LOW_DEG 30.0f
-#define PATTERN_CUT_DEG 105.0f
+#define PATTERN_CUT_DEG 94.0f
 #define PATTERN_BRAKE_START_DEG 130.0f
-#define PATTERN_ABORT_DEG 134.0f
+#define PATTERN_RELEASE_DEG 132.0f
 #define PATTERN_CLIMB_PERCENT 12.0f
 #define PATTERN_STALL_MS 700
 #define PATTERN_START_MS 4000
