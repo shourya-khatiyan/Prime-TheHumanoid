@@ -1,84 +1,59 @@
 # Story
 
-This is the account we tell, and the account we can defend. The narrative is ours. The prices and ratings below are the public figures and our own design calculations, checked on 3 November 2026. Where a line we used to say does not match those figures, this file says so.
+This is the account we tell. The speech is in `docs/presentation-script.md`. Same story, written down.
 
-## What we are doing
+## What we are building
 
-We are building a humanoid. We started with the body. When we priced the joints, a humanoid-class actuator for every joint was beyond what we could pay, and it was not something we could order in India the way we order a bearing or a bolt.
+We are building a humanoid. A robot with a body like a person. Two arms, two legs, a head.
 
-We had two 90 KV brushless motors and one field-oriented motor controller. That is the hardware budget that was actually available. With two motors we could not build eighteen joints, so the first machine is a two-degree-of-freedom arm: our P0 shoulder actuator on one motor, and the same motor type driving the elbow directly.
+People in India have seen these robots in videos. Almost all of those videos are from China. What they have not seen is what is inside, and what happens when you try to build one from here.
 
-P0 is a two-stage planetary actuator. The design rating is 30 N·m continuous and 50 N·m proof, in a 100 mm by 100.5 mm package, calculated mass 2.76 kg, ratio 30:1. Those are design calculations, not a dyno certificate. Backlash and backdrive torque have not been measured yet. We do not quote them.
+The robot moves at the joints. Shoulder, elbow, wrist, hip, knee, ankle. A full body has about eighteen main joints, before the fingers. Each joint needs its own part. That part has to be strong, small enough to fit in the limb, and able to stop where it is told. If the hip is weak, the robot cannot stand. If the shoulder is loose, the hand misses.
 
-The arm is proportioned to a stature of 160 cm. Upper arm 298 mm, forearm 234 mm. The arm with the elbow motor is 897 g. With the arm horizontal and a dummy hand, the shoulder sees about 3.1 N·m from gravity and 4.6 N·m with the design acceleration, against the 30 N·m continuous rating. The elbow is direct drive. Its steady thermal rating is 0.81 N·m if the winding is held at 70 °C with a thermal resistance of 3 K/W.
+That part is an actuator. The motor and the gears of one joint, made as one piece.
 
-## Why the actuator became the product
+## What we needed, and what we found
 
-The motors and the controller were already expensive for a student build. Two EaglePower LA8308 motors were ₹10,999 each on Technobotix on 7 October 2026, and a dual ODESC 3.6-class board was ₹10,999 on the same list. About ₹33,000 bought the entire electrical drive of this prototype, and it bought two axes.
+The hips and the legs carry the body, so those joints had to be the strong ones, past 150. The arms could be smaller. We made that list and went to buy it.
 
-Scaling that purchase to a body was a different problem. An integrated joint is a motor, a reducer, an encoder, and a driver sold as one part. For a full set of main joints we were looking at bills we could not pay, and at parts that were not sitting on an Indian shelf.
+India does not stock it. There is no shop and no site where a student orders a humanoid hip the way they order a motor for a college project. We looked. For the strength we needed, it was not there.
 
-So the actuator joined the goal. We design it, we machine it, and we mean to sell it. The motor and the controller come next, in that order, because those are the other two parts that are costly and are not a normal Indian catalogue item in the size a humanoid joint needs. Bearings, magnets, and encoder chips stay purchased. Making a joint in India does not mean making the steel ball and the silicon in the same year.
+The joints these robots use come from outside. The expensive proper ones come from companies like Harmonic Drive. A full body, hips, legs, and arms, crossed 20 lakh for the joints alone. They were still not here. A quote, a wait, an import.
 
-## What we will build toward
+China was the obvious next look. The robots are famous, and the parts are cheaper there, because those companies make the motor, the gears, and the electronics at home, in volume. A full body on that route still went above 20 lakh for us. Cheaper than the first quote, still more than we could pay, and still a parcel. If one joint fails, the project waits on the next shipment.
 
-The product sequence is the actuator, then the brushless motor, then our own field-oriented controller. Each one should be something another lab can buy without waiting on an export carton.
+We did not get stuck because we could not imagine the robot. We got stuck because the part every joint needs is too expensive, and India does not make it.
 
-The longer aim is a domestic path for this class of part. Labs and colleges should be able to use the actuator in their own machines. Workshops are how the next group learns to design one. More makers of joints, motors, and drives is the point. A single humanoid from us is a demonstration. A catalogue other people can build on is the project.
+## What we could actually buy
 
-China’s position in small robots comes from a supply chain that already contains the motor, the reducer, the driver, the magnet, the PCB, and the factory that will build a hundred. A lab there orders a joint. We are starting one layer down from that, with the joint we have already designed, and we are explicit about the layers we still buy.
+We stopped collecting quotes and decided to make the joint ourselves.
 
-## What we say about the twenty-lakh bill
+The motor inside that joint is its own problem. It is not a toy motor. A toy motor has brushes, small pieces of carbon that rub inside. They wear out, they spark, and the motor is bad at holding still under load. This job needs a brushless motor, the kind used in drones. No brushes. Strong for its size, and you can tell it how hard to push. We bought two, 90 KV, the size a shoulder needs. They are imported, and they are costly.
 
-The experience we had was that a full set of joints was quoted to us above ₹20 lakh, including the cheaper imported route we were shown. On stage we do not leave it as a memory. We show three bills a judge can open. Rupees use ₹94.9 per US dollar, the 3 November 2026 close reported by The Economic Times.
+A brushless motor does not run from a battery alone. It needs a controller. Ours is an ODrive. One board, and it is dual, so it runs two motors. Two motors and that one board were the whole budget. Two joints, not a body of eighteen.
 
-| Bill | What it is | 18 joints | Source |
-|---|---|---:|---|
-| China list, same week | RobStride RS04, 40 N·m rated, 120 N·m peak, $255 | about ₹4.4 lakh before freight and duty | robstride.com, 3 Nov 2026 |
-| China list, nearer our torque | RobStride RS03, 21 N·m rated, 60 N·m peak, $225 | about ₹3.8 lakh before freight and duty | robstride.com, 3 Nov 2026 |
-| India checkout, weaker than P0 | CubeMars AK10-9 on Robu, 15 N·m rated, 38 N·m peak, ₹80,780, out of stock, 25–30 day restock | ₹14.54 lakh | robu.in |
-| India checkout, nearest torque class | MyActuator RMD-X8-60 on RoboTechMinds, ₹93,000, out of stock. Reseller text says 25 N·m rated. The maker’s catalogue for this 36:1 unit says 30 N·m rated and 60 N·m peak | ₹16.74 lakh | robotechminds.com; MyActuator RMD-X catalogue |
-| Industrial strain-wave | Harmonic Drive FHA-14C-50, listed at $3,388. This is a small-frame unit | about ₹57.9 lakh | autopowerhub.com listing |
+## What we built
 
-Eighteen RobStride joints at the company’s own dollar price are about ₹4 lakh, not ₹20 lakh. The sentence “even the cheap Chinese actuators were above twenty lakh” is not what those pages show. If we say it flat, the first phone in the room ends the talk.
+The machine is an arm. Shoulder and elbow.
 
-What we can say, and what matches the pages:
+The shoulder is our first actuator. Compact. On the same scale where the leg we wanted was past 150, this joint is about 30 in normal use and about 50 when it pushes harder. We built it for around 17,000 rupees. That includes the motor. It does not include the ODrive. The joints we were quoted from outside were a bill in the lakhs. One joint of ours is about 17,000.
 
-- A catalogue strain-wave joint, even a small one, makes eighteen joints about ₹58 lakh before anyone ships it to India.
-- The joint an Indian cart actually lists near our torque, the MyActuator X8-60, is ₹93,000 and was out of stock. Eighteen is ₹16.7 lakh, and that price is an importer’s page, not a factory page.
-- The one robot-joint module on Robu in this class, the AK10-9, is ₹80,780, out of stock, and rated 15 N·m. Eighteen is ₹14.5 lakh for a joint weaker than P0.
-- Factory prices in China are much lower. The gap between $225 and ₹93,000 is the gap we are pointing at: the part exists, and a builder in India still cannot treat it as a normal purchase.
+The elbow is the second motor, turning the forearm directly. We did not build a second gearbox. The board runs both. Shoulder through our gears, elbow straight off the motor.
 
-Our own quote above ₹20 lakh stays in the story as what we were offered. We do not ask the room to treat it as the public list.
+The next design keeps the same motor and changes the gears. They are cycloidal: many teeth share the load, instead of one pair taking all of it. The motor turns 45 times and the joint turns once. Normal use comes to around 50. A short hard push goes past 60.
 
-## Who already builds this in India
+This is not a walking robot. It is the part India does not sell, made here, at a price we can say out loud.
 
-We do not say the market is empty.
+## Where we take it
 
-Gephr Labs publishes a G1 joint at 31.8 N·m rated and 60.1 N·m peak, 21:1 cycloidal, and describes it as shipping. The page has specifications and an email. It has no price and no cart. A public company listing puts the firm at a handful of people, founded in 2024. They are a peer, not a catalogue.
+We finish this joint so another lab can buy it from us, instead of waiting on Japan or China. Then we make the brushless motor here. Then we make our own controller, so we are not buying the ODrive either. The joint, the motor, and the board are the three things that stopped us. A college still cannot find them in India.
 
-NMotion sells the NDrive Z1, a single-axis field-oriented controller, at ₹13,999, 20 A continuous, with CAN and a dual-encoder path. An Indian controller board exists. A dual high-current board of the kind we are using still shows up on Indian shops as a Chinese ODrive-style clone: Flipsky and Makerbase, roughly ₹7,400 to ₹11,000.
+We will not keep them on our own bench.
 
-The small 90 KV outrunners on Indian shops are imported brands. Ours is an EaglePower LA8308. Drone-class motors from T-Motor and Tarot are the ones a student can reorder. That is a different object from a joint module.
+Schools come first. Short workshops, on this part, not on a video. The people who will build the next ten years are in school now, and today they only know the Chinese robot. If they see the joint was made here, some of them start earlier. A country grows from there.
 
-## What we will not claim
+Then colleges, private and government. Then the big institutions, the IITs, IISc, and whichever research lab will sit with us. We go to as many as we can. The ask is small. Use the part. Let the students build on something they can actually get.
 
-- That P0 is lighter or more efficient than an integrated Chinese joint. The X8-60 catalogue mass is about 0.9 kg. P0 is 2.76 kg. Their stated efficiency for that unit is 69 percent. We have not measured ours.
-- That P0 is quasi-direct-drive. The ratio is 30:1. The elbow is the direct-drive joint, and it is direct drive because we had no second gearbox, and because a low elbow torque does not need one.
-- That backlash is “near zero,” or that backdrive torque has a number, until we measure both.
-- That eighteen factory-price Chinese joints cost ₹20 lakh.
-- That no Indian company is attempting a humanoid joint or a field-oriented drive.
-- That the arm has been run as a closed-loop product demo beyond what we have actually shown that day.
-- That bearings, magnets, and the encoder IC are Indian parts. The AS5047P is an Infineon part. The shoulder bearings are purchased.
+The point is a stock in India. Joints, motors, and boards, here, so more people can try more things and the work moves faster. We are not short of people who can do this. What stops them is the market. The parts are not available. China moved ahead because a student there can order the joint the same week. Our students can mostly watch. If the parts are made here, we stop watching and start building with them.
 
-## Sources
-
-- RobStride product pages, RS03 at $225 and RS04 at $255, retrieved 3 November 2026, https://robstride.com/ and the RS03 / RS04 product pages. A July 2026 specification table in the RobStride product repository also lists yuan prices (RS03 ¥999, RS04 ¥1,199), which are lower, not higher.
-- CubeMars AK10-9 on Robu, ₹80,780 including GST, out of stock, https://oldwp.robu.in/product/t-motor-cubemars-ak10-9-v1-1-100kv-brushless-dc-actuator-robot-joint-motor/
-- MyActuator RMD-X8-60, maker catalogue 30 N·m rated / 60 N·m peak, https://brushless.a2v.fr/doc/myactuator/catalogue-rmd-x.pdf ; Indian listing ₹93,000, https://www.robotechminds.com/product-page/myactuator-rmd-x8-60-v3-planetary-actuator-canrs485-dual-encoder
-- Harmonic Drive FHA-14C-50 listed at $3,388, https://autopowerhub.com/products/harmonic-drive-systems-ac-24v-servo-actuator-fha-14c-50
-- USD/INR 94.90 close, The Economic Times, 3 November 2026.
-- EaglePower LA8308 and ODESC prices, `body parts/purchase.md`, pages read 7 October 2026.
-- P0 and arm ratings, `body parts/shoulder/cad/calc.txt`, `body parts/arm/cad/calc.txt`, `body parts/arm/cad/mass.txt`, `body parts/shoulder/cad/mass.txt`.
-- Gephr G1 specifications, https://gephr.com/
-- NMotion NDrive Z1, ₹13,999, https://shop.nmotion.in/products/ndrive-z1
+The arm is the first step. Two motors. One board. One joint we made for about 17,000 rupees. The next one is already stronger. The body comes after the parts exist.

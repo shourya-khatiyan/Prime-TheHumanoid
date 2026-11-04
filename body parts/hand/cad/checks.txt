@@ -1,0 +1,51 @@
+motion: the wrist plate bolts to the forearm wrist block, the hollow shell sits on the plate collar, and the hand does not move
+hand length target 173.0 mm from the mating face to the middle fingertip (arm L_HAND)
+knuckle plane z 97.7 mm, palm/hand 0.565 (Greiner band 0.556 to 0.573)
+material PETG, showcase shell, no load through the fingers
+bed: plate proximal face down, collar up; shell wrist rim and tabs down, fingers up
+depth/breadth 0.86 is an assumption
+plate on wrist block: 0.00 mm
+plate inside block: 0.0 mm3
+spigot to pocket: 0.30 mm
+collar to shell: 0.30 mm
+shell on plate: 0.00 mm
+shell inside plate: 0.0 mm3
+csk screw 1 to plate: 0.11 mm
+csk screw 1 in block: 0.0 mm3
+csk screw 2 to plate: 0.11 mm
+csk screw 2 in block: 0.0 mm3
+csk screw 3 to plate: 0.11 mm
+csk screw 3 in block: 0.0 mm3
+csk screw 4 to plate: 0.11 mm
+csk screw 4 in block: 0.0 mm3
+screws: 4 x M3x12 countersunk, wrist plate to the existing wrist-block inserts
+screws: 2 x M3x8 button, shell tabs to plate lugs, each with one M3 nut
+lock screw 1 to shell: 0.00 mm
+lock screw 1 to plate: 0.20 mm
+lock screw 2 to shell: 0.00 mm
+lock screw 2 to plate: 0.20 mm
+nut 1 to plate: 0.10 mm
+nut 2 to plate: 0.10 mm
+middle fingertip: 173.00 mm
+knuckle breadth: 83.91 mm
+knuckle slab y 8.00 mm
+shell wall at middle finger: 1.32 mm
+shell wall at palm: 1.25 mm
+flange thickness: 6.00 mm
+collar wall: 2.20 mm
+wall between pocket and screw: 3.01 mm
+solids wrist plate: 1
+solids hand shell: 1
+bed wrist plate: 78 x 36 x 13 mm
+bed hand shell: 115 x 39 x 167 mm
+plate overhang area 0 mm2
+spigot pocket bridge 330 mm2, span 20.6 mm
+shell overhang area 5 mm2
+shell upward bridge area 1594 mm2 (fingertip caps and webs)
+fingertips are open so the hollow vents; those holes are not a bridge
+solid PETG plate 13.0 g, shell 85.2 g, total 98.2 g
+about 5 percent infill, printed guess 92 g (shell counted solid)
+dummy-hand load used by the arm 150 g
+showcase shell 1.20 mm, decorative minimum 0.90, load wall 1.35
+not run: finite element, a print on the P2S, a fit on the real spigot
+wrist center world Y 28.85 mm (arm frame, for placing the step)
