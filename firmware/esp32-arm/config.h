@@ -3,7 +3,7 @@
 // one sentence: this board talks to two drone escs and two as5047p chips.
 // it can spin a motor. it cannot hold a joint. see README.md.
 
-#define FW_VERSION "0.2.4"
+#define FW_VERSION "0.2.5"
 
 #ifndef BOARD_IS_SHOULDER
 #define BOARD_IS_SHOULDER 0
