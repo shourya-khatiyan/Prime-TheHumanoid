@@ -14,7 +14,7 @@ The rear 61906 had no seat. The disc bore was cut through the seat, so the housi
 
 ## What changed
 
-The crank flange is a separate piece. The rear cage slides on from the back, over the Ø16 stem. A collar then closes that end. The front cage slides on from the front, and a washer on the nose closes it. Three M3 screws clamp the flange to the shaft. The four M2 screws still clamp the flange to the rotor, and the head pocket is 2.25 mm deep.
+The crank flange is a separate piece. The shaft is one piece: a Ø16 core runs through both journals, and the journals are eccentric bosses on that core. The rear cage slides on from the back, over the Ø16 stem. A collar then closes that end. The front cage slides on from the front, and a washer on the nose closes it. Three M3 screws clamp the flange to the shaft. The four M2 screws still clamp the flange to the rotor, and the head pocket is 2.25 mm deep.
 
 The ring pins are at 0°, which is the angle the disc was drawn for.
 

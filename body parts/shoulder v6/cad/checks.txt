@@ -12,6 +12,8 @@ screws inside the parts they pass through: clash 2.1 mm3
 M2 head ends z 3.05, flange face z 3.30, bearing starts z 4.00
 hub shoulder to rear bearing: 0.11 mm
 front plate to the outer ring: 1.60 mm
+crank shaft is 1 solid
+shaft between the journals: r 7.99 to 8.00
 crank slice at the rear journal: r 9.17 to 10.23
 solid part 1: 211 g
 solid part 2: 30 g

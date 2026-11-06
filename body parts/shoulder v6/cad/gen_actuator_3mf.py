@@ -248,9 +248,9 @@ def build():
     add("05 Needle K20x24x10 A", "Bearing (purchased)", cage(*Z_N1, ECC))
     add("06 Needle K20x24x10 B", "Bearing (purchased)", cage(*Z_N2, -ECC))
 
-    # shaft only. the flange is a separate part so the rear cage can come on
-    # from the back, over the stem, before the flange is bolted on.
-    shaft = cyl(STEM_R, Z_CRANK_FLANGE[1] - 0.4, Z_N1[0] - 0.5)
+    # one shaft. the Ø16 core runs through both journals. the flange is the
+    # only piece that comes off, so the rear cage can slide on from the back.
+    shaft = cyl(STEM_R, Z_CRANK_FLANGE[1] - 0.4, Z_N2[1] + 0.3)
     shaft = shaft + cyl(9.0, *Z_SHOULDER)  # cage still clears this step
     shaft = shaft + cyl(J_R, Z_N1[0] - 0.5, Z_N1[1] + 0.3, ECC, 0)
     shaft = shaft + cyl(J_R, Z_N2[0] - 0.5, Z_N2[1] + 0.3, -ECC, 0)
@@ -544,6 +544,15 @@ def measure(parts):
     if outer_gap is None or outer_gap < 1.0:
         problems.append(f"front plate to outer ring: {outer_gap}, wanted 1.00 to 3")
 
+    shells = len([s for s in shaft.decompose() if s.volume() > 1])
+    report.append(f"crank shaft is {shells} solid")
+    if shells != 1:
+        problems.append(f"crank shaft solids: {shells}, wanted 1 to 1")
+    gap_z = (Z_N1[1] + Z_N2[0]) / 2
+    bridge = radii_at(shaft, gap_z)
+    report.append(f"shaft between the journals: r {bridge[0]:.2f} to {bridge[1]:.2f}" if bridge else "shaft between the journals: none")
+    if bridge is None or bridge[1] < STEM_R - 0.05:
+        problems.append("no core between the two journals")
     journal = radii_at(shaft, (Z_N1[0] + Z_N1[1]) / 2)
     # the slice radius about the origin, not the journal axis. report the max.
     report.append(f"crank slice at the rear journal: r {journal[0]:.2f} to {journal[1]:.2f}")
