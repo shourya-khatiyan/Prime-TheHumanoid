@@ -2,13 +2,13 @@
 
 Screws, bearings, and pins for one actuator. The motor and the encoder are not on this list. Printed parts are in `cad/actuator_print.zip`.
 
-The journals are Ø21. The roller bore is 20 mm, and a Ø20 journal was still loose.
+The disc bearings are the leftover elbow 6704-2RS parts. Measured 19.1 × 26.7 × 3.8 mm. The catalog size is 20 × 27 × 4. The journals are Ø19.0 so those bores slide on.
 
 ## Bearings
 
 | Qty | Part | Size | Where it goes |
 |---|---|---|---|
-| 2 | Needle roller and cage, no inner ring. SKF K 20×24×10 | 20 × 24 × 10 mm | One on each crank journal. Static rating 12.9 kN. The cage is one piece, so the rear one goes on before the flange. |
+| 2 | Deep groove ball bearing, from the elbow build. 6704-2RS | measured 19.1 × 26.7 × 3.8 mm | One in each cycloid disc. The rear lip in the disc stops the outer ring. |
 | 2 | Deep groove ball bearing. SKF 61906 | 30 × 47 × 9 mm | Rear hub, then front hub. The printed seat is Ø47.6. Shaft shoulder is Ø33. Housing shoulder is Ø44. |
 
 ## Pins

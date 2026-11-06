@@ -14,9 +14,12 @@ M2 head ends z 3.05, flange face z 3.30, bearing starts z 4.00
 hub shoulder to rear bearing: 0.11 mm
 front plate to the outer ring: 1.60 mm
 crank shaft is 1 solid
-shaft between the journals: r 7.99 to 8.00
-rear journal diameter 21.000 mm
-front journal diameter 21.000 mm
+shaft between the journals: r 10.99 to 11.00
+rear journal diameter 19.000 mm
+rear disc lip 25.39 mm, seat 26.90 mm
+front journal diameter 19.000 mm
+front disc lip 25.39 mm, seat 26.90 mm
+6704 seated clash -0.0 mm3, lip stops a 1 mm push 53 mm3
 shaft vs 19 Crank flange: clash 0.0 mm3
 shaft vs 03 Cycloid disc A: clash 0.0 mm3
 shaft vs 04 Cycloid disc B: clash 0.0 mm3
@@ -27,7 +30,7 @@ solid part 2: 30 g
 solid part 8: 19 g
 solid part 15: 92 g
 solid part 23: 12 g
-solid PETG 700 g
+solid PETG 697 g
 fit-check print is solid. no infill estimate.
 arm face z 57.0 mm, was 53.0 on v4
 bed plate 1: 9 parts

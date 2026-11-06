@@ -69,11 +69,17 @@ OUT_R, OUT_N, OUT_PIN_R, OUT_PLAY = 30.0, 8, 3.0, 0.25
 HOLE_R = OUT_PIN_R + ECC + OUT_PLAY
 PIN_HOLE_R = PIN_RAD + CLEAR
 
-# K 20x24x10 roller bore is 20 mm. The printed 20 mm journals were loose, so both
-# journals are 21 mm. Only the shaft changes. The discs and the flange stay.
-NEEDLE_FW, NEEDLE_EW, NEEDLE_U = 20.0, 24.0, 10.0
-J_R = NEEDLE_FW / 2 + 0.5
-DISC_BORE_R = 12.2  # same bore as the printed v4 discs, so those discs stay
+# leftover elbow 6704-2RS. the vernier replaces the 20 x 27 x 4 catalog.
+# AST: shaft shoulder max 22.4 mm, housing shoulder min 25.44 mm.
+# https://www.astbearings.com/catalog/thin_section_metric/6704-2RS
+D6704_ID, D6704_OD, D6704_B = 19.1, 26.7, 3.8
+SEAT_D = 26.9  # 0.2 mm over the measured outer ring, so it enters
+LIP_D = 25.4  # elbow lip. under 26.7, over the inner ring
+LIP_T = 1.6
+JOURNAL_D = 19.0  # 0.1 mm under the measured 19.1 bore
+J_R = JOURNAL_D / 2
+SHAFT_STOP_D = 22.0  # inner-ring stop, under the 22.4 mm shoulder limit
+NEEDLE_FW, NEEDLE_EW, NEEDLE_U = 20.0, 24.0, 10.0  # old cage, kept for the stem-pass check
 
 # 61906
 BRG_BORE, BRG_OD, BRG_B = 30.0, 47.0, 9.0
@@ -201,14 +207,25 @@ def hex_prism(across_flats, z0, z1):
 
 
 def disc(z0, z1, shift_x, rot_deg):
-    """One cycloid disc on an eccentric journal. Same outline as v4."""
+    """Cycloid disc. The rear lip stops the 6704 outer ring. The bearing enters from the front."""
     pts = cy.disc_profile(PIN_R, ECC, PIN_RAD, RATIO, n=1200, dr=DR, rot_deg=rot_deg)
     body = extrude_polygon(pts, z0, z1).translate((shift_x, 0, 0))
-    body = body - cyl(DISC_BORE_R, z0 - 0.2, z1 + 0.2, shift_x, 0)
+    body = body - cyl(LIP_D / 2, z0 - 0.2, z0 + LIP_T, shift_x, 0)
+    body = body - cyl(SEAT_D / 2, z0 + LIP_T, z1 + 0.2, shift_x, 0)
     for a in every(OUT_N):
         x, y = polar(OUT_R, a)
         body = body - cyl(HOLE_R, z0 - 0.2, z1 + 0.2, x + shift_x, y)
     return body
+
+
+def bearing_span(z0):
+    """Z range of a 6704 seated against the rear lip of a disc that starts at z0."""
+    return (z0 + LIP_T, z0 + LIP_T + D6704_B)
+
+
+def disc_bearing(z0, x):
+    """Envelope of one measured 6704, seated in the disc."""
+    return tube(D6704_OD / 2, D6704_ID / 2, *bearing_span(z0)).translate((x, 0, 0))
 
 
 def cage(z0, z1, x):
@@ -244,15 +261,17 @@ def build():
 
     add("03 Cycloid disc A", "20MnCr5", disc(*Z_D1, ECC, 0.0))
     add("04 Cycloid disc B", "20MnCr5", disc(*Z_D2, -ECC, -180.0 / RATIO))
-    add("05 Needle K20x24x10 A", "Bearing (purchased)", cage(*Z_N1, ECC))
-    add("06 Needle K20x24x10 B", "Bearing (purchased)", cage(*Z_N2, -ECC))
+    add("05 Disc bearing 6704 A", "Bearing (purchased)", disc_bearing(Z_D1[0], ECC))
+    add("06 Disc bearing 6704 B", "Bearing (purchased)", disc_bearing(Z_D2[0], -ECC))
 
-    # one shaft. the Ø16 core runs through both journals. the flange is the
-    # only piece that comes off, so the rear cage can slide on from the back.
-    # start just in front of the flange disc, so the Ø16 stem only enters the sleeve bore
+    # one shaft. journals match the measured 19.1 mm bearing bore.
+    # the Ø22 stop between them is the elbow lens: each inner ring seats on it,
+    # and neither bearing has to slide over it.
+    za, zb = bearing_span(Z_D1[0]), bearing_span(Z_D2[0])
     shaft = cyl(STEM_R, Z_CRANK_FLANGE[1] + 0.05, Z_N2[1] + 0.3)
-    shaft = shaft + cyl(J_R, Z_N1[0] - 0.45, Z_N1[1] + 0.3, ECC, 0)
-    shaft = shaft + cyl(J_R, Z_N2[0] - 0.5, Z_N2[1] + 0.3, -ECC, 0)
+    shaft = shaft + cyl(J_R, *za, ECC, 0)
+    shaft = shaft + cyl(SHAFT_STOP_D / 2, za[1], zb[0])
+    shaft = shaft + cyl(J_R, *zb, -ECC, 0)
     shaft = shaft + cyl(NOSE_R, Z_N2[1] + 0.3, Z_N2[1] + 8.0)
     shaft = shaft - cyl(1.6, Z_CRANK_FLANGE[0] - 0.4, Z_CRANK_FLANGE[1] + 6.0)  # motor stub
     for a in every(3, 50):
@@ -556,15 +575,33 @@ def measure(parts):
     report.append(f"shaft between the journals: r {bridge[0]:.2f} to {bridge[1]:.2f}" if bridge else "shaft between the journals: none")
     if bridge is None or bridge[1] < STEM_R - 0.05:
         problems.append("no core between the two journals")
-    for label, z, origin in (
-        ("rear", (Z_N1[0] + Z_N1[1]) / 2, (ECC, 0.0)),
-        ("front", (Z_N2[0] + Z_N2[1]) / 2, (-ECC, 0.0)),
+    for label, span, origin, disc_z, disc_s in (
+        ("rear", bearing_span(Z_D1[0]), (ECC, 0.0), Z_D1, disc_a),
+        ("front", bearing_span(Z_D2[0]), (-ECC, 0.0), Z_D2, disc_b),
     ):
-        journal = radii_at(shaft, z, origin)
+        journal = radii_at(shaft, (span[0] + span[1]) / 2, origin)
         dia = None if journal is None else 2 * journal[1]
         report.append(f"{label} journal diameter {dia:.3f} mm" if dia else f"{label} journal missing")
-        if dia is None or abs(dia - 2 * J_R) > 0.02:
-            problems.append(f"{label} journal: {dia}, wanted {2 * J_R:.2f} to {2 * J_R:.2f}")
+        if dia is None or abs(dia - JOURNAL_D) > 0.02:
+            problems.append(f"{label} journal: {dia}, wanted {JOURNAL_D:.2f} to {JOURNAL_D:.2f}")
+        lip = radii_at(disc_s, disc_z[0] + LIP_T / 2, origin)
+        seat = radii_at(disc_s, span[0] + 0.4, origin)
+        lip_d = None if lip is None else 2 * lip[0]
+        seat_d = None if seat is None else 2 * seat[0]
+        report.append(f"{label} disc lip {lip_d:.2f} mm, seat {seat_d:.2f} mm" if lip_d else f"{label} disc bore missing")
+        if lip_d is None or abs(lip_d - LIP_D) > 0.05:
+            problems.append(f"{label} lip: {lip_d}, wanted {LIP_D:.2f} to {LIP_D:.2f}")
+        if seat_d is None or abs(seat_d - SEAT_D) > 0.05:
+            problems.append(f"{label} seat: {seat_d}, wanted {SEAT_D:.2f} to {SEAT_D:.2f}")
+        if lip_d is not None and not (22.4 < lip_d < D6704_OD):
+            problems.append(f"{label} lip {lip_d:.2f} does not catch the {D6704_OD:.1f} mm outer ring")
+    seated = ix(g["05 Disc bearing 6704 A"], disc_a) + ix(g["06 Disc bearing 6704 B"], disc_b)
+    locked = ix(g["05 Disc bearing 6704 A"].translate((0, 0, -1.0)), disc_a)
+    report.append(f"6704 seated clash {seated:.1f} mm3, lip stops a 1 mm push {locked:.0f} mm3")
+    if seated > 1.0:
+        problems.append(f"6704 intersects a disc: {seated:.1f} mm3, wanted 0 to 1")
+    if locked < 5.0:
+        problems.append(f"lip does not stop the bearing: {locked:.0f} mm3, wanted 5 to 400")
     for name in ("19 Crank flange", "03 Cycloid disc A", "04 Cycloid disc B", "08 Rear carrier", "21 Front washer"):
         hit = ix(shaft, g[name])
         report.append(f"shaft vs {name}: clash {hit:.1f} mm3")
@@ -683,8 +720,8 @@ def draw_section(parts, path):
         ("27 Bearing retainer", "#2f6f9f"),
         ("09 Rear output bearing 61906", "#e0c15a"),
         ("10 Front output bearing 61906", "#e0c15a"),
-        ("05 Needle K20x24x10 A", "#222222"),
-        ("06 Needle K20x24x10 B", "#222222"),
+        ("05 Disc bearing 6704 A", "#222222"),
+        ("06 Disc bearing 6704 B", "#222222"),
         ("03 Cycloid disc A", "#7d9a62"),
         ("04 Cycloid disc B", "#7d9a62"),
     )

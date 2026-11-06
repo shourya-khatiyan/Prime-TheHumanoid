@@ -20,7 +20,7 @@ The ring pins are at 0°, which is the angle the disc was drawn for.
 
 The rear bearing seat is a Ø47.6 bore. The disc chamber starts in front of it, so the seat is still there after the discs go in. A retainer ring, bolted on after the bearing, holds the outer ring. The hub shoulder is Ø33, which is inside the SKF shaft abutment of 32 to 34 mm. The retainer hole is Ø44, under the SKF housing abutment limit of 45 mm. The front plate is cut back in front of the outer ring, and the cover bore in front of the front bearing is the same Ø44.
 
-The journals are Ø21. The K 20×24×10 roller bore is 20 mm, and a Ø20 journal was still loose, so both journals are 1 mm larger on the diameter. The discs, the flange, and the hub are unchanged.
+The disc bearings are the leftover 6704-2RS parts, measured 19.1 × 26.7 × 3.8 mm. A K 20×24×10 cage has no ring for a lip to catch, which is why those cages fell out. Each disc has the elbow lip: Ø25.4 on the rear face, then a Ø26.9 seat. The bearing is pushed in from the front and stops on the lip. The journals are Ø19.0. A Ø22 stop between them seats both inner rings. The flange, housing, carrier, and cover are unchanged. The discs and the shaft are the parts to print again.
 
 The arm face moved from 53 mm to 57 mm so the retainer fits between the rear bearing and the rear carrier. The arm flange itself is the same shape.
 
@@ -41,7 +41,9 @@ Print from `cad/actuator_print.zip`. Keep the v4 parts that are not in this list
 |---|---|
 | 01 Housing | Bearing seat, pin angle, Ø4.6 pin holes |
 | 02 Ring pins, all 46 | 41 mm long. The v4 pins are 37 mm and stop short of the cover |
-| 07 Crank shaft | Journals are Ø21. Reprint this part only |
+| 03 Cycloid disc A | Rear lip and 6704 seat |
+| 04 Cycloid disc B | Rear lip and 6704 seat |
+| 07 Crank shaft | Journals Ø19.0 for the measured 19.1 mm bore |
 | 08 Rear carrier | Hub shoulder, tapped pin ends |
 | 15 Front cover | Pin angle, Ø44 abutment |
 | 19 Crank flange | One piece: the motor disc and the sleeve that stops the rear cage |
@@ -50,7 +52,7 @@ Print from `cad/actuator_print.zip`. Keep the v4 parts that are not in this list
 | 27 Bearing retainer | New |
 | 31 Fit coupon | Try one 61906 and one cage before the housing |
 
-Keep the v4 discs, the rear plate, the encoder lid, the arm flange, and the cross pin.
+Keep the rear plate, the encoder lid, the arm flange, and the cross pin. The new discs replace the v4 discs.
 
 ## Not run
 
