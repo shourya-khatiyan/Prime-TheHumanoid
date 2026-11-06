@@ -1,0 +1,8 @@
+motion: the sleeve sits on the crank journal and gives the K 20x24x10 rollers a 20 mm bore
+shaft caliper 19.00 mm, cage inner 20.00 mm, catalog under rollers 20.00 mm
+disc hole caliper 24.00 mm, cage measured outside 23.00 mm, catalog over rollers 24.00 mm
+inner sleeve bore 18.999 mm, outside 20.000 mm, wall 0.501 mm, width 10.00 mm
+diametral gap filled, inner 1.00 mm
+outer gap the caliper sees 1.00 mm. catalog roller outside is 24.00 mm, same as the disc hole, so no outer sleeve
+wall 0.50 mm, one perimeter is 0.45 mm. fit sleeve, not a load wall
+solid PETG 0.39 g each, two sleeves 0.78 g

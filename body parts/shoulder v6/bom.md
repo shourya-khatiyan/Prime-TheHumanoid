@@ -2,7 +2,7 @@
 
 Screws, bearings, and pins for one actuator. The motor and the encoder are not on this list. Printed parts are in `cad/actuator_print.zip`.
 
-The journals in that print are 0.30 mm under size so the cages slide on. A metal crank is ground to the catalog race, Ø20.
+The journals are Ø21. The roller bore is 20 mm, and a Ø20 journal was still loose.
 
 ## Bearings
 

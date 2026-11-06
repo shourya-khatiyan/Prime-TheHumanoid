@@ -21,7 +21,7 @@ so a bought bearing can enter a printed bore.
 
 Bed faces, bore axis up unless noted:
 - housing: motor end
-- discs, flange, collar, washer, retainer, front plate, cover, arm flange: flat face
+- discs, flange, washer, retainer, front plate, cover, arm flange: flat face
 - crank: stem end
 - rear carrier: plate face, pins up
 - rear plate and encoder lid: outer face
@@ -69,10 +69,10 @@ OUT_R, OUT_N, OUT_PIN_R, OUT_PLAY = 30.0, 8, 3.0, 0.25
 HOLE_R = OUT_PIN_R + ECC + OUT_PLAY
 PIN_HOLE_R = PIN_RAD + CLEAR
 
-# needles and journals. the print journal is 0.30 under Fw so the cage slides on.
-# a metal crank is ground to Fw 20.
+# K 20x24x10 roller bore is 20 mm. The printed 20 mm journals were loose, so both
+# journals are 21 mm. Only the shaft changes. The discs and the flange stay.
 NEEDLE_FW, NEEDLE_EW, NEEDLE_U = 20.0, 24.0, 10.0
-J_R = NEEDLE_FW / 2 - CLEAR
+J_R = NEEDLE_FW / 2 + 0.5
 DISC_BORE_R = 12.2  # same bore as the printed v4 discs, so those discs stay
 
 # 61906
@@ -99,7 +99,6 @@ Z_BRG_REAR = (4.0, 13.0)
 Z_RETAINER = (13.05, 15.65)
 Z_REAR_PLATE = (17.3, 19.8)
 Z_CRANK_FLANGE = (0.20, 3.30)
-Z_SHOULDER = (3.30, 4.00)  # small shoulder the cage can still pass
 
 # measured LA8308. z = 0 is the hub face.
 MOUNT = -27.5
@@ -250,9 +249,9 @@ def build():
 
     # one shaft. the Ø16 core runs through both journals. the flange is the
     # only piece that comes off, so the rear cage can slide on from the back.
-    shaft = cyl(STEM_R, Z_CRANK_FLANGE[1] - 0.4, Z_N2[1] + 0.3)
-    shaft = shaft + cyl(9.0, *Z_SHOULDER)  # cage still clears this step
-    shaft = shaft + cyl(J_R, Z_N1[0] - 0.5, Z_N1[1] + 0.3, ECC, 0)
+    # start just in front of the flange disc, so the Ø16 stem only enters the sleeve bore
+    shaft = cyl(STEM_R, Z_CRANK_FLANGE[1] + 0.05, Z_N2[1] + 0.3)
+    shaft = shaft + cyl(J_R, Z_N1[0] - 0.45, Z_N1[1] + 0.3, ECC, 0)
     shaft = shaft + cyl(J_R, Z_N2[0] - 0.5, Z_N2[1] + 0.3, -ECC, 0)
     shaft = shaft + cyl(NOSE_R, Z_N2[1] + 0.3, Z_N2[1] + 8.0)
     shaft = shaft - cyl(1.6, Z_CRANK_FLANGE[0] - 0.4, Z_CRANK_FLANGE[1] + 6.0)  # motor stub
@@ -264,15 +263,15 @@ def build():
     shaft = shaft - cyl(3.6, Z_N2[1] + 1.65, Z_N2[1] + 8.2)
     add("07 Crank shaft", "20MnCr5", shaft)
 
-    collar = tube(COLLAR_RO, STEM_R + CLEAR, Z_SHOULDER[1], Z_N1[0] - 0.5)
-    add("20 Collar", "20MnCr5", collar)
     washer = tube(COLLAR_RO, NOSE_R + CLEAR, Z_N2[1] + 0.45, Z_N2[1] + 1.7)
     add("21 Front washer", "20MnCr5", washer)
     add("28 Screw M4 washer", "52100 bearing steel",
         cyl(3.4, Z_N2[1] + 1.7, Z_N2[1] + 5.7) + cyl(1.5, Z_N2[1] - 2.5, Z_N2[1] + 1.7))
 
-    flange = cyl(FLANGE_R, *Z_CRANK_FLANGE) - cyl(STEM_R + CLEAR, Z_CRANK_FLANGE[0] - 0.3, Z_CRANK_FLANGE[1] + 0.3)
-    flange = flange - cyl(1.8, Z_CRANK_FLANGE[0] - 0.3, Z_CRANK_FLANGE[1] + 0.3)  # stub
+    # the disc and the cage-stop sleeve are one flange. the sleeve used to be a separate collar.
+    flange = cyl(FLANGE_R, *Z_CRANK_FLANGE)
+    flange = flange + tube(COLLAR_RO, STEM_R + CLEAR, Z_CRANK_FLANGE[1] - 0.8, Z_N1[0] - 0.5)
+    flange = flange - cyl(1.8, Z_CRANK_FLANGE[0] - 0.3, Z_CRANK_FLANGE[1] - 0.6)  # stub, web stays
     flange = flange - holes(M2_R, 2.4, Z_CRANK_FLANGE[0] - 0.2, Z_CRANK_FLANGE[1] + 0.2, every(4))
     # head pocket deep enough for a 2.0 mm M2 head, so the head stays inside the face
     flange = flange - holes(M2_R, 4.4, Z_CRANK_FLANGE[1] - 2.25, Z_CRANK_FLANGE[1] + 0.1, every(4))
@@ -387,7 +386,7 @@ def build():
 
 
 def fit_coupon():
-    """A bearing bore and a journal, so the 0.30 mm clearance can be tried first."""
+    """A 61906 bore and a 20 mm journal, so both fits can be tried first."""
     block = box(0, 64, 0, 24, 0, 14) - cyl(SEAT_R, -1, 15, 16, 12)
     return block + cyl(J_R, 0, 10, 48, 12)
 
@@ -407,10 +406,11 @@ def ix(a, b):
     return Manifold.batch_boolean([a, b], OpType.Intersect).volume()
 
 
-def radii_at(solid, z):
-    """Min and max radius of the slice at z, or None."""
+def radii_at(solid, z, origin=(0.0, 0.0)):
+    """Min and max radius of the slice at z about origin, or None."""
+    ox, oy = origin
     polys = solid.slice(z).to_polygons()
-    rs = [math.hypot(x, y) for poly in polys for x, y in poly]
+    rs = [math.hypot(x - ox, y - oy) for poly in polys for x, y in poly]
     if not rs:
         return None
     return min(rs), max(rs)
@@ -429,7 +429,6 @@ def measure(parts):
     g = named(parts)
     housing = g["01 Housing 6082-T6"]
     shaft = g["07 Crank shaft"]
-    collar = g["20 Collar"]
     washer = g["21 Front washer"]
     flange = g["19 Crank flange"]
     rear_brg = g["09 Rear output bearing 61906"]
@@ -459,24 +458,26 @@ def measure(parts):
                 lo = mid
         return hi
 
-    # rear cage path. the shaft is open from the back. the collar closes it after.
+    # the cage still has to pass the Ø16 stem. it is meant to be tight on the 21 mm journals.
     rear_cage = cage(0, NEEDLE_U, ECC)
-    path_z = (6.0, 10.0, Z_N1[0])
-    path_hit = max(ix(rear_cage.translate((0, 0, z)), shaft) for z in path_z)
-    report.append(f"rear cage along the shaft: clash {path_hit:.1f} mm3")
+    path_hit = ix(rear_cage.translate((0, 0, 6.0)), shaft)
+    report.append(f"rear cage along the stem: clash {path_hit:.1f} mm3")
     if path_hit > 1.0:
         problems.append(f"rear cage path: {path_hit:.1f} mm3, wanted 0 to 1")
-    stop = ix(rear_cage.translate((0, 0, 8.0)), collar)
-    report.append(f"collar stops the rear cage: clash {stop:.0f} mm3")
+    stop = ix(rear_cage.translate((0, 0, 8.0)), flange)
+    report.append(f"flange sleeve stops the rear cage: clash {stop:.0f} mm3")
     if stop < 5.0:
-        problems.append(f"collar stop: {stop:.0f} mm3, wanted 5 to 400")
+        problems.append(f"flange sleeve stop: {stop:.0f} mm3, wanted 5 to 400")
+    flange_shells = len([s for s in flange.decompose() if s.volume() > 1])
+    report.append(f"crank flange is {flange_shells} solid")
+    if flange_shells != 1:
+        problems.append(f"crank flange solids: {flange_shells}, wanted 1 to 1")
 
     front_cage = cage(0, NEEDLE_U, -ECC)
-    front_hit = ix(front_cage.translate((0, 0, Z_N2[0])), shaft)
     nose_hit = ix(front_cage.translate((0, 0, Z_N2[1] + 0.4)), shaft)
-    report.append(f"front cage on its journal: clash {front_hit:.1f} mm3, on the nose {nose_hit:.1f} mm3")
-    if front_hit > 1.0 or nose_hit > 1.0:
-        problems.append(f"front cage path: journal {front_hit:.1f}, nose {nose_hit:.1f}, wanted 0 to 1")
+    report.append(f"front cage on the nose: clash {nose_hit:.1f} mm3")
+    if nose_hit > 1.0:
+        problems.append(f"front cage path: {nose_hit:.1f} mm3, wanted 0 to 1")
     if ix(front_cage.translate((0, 0, Z_N2[1] - 0.2)), washer) < 5.0:
         problems.append("front washer does not stop the cage")
 
@@ -524,7 +525,9 @@ def measure(parts):
 
     head = g["22.1 Screw M2 crank to rotor"]
     head_z = bbox(head)[5]
-    face_z = bbox(flange)[5]
+    disc_face = Manifold.batch_boolean(
+        [flange, tube(FLANGE_R + 1, COLLAR_RO + 0.5, -1, 40)], OpType.Intersect)
+    face_z = bbox(disc_face)[5]
     brg_z = bbox(rear_brg)[2]
     report.append(f"M2 head ends z {head_z:.2f}, flange face z {face_z:.2f}, bearing starts z {brg_z:.2f}")
     if head_z > face_z - 0.05:
@@ -553,9 +556,20 @@ def measure(parts):
     report.append(f"shaft between the journals: r {bridge[0]:.2f} to {bridge[1]:.2f}" if bridge else "shaft between the journals: none")
     if bridge is None or bridge[1] < STEM_R - 0.05:
         problems.append("no core between the two journals")
-    journal = radii_at(shaft, (Z_N1[0] + Z_N1[1]) / 2)
-    # the slice radius about the origin, not the journal axis. report the max.
-    report.append(f"crank slice at the rear journal: r {journal[0]:.2f} to {journal[1]:.2f}")
+    for label, z, origin in (
+        ("rear", (Z_N1[0] + Z_N1[1]) / 2, (ECC, 0.0)),
+        ("front", (Z_N2[0] + Z_N2[1]) / 2, (-ECC, 0.0)),
+    ):
+        journal = radii_at(shaft, z, origin)
+        dia = None if journal is None else 2 * journal[1]
+        report.append(f"{label} journal diameter {dia:.3f} mm" if dia else f"{label} journal missing")
+        if dia is None or abs(dia - 2 * J_R) > 0.02:
+            problems.append(f"{label} journal: {dia}, wanted {2 * J_R:.2f} to {2 * J_R:.2f}")
+    for name in ("19 Crank flange", "03 Cycloid disc A", "04 Cycloid disc B", "08 Rear carrier", "21 Front washer"):
+        hit = ix(shaft, g[name])
+        report.append(f"shaft vs {name}: clash {hit:.1f} mm3")
+        if hit > 1.0:
+            problems.append(f"shaft hits {name}: {hit:.1f} mm3, wanted 0 to 1")
 
     for n, _, s in parts:
         if part_no(n) in PRINT_NOS and s.volume() < 10:
@@ -663,7 +677,6 @@ def draw_section(parts, path):
         ("15 Front cover", "#5c6770"),
         ("07 Crank shaft", "#8a6f4e"),
         ("19 Crank flange", "#c4a574"),
-        ("20 Collar", "#d98c4a"),
         ("21 Front washer", "#d98c4a"),
         ("08 Rear carrier", "#6e5a40"),
         ("23 Front plate and hub", "#6e5a40"),

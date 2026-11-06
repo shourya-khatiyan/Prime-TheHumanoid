@@ -1,28 +1,35 @@
 motion: the motor turns the crank, the crank walks two discs around the ring pins, and the discs turn the output pins and the arm
-rear cage along the shaft: clash 0.0 mm3
-collar stops the rear cage: clash 323 mm3
-front cage on its journal: clash 0.0 mm3, on the nose 0.0 mm3
+rear cage along the stem: clash 0.0 mm3
+flange sleeve stops the rear cage: clash 323 mm3
+crank flange is 1 solid
+front cage on the nose: clash 0.0 mm3
 housing bore at the rear bearing: r 23.80 to 52.00
 housing bore at disc A: r 46.40
 rear bearing in the housing: clash -0.0 mm3
 front bearing in the cover: clash -0.0 mm3
 retainer in the housing: clash 0.0 mm3
 ring pins in the discs: clash 0.0 mm3, profile gap 0.068 mm
-screws inside the parts they pass through: clash 2.1 mm3
+screws inside the parts they pass through: clash 0.0 mm3
 M2 head ends z 3.05, flange face z 3.30, bearing starts z 4.00
 hub shoulder to rear bearing: 0.11 mm
 front plate to the outer ring: 1.60 mm
 crank shaft is 1 solid
 shaft between the journals: r 7.99 to 8.00
-crank slice at the rear journal: r 9.17 to 10.23
+rear journal diameter 21.000 mm
+front journal diameter 21.000 mm
+shaft vs 19 Crank flange: clash 0.0 mm3
+shaft vs 03 Cycloid disc A: clash 0.0 mm3
+shaft vs 04 Cycloid disc B: clash 0.0 mm3
+shaft vs 08 Rear carrier: clash 0.0 mm3
+shaft vs 21 Front washer: clash 0.0 mm3
 solid part 1: 211 g
 solid part 2: 30 g
 solid part 8: 19 g
 solid part 15: 92 g
 solid part 23: 12 g
-solid PETG 698 g
+solid PETG 700 g
 fit-check print is solid. no infill estimate.
 arm face z 57.0 mm, was 53.0 on v4
-bed plate 1: 10 parts
+bed plate 1: 9 parts
 bed plate 2: 29 parts
 bed plate 3: 23 parts
