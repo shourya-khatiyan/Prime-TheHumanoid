@@ -97,6 +97,26 @@ static float g_slow_from = 0.0f;
 static uint32_t g_time_until = 0;
 static uint32_t g_pattern_t0 = 0;
 static bool g_sh_was_on = false;
+static uint32_t g_handoff_until = 0;
+static bool g_smooth_hold = false;
+static uint32_t g_smooth_t0 = 0;
+static bool g_shloop = false;
+static bool g_shcont = false;
+static uint32_t g_shloop_t0 = 0;
+static uint32_t g_shloop_until = 0;
+static bool g_both = false;
+static uint32_t g_both_t0 = 0;
+static uint32_t g_both_until = 0;
+static uint32_t g_both_pulse_t0 = 0;
+static uint32_t g_elbow_next = 0;
+static uint32_t g_elbow_move_t0 = 0;
+static bool g_elbow_moving = false;
+static bool g_hold_ready = false;
+static uint32_t g_hold_kick_until = 0;
+static uint32_t g_hold_block_until = 0;
+static uint16_t g_hold_ms = 55;
+static float g_hold_from = 0.0f;
+static uint32_t g_brake_until = 0;
 static uint32_t g_slow_t0 = 0;
 static float g_drive_from = 0.0f;
 static float g_drive_peak = 0.0f;
@@ -281,9 +301,18 @@ static void service_pattern() {
   bool on = ((millis() - g_pattern_t0) % cycle) < PATTERN_SHOULDER_ON_MS;
   if (on != g_sh_was_on) {
     g_sh_was_on = on;
+    if (!on) {
+      g_handoff_until = millis() + PATTERN_HANDOFF_MS;
+    }
     Serial.println(on ? F("shoulder up") : F("shoulder down"));
   }
   g_thr_s = on ? SHOULDER_TIME_THROTTLE : 0.0f;
+  bool handoff = (int32_t)(g_handoff_until - millis()) > 0;
+  float cut = PATTERN_CUT_DEG;
+  if (on) {
+    uint32_t phase = (millis() - g_pattern_t0) % cycle;
+    cut -= PATTERN_COUPLE_DEG * ((float)phase / (float)PATTERN_SHOULDER_ON_MS);
+  }
 
   float joint = g_el.unwrapped_deg - g_drive_from;
   if (joint > PATTERN_RELEASE_DEG) {
@@ -312,8 +341,11 @@ static void service_pattern() {
       g_drive_peak = g_el.unwrapped_deg;
       g_peak_since = millis();
     }
-    bool arrived = joint >= PATTERN_CUT_DEG;
-    bool stalled = joint > g_lift_from + 5.0f && (millis() - g_peak_since) > PATTERN_STALL_MS;
+    bool arrived = joint >= cut;
+    bool stalled = !handoff
+        && joint > g_lift_from + 8.0f
+        && (millis() - g_sweep_t0) > PATTERN_STALL_ARM_MS
+        && (millis() - g_peak_since) > PATTERN_STALL_MS;
     bool too_long = (millis() - g_sweep_t0) > PATTERN_CLIMB_MS;
     if (!arrived && !stalled && !too_long) {
       g_thr_e = PATTERN_CLIMB_PERCENT;
@@ -388,8 +420,106 @@ static void service_pattern() {
   }
 }
 
+static void service_both() {
+  if (!g_both) {
+    return;
+  }
+  uint32_t now = millis();
+  bool ended = (int32_t)(now - g_both_until) >= 0;
+  if (!ended) {
+    uint32_t cycle = SHOULDER_LOOP_ON_MS + SHOULDER_LOOP_OFF_MS;
+    uint32_t phase = (now - g_both_t0) % cycle;
+    bool on = phase < SHOULDER_LOOP_ON_MS;
+    if (on != g_sh_was_on) {
+      g_sh_was_on = on;
+      Serial.println(on ? F("shoulder up") : F("shoulder base"));
+    }
+    g_thr_s = on ? SHOULDER_TIME_THROTTLE : 0.0f;
+  } else {
+    g_thr_s = 0.0f;
+  }
+
+  float joint = g_el.unwrapped_deg - g_drive_from;
+  if (ended) {
+    g_thr_s = 0.0f;
+    g_thr_e = 0.0f;
+    g_both = false;
+    Serial.print(F("both done at "));
+    Serial.println(joint, 1);
+    return;
+  }
+  if (!g_elbow_moving) {
+    if ((int32_t)(now - g_elbow_next) >= 0 && joint < BOTH_AIM_DEG - 8.0f) {
+      g_elbow_moving = true;
+      g_hold_kick_until = 0;
+      g_elbow_move_t0 = now;
+      g_coast_mark = joint;
+      Serial.print(F("elbow move "));
+      Serial.println(joint, 1);
+      return;
+    }
+    if (!g_hold_ready) {
+      g_thr_e = 0.0f;
+      return;
+    }
+    if (g_hold_kick_until != 0 && (int32_t)(now - g_hold_kick_until) < 0) {
+      if (joint >= g_hold_from + BOTH_HOLD_LIFT_DEG) {
+        float rise = joint - g_hold_from;
+        if (rise > 4.0f && g_hold_ms > 30) {
+          g_hold_ms = (uint16_t)(g_hold_ms - 15);
+        }
+        g_thr_e = 0.0f;
+        g_hold_kick_until = 0;
+        g_hold_block_until = now + 300;
+        return;
+      }
+      g_thr_e = ESC_THROTTLE_CAP_PERCENT;
+      return;
+    }
+    if (g_hold_kick_until != 0) {
+      float rise = joint - g_hold_from;
+      if (rise < 0.8f && g_hold_ms < 130) {
+        g_hold_ms = (uint16_t)(g_hold_ms + 15);
+      }
+      if (rise > 4.0f && g_hold_ms > 30) {
+        g_hold_ms = (uint16_t)(g_hold_ms - 15);
+      }
+      g_hold_kick_until = 0;
+      g_hold_block_until = now + 300;
+      g_thr_e = 0.0f;
+      return;
+    }
+    if (joint <= BOTH_HOLD_DEG && (int32_t)(now - g_hold_block_until) >= 0) {
+      g_hold_from = joint;
+      g_hold_kick_until = now + g_hold_ms;
+      g_thr_e = ESC_THROTTLE_CAP_PERCENT;
+      Serial.print(F("elbow hold "));
+      Serial.println(joint, 1);
+      return;
+    }
+    g_thr_e = 0.0f;
+    return;
+  }
+  if (joint > BOTH_CAP_DEG || joint >= BOTH_AIM_DEG || (now - g_elbow_move_t0) > BOTH_MOVE_MAX_MS) {
+    g_thr_e = 0.0f;
+    g_elbow_moving = false;
+    g_hold_ready = true;
+    g_elbow_next = now + BOTH_GAP_MS;
+    Serial.print(F("elbow pause "));
+    Serial.println(joint, 1);
+    return;
+  }
+  if ((now - g_elbow_move_t0) < 400) {
+    g_thr_e = ESC_THROTTLE_CAP_PERCENT;
+    return;
+  }
+  uint32_t span = BOTH_SLOW_ON_MS + BOTH_SLOW_OFF_MS;
+  uint32_t pt = (now - g_elbow_move_t0) % span;
+  g_thr_e = pt < BOTH_SLOW_ON_MS ? ESC_THROTTLE_CAP_PERCENT : 0.0f;
+}
+
 static void note_elbow_motion() {
-  if (g_stage == STAGE_SWEEP || g_stage == STAGE_GOTO || g_stage == STAGE_PATTERN) {
+  if (g_both || g_stage == STAGE_SWEEP || g_stage == STAGE_GOTO || g_stage == STAGE_PATTERN) {
     return;
   }
   if (!g_el.inited || g_thr_e <= 0.0f) {
@@ -427,6 +557,10 @@ static void print_help() {
   Serial.println(F("  arm               send min throttle, wait for esc tone"));
   Serial.println(F("  loops             20 times, rest 0 to 110"));
   Serial.println(F("  pattern           elbow 40 turns 30-130, shoulder 3s on 3s off"));
+  Serial.println(F("  smooth            saved elbow motion, shoulder releases at the bottom"));
+  Serial.println(F("  shloop            shoulder only, 3s up, 3s base, 1 minute"));
+  Serial.println(F("  shcont            shoulder only, same loop, until stop"));
+  Serial.println(F("  both              slow elbow moves, 2s apart. shoulder 3s loop"));
   Serial.println(F("  time <sec>        shoulder runs for that many seconds"));
   Serial.println(F("  open              two short pulses, no encoder"));
   Serial.println(F("  sweep             drive to the stop, let it fall, repeat"));
@@ -446,6 +580,10 @@ static void cut_all(const char *why) {
   g_thr_s = 0.0f;
   g_thr_e = 0.0f;
   g_time_until = 0;
+  g_smooth_hold = false;
+  g_shloop = false;
+  g_shcont = false;
+  g_both = false;
   g_stage = STAGE_IDLE;
   Serial.print(F("CUT "));
   Serial.println(why);
@@ -479,13 +617,30 @@ static void service_time() {
   if (g_time_until == 0) {
     return;
   }
-  if ((int32_t)(millis() - g_time_until) < 0) {
+  if (g_smooth_hold && g_stage != STAGE_GOTO) {
+    g_thr_s = 0.0f;
+    g_time_until = 0;
+    g_smooth_hold = false;
+    Serial.println(F("shoulder down"));
+    return;
+  }
+  bool min_done = (int32_t)(millis() - g_time_until) >= 0;
+  float joint = g_el.unwrapped_deg - g_drive_from;
+  bool hold = false;
+  if (g_smooth_hold && min_done) {
+    bool low = joint <= (ELBOW_TURN_DEG + 8.0f);
+    bool cap = (millis() - g_smooth_t0) >= SMOOTH_SHOULDER_MAX_MS;
+    hold = !low && !cap;
+  }
+  if (!min_done || hold) {
     g_thr_s = SHOULDER_TIME_THROTTLE;
     return;
   }
   g_thr_s = 0.0f;
   g_time_until = 0;
-  Serial.println(F("time done"));
+  bool was_smooth = g_smooth_hold;
+  g_smooth_hold = false;
+  Serial.println(was_smooth ? F("shoulder down") : F("time done"));
 }
 
 static void service_open() {
@@ -529,6 +684,38 @@ static void apply_throttles() {
 #endif
   service_open();
   service_time();
+  if (g_shloop) {
+    uint32_t now = millis();
+    if ((int32_t)(now - g_shloop_until) >= 0) {
+      g_thr_s = 0.0f;
+      g_thr_e = 0.0f;
+      g_shloop = false;
+      Serial.println(F("shoulder done"));
+    } else {
+      uint32_t cycle = SHOULDER_LOOP_ON_MS + SHOULDER_LOOP_OFF_MS;
+      uint32_t phase = (now - g_shloop_t0) % cycle;
+      bool on = phase < SHOULDER_LOOP_ON_MS;
+      if (on != g_sh_was_on) {
+        g_sh_was_on = on;
+        Serial.println(on ? F("shoulder up") : F("shoulder base"));
+      }
+      g_thr_s = on ? SHOULDER_TIME_THROTTLE : 0.0f;
+      g_thr_e = 0.0f;
+    }
+  }
+  if (g_shcont) {
+    uint32_t now = millis();
+    uint32_t cycle = SHOULDER_LOOP_ON_MS + SHOULDER_LOOP_OFF_MS;
+    uint32_t phase = (now - g_shloop_t0) % cycle;
+    bool on = phase < SHOULDER_LOOP_ON_MS;
+    if (on != g_sh_was_on) {
+      g_sh_was_on = on;
+      Serial.println(on ? F("shoulder up") : F("shoulder base"));
+    }
+    g_thr_s = on ? SHOULDER_TIME_THROTTLE : 0.0f;
+    g_thr_e = 0.0f;
+  }
+  service_both();
   esc_write_percent(ESC_SHOULDER, g_thr_s);
   esc_write_percent(ESC_ELBOW, g_thr_e);
   if (g_stage != STAGE_IDLE) {
@@ -669,6 +856,9 @@ static void handle_line(String line) {
     g_thr_s = 0.0f;
     g_thr_e = 0.0f;
     g_time_until = 0;
+    g_shloop = false;
+    g_shcont = false;
+    g_both = false;
     if (g_stage == STAGE_SPIN || g_stage == STAGE_MOVE || g_stage == STAGE_SWEEP || g_stage == STAGE_OPEN || g_stage == STAGE_GOTO || g_stage == STAGE_PATTERN) {
       g_stage = STAGE_ARMED;
     }
@@ -844,6 +1034,122 @@ static void handle_line(String line) {
     return;
   }
 
+  if (line == "smooth") {
+    if (g_stage == STAGE_IDLE) {
+      Serial.println(F("not armed. send arm first."));
+      return;
+    }
+    if (!g_el.inited) {
+      Serial.println(F("elbow encoder not talking."));
+      return;
+    }
+    if (g_el.last_raw_deg > 40.0f && g_el.last_raw_deg < 320.0f) {
+      Serial.println(F("not at rest. let the forearm down first."));
+      return;
+    }
+    g_drive_from = g_el.unwrapped_deg;
+    g_el.zero_joint_deg = g_el.unwrapped_deg / g_el.ratio;
+    g_drive_peak = g_drive_from;
+    g_peak_since = millis();
+    g_sweep_t0 = millis();
+    g_sweep_phase = SWEEP_DRIVE;
+    g_loops_left = ELBOW_LOOPS;
+    g_loops_done = 0;
+    g_end_down = false;
+    g_lift_from = 0.0f;
+    g_smooth_hold = true;
+    g_smooth_t0 = millis();
+    g_time_until = g_smooth_t0 + SMOOTH_SHOULDER_MIN_MS;
+    g_thr_e = ESC_THROTTLE_CAP_PERCENT;
+    g_thr_s = SHOULDER_TIME_THROTTLE;
+    g_stage = STAGE_GOTO;
+    Serial.println(F("smooth. saved elbow profile. shoulder releases near the bottom."));
+    return;
+  }
+
+  if (line == "shloop") {
+    if (g_stage == STAGE_IDLE) {
+      Serial.println(F("not armed. send arm first."));
+      return;
+    }
+    g_shloop = true;
+    g_sh_was_on = false;
+    g_shloop_t0 = millis();
+    g_shloop_until = g_shloop_t0 + SHOULDER_LOOP_TOTAL_MS;
+    g_time_until = 0;
+    g_smooth_hold = false;
+    g_thr_e = 0.0f;
+    g_thr_s = SHOULDER_TIME_THROTTLE;
+    if (g_stage != STAGE_ARMED) {
+      g_stage = STAGE_ARMED;
+    }
+    Serial.println(F("shoulder only. 3s up, 3s base, 1 minute. elbow off."));
+    return;
+  }
+
+  if (line == "shcont") {
+    if (g_stage == STAGE_IDLE) {
+      Serial.println(F("not armed. send arm first."));
+      return;
+    }
+    g_shcont = true;
+    g_shloop = false;
+    g_both = false;
+    g_sh_was_on = false;
+    g_shloop_t0 = millis();
+    g_time_until = 0;
+    g_smooth_hold = false;
+    g_thr_e = 0.0f;
+    g_thr_s = SHOULDER_TIME_THROTTLE;
+    if (g_stage != STAGE_ARMED) {
+      g_stage = STAGE_ARMED;
+    }
+    Serial.println(F("shoulder continuous. 3s up, 3s base. elbow off."));
+    return;
+  }
+
+  if (line == "both") {
+    if (g_stage == STAGE_IDLE) {
+      Serial.println(F("not armed. send arm first."));
+      return;
+    }
+    if (!g_el.inited) {
+      Serial.println(F("elbow encoder not talking."));
+      return;
+    }
+    if (g_el.last_raw_deg > 40.0f && g_el.last_raw_deg < 320.0f) {
+      Serial.println(F("not at rest. let the forearm down first."));
+      return;
+    }
+    g_drive_from = g_el.unwrapped_deg;
+    g_el.zero_joint_deg = g_el.unwrapped_deg / g_el.ratio;
+    g_drive_peak = g_drive_from;
+    g_peak_since = millis();
+    g_sweep_t0 = millis();
+    g_sweep_phase = SWEEP_DRIVE;
+    g_coast_mark = 0.0f;
+    g_both = true;
+    g_elbow_moving = false;
+    g_hold_ready = false;
+    g_hold_kick_until = 0;
+    g_hold_ms = 120;
+    g_shloop = false;
+    g_sh_was_on = false;
+    g_both_t0 = millis();
+    g_both_until = g_both_t0 + BOTH_TOTAL_MS;
+    g_elbow_next = g_both_t0 + BOTH_GAP_MS;
+    g_both_pulse_t0 = g_both_t0;
+    g_time_until = 0;
+    g_smooth_hold = false;
+    g_thr_e = 0.0f;
+    g_thr_s = SHOULDER_TIME_THROTTLE;
+    if (g_stage != STAGE_ARMED) {
+      g_stage = STAGE_ARMED;
+    }
+    Serial.println(F("both. elbow one slow move, then 2s. shoulder 3s up, 3s base."));
+    return;
+  }
+
   if (line == "pattern") {
     if (g_stage == STAGE_IDLE) {
       Serial.println(F("not armed. send arm first."));
@@ -869,6 +1175,7 @@ static void handle_line(String line) {
     g_lift_from = 0.0f;
     g_pattern_t0 = millis();
     g_sh_was_on = false;
+    g_handoff_until = 0;
     g_thr_e = PATTERN_CLIMB_PERCENT;
     g_thr_s = SHOULDER_TIME_THROTTLE;
     g_stage = STAGE_PATTERN;
