@@ -20,6 +20,15 @@ rear disc lip 25.39 mm, seat 26.90 mm
 front journal diameter 19.000 mm
 front disc lip 25.39 mm, seat 26.90 mm
 6704 seated clash -0.0 mm3, lip stops a 1 mm push 53 mm3
+assembly bearing A into the disc: clash 0.0 mm3
+assembly bearing B into the disc: clash 0.0 mm3
+assembly disc A from the rear: clash 0.0 mm3
+assembly bearing A from the rear: clash 0.0 mm3
+assembly disc B from the front: clash 0.0 mm3
+assembly bearing B from the front: clash 0.0 mm3
+assembly carrier from the rear: clash 0.0 mm3
+assembly flange from the rear: clash 0.0 mm3
+assembly stack from the front: clash 0.0 mm3
 shaft vs 19 Crank flange: clash 0.0 mm3
 shaft vs 03 Cycloid disc A: clash 0.0 mm3
 shaft vs 04 Cycloid disc B: clash 0.0 mm3

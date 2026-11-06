@@ -602,6 +602,33 @@ def measure(parts):
         problems.append(f"6704 intersects a disc: {seated:.1f} mm3, wanted 0 to 1")
     if locked < 5.0:
         problems.append(f"lip does not stop the bearing: {locked:.0f} mm3, wanted 5 to 400")
+
+    def travel(moving, obstacles, direction, limit):
+        """Largest clash while moving from `limit` mm off the seat back to the seat."""
+        worst = 0.0
+        dist = float(limit)
+        while dist >= 0.0:
+            worst = max(worst, sum(ix(moving.translate((0, 0, direction * dist)), o) for o in obstacles))
+            dist -= 2.0
+        return worst
+
+    pins = [s for name, s in g.items() if name.startswith("02.")]
+    steps = (
+        ("bearing A into the disc", g["05 Disc bearing 6704 A"], [disc_a], 1, 12),
+        ("bearing B into the disc", g["06 Disc bearing 6704 B"], [disc_b], 1, 12),
+        ("disc A from the rear", disc_a, [shaft], -1, 20),
+        ("bearing A from the rear", g["05 Disc bearing 6704 A"], [shaft], -1, 20),
+        ("disc B from the front", disc_b, [shaft, disc_a], 1, 24),
+        ("bearing B from the front", g["06 Disc bearing 6704 B"], [shaft], 1, 24),
+        ("carrier from the rear", carrier, [shaft, disc_a, disc_b], -1, 24),
+        ("flange from the rear", flange, [shaft, disc_a], -1, 16),
+        ("stack from the front", disc_a, [housing] + pins, 1, 30),
+    )
+    for label, moving, obstacles, direction, limit in steps:
+        worst = travel(moving, obstacles, direction, limit)
+        report.append(f"assembly {label}: clash {worst:.1f} mm3")
+        if worst > 1.0:
+            problems.append(f"assembly {label}: {worst:.1f} mm3, wanted 0 to 1")
     for name in ("19 Crank flange", "03 Cycloid disc A", "04 Cycloid disc B", "08 Rear carrier", "21 Front washer"):
         hit = ix(shaft, g[name])
         report.append(f"shaft vs {name}: clash {hit:.1f} mm3")
