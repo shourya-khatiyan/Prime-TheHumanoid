@@ -1,0 +1,26 @@
+motion: the motor turns the crank, the crank walks two discs around the ring pins, and the discs turn the output pins and the arm
+rear cage along the shaft: clash 0.0 mm3
+collar stops the rear cage: clash 323 mm3
+front cage on its journal: clash 0.0 mm3, on the nose 0.0 mm3
+housing bore at the rear bearing: r 23.80 to 52.00
+housing bore at disc A: r 46.40
+rear bearing in the housing: clash -0.0 mm3
+front bearing in the cover: clash -0.0 mm3
+retainer in the housing: clash 0.0 mm3
+ring pins in the discs: clash 0.0 mm3, profile gap 0.068 mm
+screws inside the parts they pass through: clash 2.1 mm3
+M2 head ends z 3.05, flange face z 3.30, bearing starts z 4.00
+hub shoulder to rear bearing: 0.11 mm
+front plate to the outer ring: 1.60 mm
+crank slice at the rear journal: r 9.17 to 10.23
+solid part 1: 211 g
+solid part 2: 30 g
+solid part 8: 19 g
+solid part 15: 92 g
+solid part 23: 12 g
+solid PETG 698 g
+fit-check print is solid. no infill estimate.
+arm face z 57.0 mm, was 53.0 on v4
+bed plate 1: 10 parts
+bed plate 2: 29 parts
+bed plate 3: 23 parts
